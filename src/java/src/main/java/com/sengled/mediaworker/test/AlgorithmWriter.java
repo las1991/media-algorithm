@@ -105,7 +105,7 @@ public class AlgorithmWriter {
         //putRecord.setPartitionKey("DD69960CE1DF6C27EBED2B7889CD8F5A");
         putRecord.setPartitionKey("IAMTOKEN_"+index);
         putRecord.setData(ByteBuffer.wrap(imageBytes));
-        LOG.info("Putting token: " + "IAMTOKEN_"+index);
+        LOG.info("Putting token: " + "_IAMTOKEN_"+index);
 
         try {
             kinesisClient.putRecord(putRecord);
