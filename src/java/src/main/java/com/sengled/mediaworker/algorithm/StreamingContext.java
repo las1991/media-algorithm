@@ -29,6 +29,7 @@ public class StreamingContext implements Closeable{
 	 */
 	private String model;
 	private String utcDate;
+	private Date lastMotionDate;
 	private PythonProcessor processor;
 	private Algorithm algorithm;
 	
@@ -66,8 +67,9 @@ public class StreamingContext implements Closeable{
 	public void reloadAlgorithmModel(){
 		LOGGER.info("StreamingContext reloadAlgorithmModel. model:{} token:{}",model,token);
 		try {
+			processor.removeAlgorithm(algorithm);
 			String pythonObjectId = processor.newAlgorithm(model, token);
-			LOGGER.info("ReloadAlgorithmModel pythonObjectId:{}",pythonObjectId);
+			LOGGER.info("ReloadAlgorithmModel  pythonObjectId old:{} new:{}",algorithm.getPythonObjectId(),pythonObjectId);
 			algorithm.setPythonObjectId(pythonObjectId);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
@@ -104,6 +106,15 @@ public class StreamingContext implements Closeable{
 
 	public void setUtcDate(String utcDate) {
 		this.utcDate = utcDate;
+	}
+
+ 
+	public Date getLastMotionDate() {
+		return lastMotionDate;
+	}
+
+	public void setLastMotionDate(Date lastMotionDate) {
+		this.lastMotionDate = lastMotionDate;
 	}
 
 	public Date getLastUtcDateTime(){

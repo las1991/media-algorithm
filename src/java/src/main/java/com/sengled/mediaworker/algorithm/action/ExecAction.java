@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.algorithm.action;
 
+import java.util.Date;
 import java.util.concurrent.Future;
 
 import org.slf4j.Logger;
@@ -16,14 +17,26 @@ import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
 public class ExecAction extends Action {
+	private static final int  MOTION_INTERVAL = 15;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecAction.class);
 	
 	@Override
 	public void feed(final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) {
 		final String token = context.getToken();
 		final String model = context.getModel();
-		LOGGER.info("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,
-				context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
+		Date lastMotionDate = context.getLastMotionDate();
+		if(lastMotionDate !=null){
+			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) < MOTION_INTERVAL){
+				LOGGER.info("Motion MOTION_INTERVAL:{}s",MOTION_INTERVAL);
+				return;
+			}else{
+				context.setLastMotionDate(null);
+				context.close();
+			}
+		}
+		
+		
+		LOGGER.info("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
 		Future<String> result = context.getProcessor().submit(new Operation<String>() {
 			@Override
 			public String apply(Function function) {
@@ -81,6 +94,8 @@ public class ExecAction extends Action {
 				event.setUtcDate(context.getLastUtcDateTime());
 				event.setJpgDate(jpgData);
 				listener.post(event);
+				//update motion time
+				context.setMotionUtcTime(context.getLastUtcDateTime());
 				break;
 			case "object":
 				ObjectEvent objectEvent = new ObjectEvent();
