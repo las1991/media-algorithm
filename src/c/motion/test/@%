@@ -1,0 +1,158 @@
+#include "robot_vision.h"
+#include <opencv2/opencv.hpp>
+#include <stdio.h>
+#include "debug.h"
+#include "decoder/include/decoder.h"
+#include <pthread.h>
+#include <unistd.h>
+
+using namespace cv;
+
+
+#define URL_1   "rtsp://54.223.51.168:554/140A4524FC57C21DA0768EBEAB4AA392.sdpp"
+#define URL_2   "rtsp://54.223.242.201:554/D438197D40E7B7E121B1306D98A75FFC.sdp"
+#define URL_3   "rtsp://54.223.54.82:554/D438197D40E7B7E121B1306D98A75FFC.sdp"
+
+#define TOKEN_1  "140A4524FC57C21DA0768EBEAB4AA392"
+#define TOKEN_2  "D438197D40E7B7E121B1306D98A75FFC"
+#define TOKEN_3  "D438197D40E7B7E121B1306D98A75FFC"
+
+typedef struct ThreadParam
+{
+	char url[512];
+	char tocken[256];
+}ThreadParam;
+
+
+void callback( void *param1, void *pcontent, int type )
+{
+    if ( type == SLS_ALGLRITHM_STATE_SUCCESS )
+    {
+		SLS_Algorithm *palgorithm = static_cast<SLS_Algorithm*>(pcontent);
+		if ( palgorithm == NULL )
+		{
+			return;
+		}
+		printf("imageName:%s\n",palgorithm->image_name);
+		printf("imageInfo:%s\n",palgorithm->image_info );
+    }  
+	
+}
+
+void alo_log_callback (void* ptr, int level, const char* fmt, va_list vl)
+{
+	char sztmp[1024] = { 0 };
+	sprintf( sztmp,"%s\n",fmt );
+	vfprintf(stderr,sztmp,vl );
+	fflush(stderr);
+}
+
+void test( const char *url, const char *token )
+{
+	InitContext  initcontext;
+	initcontext.callback = callback;
+	initcontext.log_callback = alo_log_callback;
+	initcontext.callback_param = NULL;
+	strcpy(initcontext.dest_storage_floder,"/home/wxc/picture");
+	
+	strcpy(initcontext.token,token);
+    
+	void *private_param;
+	SLSInit( &private_param,&initcontext );
+	
+	SLS_AlgorithmParams algorithmparams;
+
+	algorithmparams.action_type = 0;
+	algorithmparams.action_type |= SLS_ALGORITHM_ACTION_MOTION_CODE | SLS_ALGORITHM_ACTION_GESTURE_CODE | SLS_ALGORITHM_ACTION_EXPRESSION_CODE;
+	//algorithmparams.action_type |= SLS_ALGORITHM_ACTION_HUMAN_CODE;
+	// algorithmparams.action_type |= SLS_ALGORITHM_ACTION_GESTURE_CODE;
+	//algorithmparams.action_type |= SLS_ALGORITHM_ACTION_EXPRESSION_CODE;
+	//algorithmparams.action_type |= SLS_ALGORITHM_ACTION_MOTION_CODE;
+
+	algorithmparams.motion_params.zone_count = 0;
+	algorithmparams.motion_setting_params.sensitivity = 900;
+	algorithmparams.motion_setting_params.sleep_period = 1;
+    algorithmparams.motion_setting_params.frame_skip = 12;
+
+	algorithmparams.gesture_setting_params.frame_skip = 12;
+	algorithmparams.gesture_setting_params.sleep_period = 1;
+	algorithmparams.gesture_setting_params.sensitivity = 500;
+
+	algorithmparams.expression_settting_params.frame_skip = 12;
+	algorithmparams.expression_settting_params.sleep_period = 1;
+	algorithmparams.expression_settting_params.sensitivity = 500;
+
+	algorithmparams.human_setting_params.frame_skip = 1;
+	algorithmparams.human_setting_params.sleep_period = 1;
+	algorithmparams.human_setting_params.sensitivity = 500;
+	SLStreamParameter stream_parameter;
+    
+    int opencount = 0;
+	while ( opencount < 50  )
+	{
+		opencount++;
+		if ( !decodeVideo(stream_parameter,url) )
+		{
+			printf("------open video failed:%d------\n", opencount++ );
+			continue;
+
+		}
+      
+		int count_error = 0;
+		stream_parameter.scaled_frame_data = (char*)malloc(1920*1080*2);
+		while ( 1 )
+		{
+			bool ret = getFrameFromDecoder(stream_parameter);
+			if ( !ret )
+			{
+				count_error++;
+				printf("getFrameFromDecoder failed %d\n",count_error);			
+			}
+			if ( count_error >= 20 )
+			{
+				break;
+			}
+			if ( ret &&  stream_parameter.error_frame !=-1 )
+			{
+				SLSStart( private_param,stream_parameter.scaled_frame_data,stream_parameter.frame_width,
+					stream_parameter.frame_height,&algorithmparams );
+			}		
+		}
+		stopGetFrame( stream_parameter );
+		closeVideoDecoder(stream_parameter);
+	}
+	
+	SLSStop( private_param );	
+	
+}
+
+void *thread_fun( void *param )
+{
+	ThreadParam *pinfo = static_cast<ThreadParam*>(param);
+	test( pinfo->url,pinfo->tocken );
+	delete pinfo;
+}
+
+void start( const char *url, const char *tocken )
+{
+    ThreadParam *pinfo = new ThreadParam;
+	strcpy(pinfo->url,url);
+	strcpy(pinfo->tocken,tocken);
+	pthread_t threadid;
+	pthread_create( &threadid,NULL,thread_fun, pinfo );
+	pthread_detach(threadid);
+}
+
+int main()
+{
+	 start( URL_2, TOKEN_2 );
+	//start( URL_1, TOKEN_1 );
+	//start( URL_2, TOKEN_2 );
+	while ( 1 )
+	{
+		sleep(10);
+	}
+	return 0;
+}
+
+

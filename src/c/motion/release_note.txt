@@ -1,0 +1,3 @@
+time:2016/10/12 9:45
+1.when reported picture algorithm printing cost time log
+2.modify no md,delete report detection 
