@@ -1,0 +1,25 @@
+version: 0.1
+
+phases:
+  install:
+    commands:
+      - echo "Nothing to do in the install phase..."
+  pre_build:
+    commands:
+      - echo "Make begin with [`date`], ok. "
+      - yum -y install zlib-devel
+  build:
+    commands:
+      - echo "Build begin with [`date`]"
+      - sh build-cproject.sh
+      - mvn install
+  post_build:
+    commands:
+      - echo "Build complete with [`date`]"
+
+artifacts:
+  files:
+    - source: src/java/screenshot-assembly/target/media-algorithm-v3-distribution.zip
+      destination: content/
+      action: unzip
+

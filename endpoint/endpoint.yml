@@ -1,0 +1,8 @@
+---
+os: linux
+version: 3.0
+appService: media-algorithm-v3
+
+exec:
+  - type: private
+    port: 8888
