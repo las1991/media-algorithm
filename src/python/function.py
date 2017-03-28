@@ -92,7 +92,7 @@ class Function(object):
         try:
             context = algorithm_context[java_uuid]
         except:
-            return "ERROR"
+            return "NULL_ALGORITHM_MODEL"
 
         width = yuv_image.getWidth()
         height = yuv_image.getHeight()
@@ -122,14 +122,24 @@ class Function(object):
                 return result
         else:
             log_print(0, "context not found")
-            return "ERROR"
+            return "NULL_ALGORITHM_MODEL"
 
     def close(self, java_algorithm_object):
         
         java_uuid = java_algorithm_object.getPythonObjectId()
-        context = algorithm_context[java_uuid]
+        try:
+            context = algorithm_context[java_uuid]
+        except:
+            log_print(0, "context not exist!")
+            return
+        
+        log_print(0, "==========close============")
         if context:
             context.close()
+            try:
+                algorithm_context.pop(context)
+            except:
+                log_print(0, "context not exist!")
 
     def hello(self):
         log_print(0, "receive heartbeat hello!")
