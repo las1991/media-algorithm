@@ -2,7 +2,7 @@
 
 project_name='media-algorithm-v3'
 basepath=$(cd `dirname $0`; pwd)
-${basepath}/../content/media-v3/bin/stop-all.sh
+${basepath}/../content/${project_name}/bin/stop-all.sh
 
 ps -ef|grep consul-template | grep -v grep | grep sengled.properties.ctmpl >/dev/null 2>&1
 if [ $? -ne 0 ];then
