@@ -31,10 +31,9 @@ public class ExecAction extends Action {
 				return;
 			}else{
 				context.setLastMotionDate(null);
-				context.reloadAlgorithmModel();
+				context.reloadAlgorithmModel("Motion after pass 15s");
 			}
 		}
-		
 		
 		LOGGER.info("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
 		Future<String> result = context.getProcessor().submit(new Operation<String>() {
@@ -45,13 +44,14 @@ public class ExecAction extends Action {
 		});
 
 		// 如果python进程算法模型上下文丢失，则重新初始化算法模型
+		String text = "";
 		try {
-			String text = result.get();
+			text = result.get();
 			LOGGER.info("token:{},model:{},feed return:{}", token, model, text);
 			if (Action.NULL_ALGORITHM_MODEL.equals(text)) {// feed 返回ERROR
 											// 时，重新初始化算法模型，丢弃本次接收的数据不再调用feed
-				LOGGER.error("Feed result ERROR. run reloadAlgorithmModel");
-				context.reloadAlgorithmModel();
+				LOGGER.error("Feed result "+Action.NULL_ALGORITHM_MODEL+". run reloadAlgorithmModel");
+				context.reloadAlgorithmModel("Feed return "+Action.NULL_ALGORITHM_MODEL);
 				return;
 			}
 			if (Action.NORESULT.equals(text)) {
@@ -63,6 +63,7 @@ public class ExecAction extends Action {
 			LOGGER.error("InterruptedException");
 			return;
 		}catch (Exception e) {
+			LOGGER.info("feed result:{}",text);
 			LOGGER.error("token:" + token + " Feed Exception." + e.getMessage(), e);
 			return;
 		}

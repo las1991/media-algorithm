@@ -76,10 +76,10 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
         eventBus.register(dynamodbEventListener);
         
         executor = new ThreadPoolExecutor(Constants.CPU_CORE_COUNT * 2,
-														  Constants.CPU_CORE_COUNT * 2,
-														  60, TimeUnit.SECONDS,
-														  new ArrayBlockingQueue<Runnable>(Constants.CPU_CORE_COUNT * 2),
-														  new ThreadPoolExecutor.CallerRunsPolicy());
+										  Constants.CPU_CORE_COUNT * 4,
+										  60, TimeUnit.SECONDS,
+										  new ArrayBlockingQueue<Runnable>(Constants.CPU_CORE_COUNT * 4),
+										  new ThreadPoolExecutor.CallerRunsPolicy());
     	return  new RecordProcessor(executor,processorManager,recordCount,feedListener);
     }
     public void shutdown(){
