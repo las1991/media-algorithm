@@ -19,6 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSON;
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException;
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException;
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.ThrottlingException;
@@ -43,14 +44,13 @@ import com.sengled.mediaworker.algorithm.pydto.YUVImage;
  */
 public class RecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
-	private static final long CHECKPOINT_INTERVAL_MILLIS = 60000L; // 1 minute
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	private String kinesisShardId;
 	private ProcessorManager processorManager;
 	private Map<String, StreamingContext> contextMap;
 	private FeedListener feedListener;
 
-	private long nextCheckpointTimeInMillis;
+
 	private AtomicLong recordCount;
     private ExecutorService handleThread;
     
@@ -71,28 +71,14 @@ public class RecordProcessor implements IRecordProcessor {
 	public void initialize(String shardId) {
 		LOGGER.info("Initializing record processor for shard: " + shardId);
 		this.kinesisShardId = shardId;
-		this.nextCheckpointTimeInMillis = CHECKPOINT_INTERVAL_MILLIS;
 	}
 
 	@Override
 	public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
 		LOGGER.info("received records...{}",records.size());
 		recordCount.addAndGet(records.size());
-		if(handleThread.isShutdown()){
-			try {
-				LOGGER.warn("handleThread isShutdown true. wait...");
-				checkpoint(checkpointer);
-				Thread.currentThread().wait();
-			} catch (InterruptedException e) {
-				LOGGER.debug(e.getMessage(),e);
-			}
-		}
 		for (Record record : records) {
 			processRecord(record);
-		}
-		if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
-			checkpoint(checkpointer);
-			nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
 		}
 	}
 
@@ -128,24 +114,8 @@ public class RecordProcessor implements IRecordProcessor {
 	@Override
 	public void shutdown(IRecordProcessorCheckpointer checkpointer, ShutdownReason reason) {
 		LOGGER.info("Shutting down record processor for shard: " + kinesisShardId);
-		if (reason == ShutdownReason.TERMINATE) {
-			checkpoint(checkpointer);
-		}
 	}
-
-	private void checkpoint(IRecordProcessorCheckpointer checkpointer) {
-		LOGGER.info("Checkpointing shard " + kinesisShardId);
-		try {
-			checkpointer.checkpoint();
-		} catch (ShutdownException se) {
-			LOGGER.info("Caught shutdown exception, skipping checkpoint.", se);
-		} catch (ThrottlingException e) {
-			LOGGER.error("Caught throttling exception, skipping checkpoint.", e);
-		} catch (InvalidStateException e) {
-			LOGGER.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
-		}
-	}
-
+	
 	private void pushData(String token, byte[] data) throws Exception {
 		LOGGER.info("Receive record...");
 		Frame frame = KinesisFrameDecoder.decode(data);
@@ -160,9 +130,10 @@ public class RecordProcessor implements IRecordProcessor {
 		for(String model : MODEL_LIST){
 			String key =  token + "_" + model;//key format e.g: TOKEN_motion
 			if (params.containsKey(model)) {
+				Map<String,Object> newModelConfig = (Map<String,Object>)params.get(model);
 				StreamingContext context = contextMap.get(key);
-				if (context == null) {
-					context = processorManager.newAlgorithmContext(model, token, (Map<String,Object>)params.get(model));
+				if(context == null){
+					context = processorManager.newAlgorithmContext(model, token,newModelConfig);
 					contextMap.put(key, context);
 				}
 				

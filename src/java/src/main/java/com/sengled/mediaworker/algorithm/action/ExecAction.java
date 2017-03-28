@@ -31,7 +31,7 @@ public class ExecAction extends Action {
 				return;
 			}else{
 				context.setLastMotionDate(null);
-				context.close();
+				context.reloadAlgorithmModel();
 			}
 		}
 		
@@ -95,7 +95,7 @@ public class ExecAction extends Action {
 				event.setJpgDate(jpgData);
 				listener.post(event);
 				//update motion time
-				context.setMotionUtcTime(context.getLastUtcDateTime());
+				context.setLastMotionDate(context.getLastUtcDateTime());
 				break;
 			case "object":
 				ObjectEvent objectEvent = new ObjectEvent();

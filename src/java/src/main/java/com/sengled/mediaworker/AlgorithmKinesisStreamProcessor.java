@@ -43,8 +43,8 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
 
     @Autowired
     private RecordProcessorFactory recordProcessorFactory;
-    @Autowired
-    private MetricRegistry metricRegistry;
+//    @Autowired
+//    private MetricRegistry metricRegistry;
     
     private ProcessorManager processorManager;
     
@@ -80,12 +80,6 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
         if(event instanceof ContextClosedEvent ){
         	LOGGER.info("Shutdown all recordProcessorFactory thread");
         	recordProcessorFactory.shutdown();
-        	try {
-        		LOGGER.info("Sleep 10s ...");
-				Thread.sleep(10000);
-			} catch (InterruptedException e) {
-				
-			}
             LOGGER.info("Shutdown all python process");
             processorManager.destroyAll();
         }
