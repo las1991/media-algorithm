@@ -39,7 +39,7 @@ do
 done
 
 
-export JMEDIA_OPTS=" -Dserver.name=ScreenshotServer -Dspring.config.location=${CONFIGS}file:/etc/sengled/sengled.properties"
+export JMEDIA_OPTS=" -Dserver.name=media-algorithm-v3 -Dspring.config.location=${CONFIGS}file:/etc/sengled/sengled.properties"
 export JMEDIA_OPTS=" -Dstogare.log.maxBytes=134217728 "$JMEDIA_OPTS
 export JMEDIA_OPTS=" -Dstogare.log.flushDisk=1000 "$JMEDIA_OPTS
 export JMEDIA_OPTS=" -Dstogare.log.cleanDisk=60000 "$JMEDIA_OPTS
