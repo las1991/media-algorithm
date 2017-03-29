@@ -26,7 +26,7 @@ public class ExecAction extends Action {
 		final String model = context.getModel();
 		Date lastMotionDate = context.getLastMotionDate();
 		if(lastMotionDate !=null){
-			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) < MOTION_INTERVAL){
+			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) <= MOTION_INTERVAL){
 				LOGGER.info("Motion MOTION_INTERVAL:{}s",MOTION_INTERVAL);
 				return;
 			}else{
@@ -35,7 +35,7 @@ public class ExecAction extends Action {
 			}
 		}
 		
-		LOGGER.info("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
+		LOGGER.debug("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
 		Future<String> result = context.getProcessor().submit(new Operation<String>() {
 			@Override
 			public String apply(Function function) {
@@ -47,7 +47,7 @@ public class ExecAction extends Action {
 		String text = "";
 		try {
 			text = result.get();
-			LOGGER.info("token:{},model:{},feed return:{}", token, model, text);
+			LOGGER.debug("token:{},model:{},feed return:{}", token, model, text);
 			if (Action.NULL_ALGORITHM_MODEL.equals(text)) {// feed 返回ERROR
 											// 时，重新初始化算法模型，丢弃本次接收的数据不再调用feed
 				LOGGER.error("Feed result "+Action.NULL_ALGORITHM_MODEL+". run reloadAlgorithmModel");
@@ -55,12 +55,13 @@ public class ExecAction extends Action {
 				return;
 			}
 			if (Action.NORESULT.equals(text)) {
-				LOGGER.info("Feed result NORESULT. token:{}",token);
+				LOGGER.debug("Feed result NORESULT. token:{}",token);
 				return;
 			}
 			handleListenerEvent(text,context, yuvImage, listener);
 		}catch(InterruptedException e){
-			LOGGER.error("InterruptedException");
+			LOGGER.error("InterruptedException token:{}",token);
+			LOGGER.error(e.getMessage(),e);
 			return;
 		}catch (Exception e) {
 			LOGGER.info("feed result:{}",text);
@@ -68,7 +69,7 @@ public class ExecAction extends Action {
 			return;
 		}
 
-		LOGGER.info("token:{},model:{},OpenAction feed finisthed...", token, model);
+		LOGGER.debug("token:{},model:{},OpenAction feed finisthed...", token, model);
 
 	}
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{
@@ -93,7 +94,7 @@ public class ExecAction extends Action {
 				event.setModel(model);
 				event.setZoneId(zoneId);
 				event.setUtcDate(context.getLastUtcDateTime());
-				event.setJpgDate(jpgData);
+				event.setJpgData(jpgData);
 				listener.post(event);
 				//update motion time
 				context.setLastMotionDate(context.getLastUtcDateTime());

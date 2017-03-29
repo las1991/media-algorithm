@@ -52,17 +52,15 @@ public class RecordProcessor implements IRecordProcessor {
 
 
 	private AtomicLong recordCount;
-    private ExecutorService handleThread;
     
 	
-	public RecordProcessor(ExecutorService executor,
+	public RecordProcessor(
 						   ProcessorManager processorManager, 
 			               AtomicLong recordCount, 
 						   FeedListener feedListener) {
 		this.processorManager = processorManager;
 		this.recordCount = recordCount;
 		this.feedListener = feedListener;
-		this.handleThread = executor;
 		this.contextMap = new HashMap<String, StreamingContext>();
 	}
 
@@ -94,18 +92,11 @@ public class RecordProcessor implements IRecordProcessor {
 			LOGGER.warn("Record d ata is null");
 			return;
 		}
-		handleThread.submit(new Runnable() {
-			@Override
-			public void run() {
-				try {
-					pushData(record.getPartitionKey(), data);
-				}catch (InterruptedException e1){
-					LOGGER.error("InterruptedException");
-				} catch (Exception e) {
-					LOGGER.error("pushData "+e.getMessage(),e);
-				}
-			}
-		});
+		try {
+			pushData(record.getPartitionKey(), data);
+		} catch (Exception e) {
+			LOGGER.error("pushData "+e.getMessage(),e);
+		}
 	}
 
 	/**
@@ -117,7 +108,7 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 	
 	private void pushData(String token, byte[] data) throws Exception {
-		LOGGER.info("Receive record...");
+		LOGGER.debug("Receive record...token:{}",token);
 		Frame frame = KinesisFrameDecoder.decode(data);
 
 		Map<String, Object> params = frame.getConfigs();

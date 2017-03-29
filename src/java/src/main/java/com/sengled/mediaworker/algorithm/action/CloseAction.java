@@ -12,9 +12,9 @@ public class CloseAction extends Action{
 
 	@Override
 	public void feed(final StreamingContext context,final YUVImage yuvImage,final FeedListener listener) {
-		LOGGER.info("CloseAction feed...");
+		LOGGER.debug("CloseAction feed...");
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
-		context.close();		
+		context.close();	
 	}
 }

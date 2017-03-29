@@ -1,8 +1,5 @@
 package com.sengled.mediaworker;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
@@ -15,7 +12,6 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorF
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.eventbus.AsyncEventBus;
-import com.sengled.mediaworker.algorithm.Constants;
 import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.service.DynamodbEventListener;
@@ -74,19 +70,13 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
     	LOGGER.info("Create RecordProcessor...");//会根据分片创建多个RecordProcessor
         AsyncEventBus eventBus = feedListener.getEventBus();
         eventBus.register(dynamodbEventListener);
-        
-        executor = new ThreadPoolExecutor(Constants.CPU_CORE_COUNT * 2,
-										  Constants.CPU_CORE_COUNT * 4,
-										  60, TimeUnit.SECONDS,
-										  new ArrayBlockingQueue<Runnable>(Constants.CPU_CORE_COUNT * 4),
-										  new ThreadPoolExecutor.CallerRunsPolicy());
-    	return  new RecordProcessor(executor,processorManager,recordCount,feedListener);
+
+    	return  new RecordProcessor(processorManager,recordCount,feedListener);
     }
     public void shutdown(){
     	try {
     		executor.shutdown();
-			executor.awaitTermination(50, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
 		}
     }

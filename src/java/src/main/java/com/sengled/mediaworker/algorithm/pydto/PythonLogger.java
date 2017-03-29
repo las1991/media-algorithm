@@ -44,5 +44,15 @@ public class PythonLogger{
     public static void error(String format, Object... arguments){
     	LOGGER.warn(format, arguments);
     }
+    //--debug
+    public static void debug(String msg){
+    	LOGGER.debug(msg);
+    }
+    public static void debug(Marker marker,String msg){
+    	LOGGER.warn(marker, msg);
+    }
+    public static void debug(String format, Object... arguments){
+    	LOGGER.warn(format, arguments);
+    }
 }
 
