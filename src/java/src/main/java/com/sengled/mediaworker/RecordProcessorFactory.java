@@ -85,8 +85,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
     public void shutdown(){
     	try {
     		executor.shutdown();
-			executor.awaitTermination(50, TimeUnit.SECONDS);
-		} catch (InterruptedException e) {
+		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
 		}
     }

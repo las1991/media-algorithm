@@ -117,7 +117,7 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 	
 	private void pushData(String token, byte[] data) throws Exception {
-		LOGGER.info("Receive record...");
+		LOGGER.debug("Receive record...token:{}",token);
 		Frame frame = KinesisFrameDecoder.decode(data);
 
 		Map<String, Object> params = frame.getConfigs();

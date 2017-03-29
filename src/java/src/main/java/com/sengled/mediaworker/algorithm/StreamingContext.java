@@ -56,7 +56,7 @@ public class StreamingContext implements Closeable{
 	 * @return
 	 */
 	public void feed(final YUVImage yuvImage,final FeedListener listener){
-		LOGGER.info("parameters:"+this.getAlgorithm().getParameters().toString());
+		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters().toString());
 		if(action != null){
 			action.feed(this,yuvImage,listener);	
 		}else{
@@ -69,7 +69,7 @@ public class StreamingContext implements Closeable{
 		try {
 			processor.removeAlgorithm(algorithm);
 			String pythonObjectId = processor.newAlgorithm(model, token);
-			LOGGER.info("ReloadAlgorithmModel  pythonObjectId old:{} new:{}",algorithm.getPythonObjectId(),pythonObjectId);
+			LOGGER.debug("ReloadAlgorithmModel  pythonObjectId old:{} new:{}",algorithm.getPythonObjectId(),pythonObjectId);
 			algorithm.setPythonObjectId(pythonObjectId);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);

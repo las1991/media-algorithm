@@ -7,7 +7,10 @@ import java.util.Map;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -27,12 +30,11 @@ public class PythonProcessor{
 	private final static String PYTHON_C_LIB = PYTHON_MODULE_PATH;
 	private final static String PYTHON_LOG_PATH = PYTHON_MODULE_PATH;
 	private final static String PYTHON_MODULE_MAIN = PYTHON_MODULE_PATH + Constants.FILE_SEPARATOR + "function.py";
-	private final static int TASK_QUEUE_SIZE = 10;
 
 	/**
 	 * 需要构造的成员
 	 */
-	private ThreadPoolExecutor singleThread;
+	private ThreadPoolExecutor  singleThread;
 	private GatewayServerListener gatewayServerListener;
 
 	private GatewayServer gateway;
@@ -52,10 +54,9 @@ public class PythonProcessor{
 	}
 
 	private void initThread() {
-		singleThread = new ThreadPoolExecutor(1, 1, 
-											  60, TimeUnit.SECONDS, 
-											  new ArrayBlockingQueue<Runnable>(TASK_QUEUE_SIZE),
-											  new ThreadPoolExecutor.CallerRunsPolicy());
+		singleThread =  new ThreadPoolExecutor(1, 1,
+                0L, TimeUnit.MILLISECONDS,
+                new LinkedBlockingQueue<Runnable>());
 	}
 
 	public void startup() {
@@ -115,13 +116,14 @@ public class PythonProcessor{
 	 * @param token
 	 * @return
 	 */
-	public String newAlgorithm(String model,String token) throws Exception {
-		try {
-			return func.newAlgorithmModel(model,token);
-		} catch (Exception e) {
-			LOGGER.error("Call newAlgorithm failed.",e);
-			throw e;
-		}
+	public String newAlgorithm(final String model,final String token) throws Exception {
+		Future<String> pythonObjectId = singleThread.submit(new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				return func.newAlgorithmModel(model,token);
+			}
+		});
+		return pythonObjectId.get();
 	}
 
 	/**
@@ -129,12 +131,18 @@ public class PythonProcessor{
 	 * 
 	 * @param algorithm
 	 */
-	public void removeAlgorithm(Algorithm algorithm) {
-		try {
-			func.close(algorithm);
-		} catch (Exception e) {
-			LOGGER.error("RemoveAlgorithm failed." + e.getMessage(), e);
-		}
+	public void removeAlgorithm(final Algorithm algorithm) {
+		singleThread.submit(new Callable<Void>() {
+			@Override
+			public Void call() throws Exception {
+				try {
+					func.close(algorithm);
+				} catch (Exception e) {
+					LOGGER.error(e.getMessage(),e);
+				}
+				return null;
+			}
+		});
 	}
 
 

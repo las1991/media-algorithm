@@ -46,7 +46,7 @@ public class ProcessorManager {
 			public void run() {
 				exceptionProcessorsCheck();
 			}
-		}, 10000, 5000);
+		}, 10000, 10000);
 	}
 	/**
 	 * 解码flv
@@ -58,7 +58,6 @@ public class ProcessorManager {
 		PythonProcessor processor = null;
 		Future<YUVImage> future = null;
 		processor = selectByQueueSize();
-		LOGGER.info("select processor end");
 		try {
 			future = processor.submit(new Operation<YUVImage>(){
 				@Override
@@ -100,7 +99,7 @@ public class ProcessorManager {
 	 * @return
 	 */
 	private PythonProcessor selectByActiveCount() {
-		LOGGER.info("Select one  processor");
+		LOGGER.debug("Select one  processor");
 		return Collections.min(processorList, new Comparator<PythonProcessor>() {
 			@Override
 			public int compare(PythonProcessor o1, PythonProcessor o2) {
@@ -117,7 +116,7 @@ public class ProcessorManager {
 		});
 	}
 	private PythonProcessor selectByQueueSize() {
-		LOGGER.info("Select one  processor");
+		LOGGER.debug("Select one  processor");
 		return Collections.min(processorList, new Comparator<PythonProcessor>() {
 			@Override
 			public int compare(PythonProcessor o1, PythonProcessor o2) {
@@ -134,7 +133,7 @@ public class ProcessorManager {
 		});
 	}
 	private void exceptionProcessorsCheck() {
-		LOGGER.info("run exceptionProcessorsCheck");
+		LOGGER.debug("run exceptionProcessorsCheck");
 		for(PythonProcessor processor :processorList ){
 			try {
 				processor.hello();
