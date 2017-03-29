@@ -24,11 +24,11 @@ else
 fi
 
 basepath=$(cd `dirname $0`; pwd)
-sed -i "s/\$PUBLIC_IPV4/${public_ip}/g" ${basepath}/../content/sengled.properties.ctmpl
-sed -i "s/\$PRIVATE_IPV4/${private_ip}/g" ${basepath}/../content/sengled.properties.ctmpl
+sed -i "s/\$PUBLIC_IPV4/${public_ip}/g" ${basepath}/../config/sengled.properties.ctmpl
+sed -i "s/\$PRIVATE_IPV4/${private_ip}/g" ${basepath}/../config/sengled.properties.ctmpl
 
-sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../content/sengled.properties.ctmpl
-sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../content/haproxy.cfg.ctmpl
+sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../config/sengled.properties.ctmpl
+sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../config/haproxy.cfg.ctmpl
 
 
 
