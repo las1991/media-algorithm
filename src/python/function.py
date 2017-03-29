@@ -137,7 +137,7 @@ class Function(object):
         if context:
             context.close()
             try:
-                algorithm_context.pop(context)
+                algorithm_context.pop(java_uuid)
             except:
                 log_print(0, "context not exist!")
 
