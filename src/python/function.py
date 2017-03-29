@@ -49,7 +49,7 @@ class Function(object):
     def decode(self, token, nal_data):
 
         if len(nal_data) == 0:
-            log_print(0, "receive data len = 0!")
+            log_print(4, "receive data len = 0!")
             return
         h264naldecoder = H264NalDecoder(log_callback)
         decode_results = h264naldecoder.decode(token, str(nal_data), True)
@@ -62,11 +62,11 @@ class Function(object):
     def encode(self, token, src_width, src_height, dst_width, dst_height, yuv_data):    
 
         if len(yuv_data) == 0:
-            log_print(0, "receive data len = 0!")
+            log_print(4, "receive data len = 0!")
             return
         encodejpg = EncodeJPG(log_callback)
         str2 = "src width = " + str(src_width) + " str height = " + str(src_height) + " dst width =  " +str(dst_width) + " dst height " + str(dst_height)
-        log_print(0, str2)
+        log_print(2, str2)
 
         encode_results = encodejpg.encode(token, src_width, src_height, dst_width, dst_height, str(yuv_data), True) 
         if encode_results:
@@ -81,7 +81,7 @@ class Function(object):
             context = MotionDetect(log_callback)
             uuid = context.init(str(token))
             algorithm_context[uuid] = context
-            log_print(0, "uuid = " + uuid)
+            log_print(2, "uuid = " + uuid)
             return uuid
         else:
             return None
@@ -121,7 +121,7 @@ class Function(object):
             else:
                 return result
         else:
-            log_print(0, "context not found")
+            log_print(4, "context not found")
             return "NULL_ALGORITHM_MODEL"
 
     def close(self, java_algorithm_object):
@@ -130,19 +130,19 @@ class Function(object):
         try:
             context = algorithm_context[java_uuid]
         except:
-            log_print(0, "context not exist!")
+            log_print(4, "context not exist!")
             return
         
-        log_print(0, "==========close============")
+        log_print(2, "==========close============")
         if context:
             context.close()
             try:
-                algorithm_context.pop(context)
+                algorithm_context.pop(java_uuid)
             except:
-                log_print(0, "context not exist!")
+                log_print(4, "context not exist!")
 
     def hello(self):
-        log_print(0, "receive heartbeat hello!")
+        log_print(2, "receive heartbeat hello!")
         return "hello"
 
     def apply(self, token, data = None):
@@ -162,7 +162,7 @@ if __name__ == "__main__":
     java_import(gateway.jvm, "com.sengled.mediaworker.algorithm.pydto.*") 
     logger = gateway.jvm.PythonLogger
 
-    log_print(0, "start...")
+    log_print(1, "start...")
     python_port = gateway.get_callback_server().get_listening_port()
     java_gateway_server = gateway.java_gateway_server
     java_gateway_server.resetCallbackClient(

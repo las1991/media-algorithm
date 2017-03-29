@@ -20,7 +20,7 @@ import py4j.DefaultGatewayServerListener;
 import py4j.GatewayServer;
 import py4j.GatewayServerListener;
 
-public class PythonProcessor implements Comparable<PythonProcessor>{
+public class PythonProcessor{
 	private static final Logger LOGGER = LoggerFactory.getLogger(PythonProcessor.class);
 	private final static String PROJECT_PATH = System.getenv("SENGLED_APP_HOME");
 	private final static String PYTHON_MODULE_PATH = PROJECT_PATH + Constants.FILE_SEPARATOR + "python";
@@ -33,7 +33,6 @@ public class PythonProcessor implements Comparable<PythonProcessor>{
 	 * 需要构造的成员
 	 */
 	private ThreadPoolExecutor singleThread;
-	private BlockingQueue<Runnable> taskQueue;
 	private GatewayServerListener gatewayServerListener;
 
 	private GatewayServer gateway;
@@ -53,11 +52,10 @@ public class PythonProcessor implements Comparable<PythonProcessor>{
 	}
 
 	private void initThread() {
-		this.taskQueue = new ArrayBlockingQueue<Runnable>(TASK_QUEUE_SIZE);
-		singleThread = new ThreadPoolExecutor(1, 1, 60, TimeUnit.SECONDS, taskQueue,
-				new ThreadPoolExecutor.CallerRunsPolicy());
-
-
+		singleThread = new ThreadPoolExecutor(1, 1, 
+											  60, TimeUnit.SECONDS, 
+											  new ArrayBlockingQueue<Runnable>(TASK_QUEUE_SIZE),
+											  new ThreadPoolExecutor.CallerRunsPolicy());
 	}
 
 	public void startup() {
@@ -154,22 +152,11 @@ public class PythonProcessor implements Comparable<PythonProcessor>{
 			}
 		}
 	}
-
-	public Integer getTaskQueueCount() {
-		return taskQueue.size();
-	}
 	public void hello(){
 		func.hello();
 	}
 
-	@Override
-	public int compareTo(PythonProcessor o) {
-		if(o.getTaskQueueCount()> this.getTaskQueueCount()){
-			return -1;
-		}
-		if(o.getTaskQueueCount()== this.getTaskQueueCount()){
-			return 0;
-		}
-		return 1;
+	public ThreadPoolExecutor getSingleThread() {
+		return singleThread;
 	}
 }

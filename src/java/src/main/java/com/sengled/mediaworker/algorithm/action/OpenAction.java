@@ -13,7 +13,7 @@ public class OpenAction extends Action{
 	@Override
 	public void feed(final StreamingContext context,final YUVImage yuvImage, final FeedListener listener) {
 		context.close();
-		context.reloadAlgorithmModel();
+		context.reloadAlgorithmModel("Open action");
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
 	}

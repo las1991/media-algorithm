@@ -2,7 +2,7 @@
 <configuration debug="false">
 <!--定义日志文件的存储地址 勿在 LogBack 的配置中使用相对路径-->
 <property name="LOG_HOME" value="/var/log/sengled" />
-<property name="APP_NAME" value="media-screenshot-v3-java" />
+<property name="APP_NAME" value="media-algorithm-v3" />
 
 <!-- 控制台输出 -->
 <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
@@ -38,6 +38,5 @@
 <!-- 日志输出级别 -->
 <root level="INFO" >
     <appender-ref ref="FILE" />
-    <appender-ref ref="STDOUT" />
 </root>
 </configuration>

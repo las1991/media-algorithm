@@ -126,7 +126,7 @@ public class RecordProcessor implements IRecordProcessor {
 		}
 		byte[] imageData = frame.getData();
 		YUVImage image = processorManager.decode(token,imageData);
-		
+
 		for(String model : MODEL_LIST){
 			String key =  token + "_" + model;//key format e.g: TOKEN_motion
 			if (params.containsKey(model)) {

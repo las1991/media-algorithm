@@ -64,8 +64,8 @@ public class StreamingContext implements Closeable{
 		}
 		
 	}
-	public void reloadAlgorithmModel(){
-		LOGGER.info("StreamingContext reloadAlgorithmModel. model:{} token:{}",model,token);
+	public void reloadAlgorithmModel(String reason){
+		LOGGER.info("StreamingContext reloadAlgorithmModel. model:{} token:{} reason:{}",model,token,reason);
 		try {
 			processor.removeAlgorithm(algorithm);
 			String pythonObjectId = processor.newAlgorithm(model, token);

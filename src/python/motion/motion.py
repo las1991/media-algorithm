@@ -91,8 +91,6 @@ class MotionDetect(object):
            point_num = (int(points[0]), int(points[1]), int(points[2]), int(points[3]))
            zone_pos.append(point_num)
         
-        self.log_fun(0, "context: " + str(self.context))
-        
         params = create_motion_params(int(motion_params["zone_count"]), zone_ids, zone_pos, int(motion_params["sensitivity"]))
 
         self.motion.feed_frame(self.context, str(frame), frame_width, frame_height, ctypes.byref(params), ctypes.byref(recognition_result))
