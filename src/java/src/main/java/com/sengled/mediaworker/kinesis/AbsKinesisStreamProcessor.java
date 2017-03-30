@@ -39,17 +39,17 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     private Worker worker;
     
     public  ClientConfiguration initConfig(){
-        return new ClientConfiguration()
-                .withGzip(false) // 本身时图片，不使用Gzip压缩
-                .withTcpKeepAlive(true) // 使用长连接
-                .withProtocol(Protocol.HTTPS) // 默认使用 HTTPS
-                .withMaxConnections(50) // 默认 50
-                .withConnectionTTL(5 * 60 * 1000) // 长连接 TTL 为 5min
-                .withConnectionMaxIdleMillis(5 * 60 * 1000) // idle 为 5min
-                .withConnectionTimeout(30 * 1000) //
-                .withMaxErrorRetry(1)
-                .withClientExecutionTimeout(30 * 1000)
-                .withCacheResponseMetadata(false);
+        return new ClientConfiguration();
+//                .withGzip(false) // 本身时图片，不使用Gzip压缩
+//                .withTcpKeepAlive(true) // 使用长连接
+//                .withProtocol(Protocol.HTTPS) // 默认使用 HTTPS
+//                .withMaxConnections(50) // 默认 50
+//                .withConnectionTTL(5 * 60 * 1000) // 长连接 TTL 为 5min
+//                .withConnectionMaxIdleMillis(5 * 60 * 1000) // idle 为 5min
+//                .withConnectionTimeout(30 * 1000) //
+//                .withMaxErrorRetry(1)
+//                .withClientExecutionTimeout(30 * 1000)
+//                .withCacheResponseMetadata(false);
     }    
     
     public KinesisClientLibConfiguration createKclConfig(){
@@ -63,8 +63,8 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
         return new KinesisClientLibConfiguration(applicationName, streamName, provider, workerId)
                 .withRegionName(getRegion())
                 .withInitialPositionInStream(InitialPositionInStream.LATEST)
-                .withKinesisClientConfig(initConfig());
-//                .withIdleTimeBetweenReadsInMillis(1000);
+                .withKinesisClientConfig(initConfig())
+                .withIdleTimeBetweenReadsInMillis(200);
     }
     public void start() {
         final Worker worker = new Worker(getRecordProcessorFactory(), createKclConfig());
