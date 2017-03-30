@@ -27,7 +27,7 @@ public class DynamodbEventListener {
 
 	public final static String tableName = "m_algorithm_results";
 
-	@Value("${AWS_SQS_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
+	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
 	private String queue;
 	@Value("${aws_screenshot_bucket}")
 	private String bucketName;
