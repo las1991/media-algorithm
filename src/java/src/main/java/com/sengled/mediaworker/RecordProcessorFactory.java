@@ -6,8 +6,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 
+import javax.annotation.PostConstruct;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -28,11 +31,10 @@ import com.sengled.mediaworker.algorithm.Constants;
  * @Desc
  */
 @Component
-public class RecordProcessorFactory implements IRecordProcessorFactory {
+public class RecordProcessorFactory implements IRecordProcessorFactory ,InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessorFactory.class);
 	
     private final static String METRICS_NAME = "algorithm";
-    
     
     @Autowired
     private MetricRegistry metricRegistry;
@@ -42,14 +44,19 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
     
     private ProcessorManager processorManager;
     
-    @Autowired
-    private DynamodbEventListener  dynamodbEventListener;
-    
     
     private ThreadPoolExecutor executor;
     private AtomicLong recordCount = new AtomicLong();
     
-    
+	@Override
+	public void afterPropertiesSet() throws Exception {
+        executor = new ThreadPoolExecutor(Constants.CPU_CORE_COUNT * 10,
+						                  Constants.CPU_CORE_COUNT * 10,
+										  0, TimeUnit.SECONDS,
+										  new SynchronousQueue<Runnable>(),
+										  new ThreadPoolExecutor.CallerRunsPolicy());
+	}
+	
     public void setProcessorManager(ProcessorManager processorManager){
         this.processorManager = processorManager;
         this.metricRegistry.register( MetricRegistry.name(METRICS_NAME, "recordCount"), new Gauge<Long>(){
@@ -72,13 +79,6 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
     @Override
     public IRecordProcessor createProcessor() {
     	LOGGER.info("Create RecordProcessor...");//会根据分片创建多个RecordProcessor
-        AsyncEventBus eventBus = feedListener.getEventBus();
-        eventBus.register(dynamodbEventListener);
-        executor = new ThreadPoolExecutor(Constants.CPU_CORE_COUNT * 10,
-						                  Constants.CPU_CORE_COUNT * 10,
-										  0, TimeUnit.SECONDS,
-										  new SynchronousQueue<Runnable>(),
-										  new ThreadPoolExecutor.CallerRunsPolicy());
     	return  new RecordProcessor(executor,processorManager,recordCount,feedListener);
     }
     public void shutdown(){
@@ -88,4 +88,5 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
 			LOGGER.error(e.getMessage(),e);
 		}
     }
+
 }

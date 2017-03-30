@@ -1,38 +1,24 @@
 package com.sengled.mediaworker;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.Timer;
-import java.util.TimerTask;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSON;
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException;
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException;
-import com.amazonaws.services.kinesis.clientlibrary.exceptions.ThrottlingException;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownReason;
 import com.amazonaws.services.kinesis.model.Record;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.sengled.mediaworker.algorithm.Constants;
 import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.StreamingContext;
@@ -80,47 +66,34 @@ public class RecordProcessor implements IRecordProcessor {
 	@Override
 	public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
 		LOGGER.info("received records...{}",records.size());
-		recordCount.addAndGet(records.size());
-		for(Record record :records ){
-			ByteBuffer buffer = record.getData();
-			final byte[] data = new byte[buffer.remaining()];
-			buffer.get(data);
-		}
-		
+		recordCount.addAndGet(records.size());		
 		
 		final Multimap<String, Record> RecordMap = ArrayListMultimap.create();
 		for (Record record : records) {
 			RecordMap.put(record.getPartitionKey(), record);
 		}
 		
+		List<Future<?>> batchTasks =  new ArrayList<>(RecordMap.size());
 		for(final String key : RecordMap.keySet()){
-			try {
-				handleThread.submit(new Runnable() {
-					@Override
-					public void run() {
-						for(Record record : RecordMap.get(key)){
-							ByteBuffer buffer = record.getData();
-							if (buffer.remaining() <= 0) {
-								LOGGER.error("record data size is null.PartitionKey:" + record.getPartitionKey());
-								return;
-							}
-							final byte[] data = new byte[buffer.remaining()];
-							buffer.get(data);
-							if(data.length <=0 ){
-								LOGGER.warn("Record d ata is null");
-								return;
-							}
-							Frame frame;
-							try {
-								frame = KinesisFrameDecoder.decode(data);
-								pushData(record.getPartitionKey(), frame);
-							} catch (Exception e) {
-								LOGGER.error(e.getMessage(),e);
-								return;
-							}
+			batchTasks.add(handleThread.submit(new Runnable() {
+				@Override
+				public void run() {
+					for(Record record : RecordMap.get(key)){
+						ByteBuffer buffer = record.getData();
+						try {
+							Frame frame = KinesisFrameDecoder.decode(buffer);
+							pushData(record.getPartitionKey(), frame);
+						} catch (Exception e) {
+							LOGGER.error(e.getMessage(),e);
+							return;
 						}
 					}
-				}).get();
+				}
+			}));
+		}
+		for(Future<?> task : batchTasks){
+			try {
+				task.get();
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 			}

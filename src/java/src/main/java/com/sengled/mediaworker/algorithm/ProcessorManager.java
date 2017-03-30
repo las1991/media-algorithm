@@ -84,7 +84,6 @@ public class ProcessorManager {
 	 */
 	public StreamingContext newAlgorithmContext(String model,String token,Map<String,Object> configs) throws Exception{
 		PythonProcessor processor =  selectByActiveCount();
-		LOGGER.info("select processor end");
 		//初始化算法模型
 		String pythonObjectId = processor.newAlgorithm(model,token);
 		if(StringUtils.isBlank(pythonObjectId)){
