@@ -1,5 +1,6 @@
 package com.sengled.mediaworker;
 
+import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collection;
@@ -11,6 +12,7 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
@@ -79,41 +81,49 @@ public class RecordProcessor implements IRecordProcessor {
 	public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
 		LOGGER.info("received records...{}",records.size());
 		recordCount.addAndGet(records.size());
+		for(Record record :records ){
+			ByteBuffer buffer = record.getData();
+			final byte[] data = new byte[buffer.remaining()];
+			buffer.get(data);
+		}
+		
+		
 		final Multimap<String, Record> RecordMap = ArrayListMultimap.create();
 		for (Record record : records) {
 			RecordMap.put(record.getPartitionKey(), record);
 		}
 		
 		for(final String key : RecordMap.keySet()){
-			handleThread.submit(new Runnable() {
-				@Override
-				public void run() {
-					for(Record record : RecordMap.get(key)){
-						processRecord(record);	
+			try {
+				handleThread.submit(new Runnable() {
+					@Override
+					public void run() {
+						for(Record record : RecordMap.get(key)){
+							ByteBuffer buffer = record.getData();
+							if (buffer.remaining() <= 0) {
+								LOGGER.error("record data size is null.PartitionKey:" + record.getPartitionKey());
+								return;
+							}
+							final byte[] data = new byte[buffer.remaining()];
+							buffer.get(data);
+							if(data.length <=0 ){
+								LOGGER.warn("Record d ata is null");
+								return;
+							}
+							Frame frame;
+							try {
+								frame = KinesisFrameDecoder.decode(data);
+								pushData(record.getPartitionKey(), frame);
+							} catch (Exception e) {
+								LOGGER.error(e.getMessage(),e);
+								return;
+							}
+						}
 					}
-				}
-			});
-		}
-	}
-
-	private void processRecord(final Record record) {
-		ByteBuffer buffer = record.getData();
-		if (buffer.remaining() <= 0) {
-			LOGGER.error("record data size is null.PartitionKey:" + record.getPartitionKey());
-			return;
-		}
-		final byte[] data = new byte[buffer.remaining()];
-		buffer.get(data);
-		if(data.length <=0 ){
-			LOGGER.warn("Record d ata is null");
-			return;
-		}
-		
-		
-		try {
-			pushData(record.getPartitionKey(), data);
-		} catch (Exception e) {
-			LOGGER.error("pushData "+e.getMessage(),e);
+				}).get();
+			} catch (Exception e) {
+				LOGGER.error(e.getMessage(),e);
+			}
 		}
 	}
 
@@ -125,14 +135,13 @@ public class RecordProcessor implements IRecordProcessor {
 		LOGGER.info("Shutting down record processor for shard: " + kinesisShardId);
 	}
 	
-	private void pushData(String token, byte[] data) throws Exception {
-		LOGGER.debug("Receive record...token:{}",token);
-		Frame frame = KinesisFrameDecoder.decode(data);
-
+	private void pushData(final String token, final Frame frame) throws Exception {
 		Map<String, Object> params = frame.getConfigs();
 		if(params == null || params.size() <=0){
 			throw new Exception("Frame params is null");
 		}
+		LOGGER.debug("Receive record...token:{},params:{}",token,frame.getConfigs());
+
 		byte[] imageData = frame.getData();
 		YUVImage image = processorManager.decode(token,imageData);
 
@@ -169,12 +178,5 @@ public class RecordProcessor implements IRecordProcessor {
 				context.feed(image, feedListener);
 			}
 		}
-	}
-	public static void main(String[] args) {
-		Multimap<String, Object> map = ArrayListMultimap.create();
-		map.put("a", "a");
-		map.put("a", "a");
-		map.put("a", "a");
-		System.out.println(map);
 	}
 }

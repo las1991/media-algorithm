@@ -1,6 +1,7 @@
 package com.sengled.mediaworker;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -76,7 +77,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory {
         executor = new ThreadPoolExecutor(Constants.CPU_CORE_COUNT * 10,
 						                  Constants.CPU_CORE_COUNT * 10,
 										  0, TimeUnit.SECONDS,
-										  new ArrayBlockingQueue<Runnable>(Constants.CPU_CORE_COUNT * 100),
+										  new SynchronousQueue<Runnable>(),
 										  new ThreadPoolExecutor.CallerRunsPolicy());
     	return  new RecordProcessor(executor,processorManager,recordCount,feedListener);
     }

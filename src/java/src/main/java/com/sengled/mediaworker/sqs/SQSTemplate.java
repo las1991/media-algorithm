@@ -45,8 +45,6 @@ public class SQSTemplate implements InitializingBean {
     @Value("${AWS_SQS_REGION:cn-north-1}")
     private String regionName;
 
-    @Value("${sqs_delivery_retry_limit:3}")
-    private Integer deliveryRetryLimit = 3;// 发送失败重试次数
 
     @Value("${publisher_thread_count:3}")
     private Integer publisherThreadCount = 3; //发布消息线程数
@@ -135,19 +133,12 @@ public class SQSTemplate implements InitializingBean {
         SendMessageRequest request = new SendMessageRequest(url, encodedMessage);
 
         //request.withDelaySeconds(3);
-        for (int i = 0; i < deliveryRetryLimit; ++i) {
-            try {
-                return sqsClient.sendMessage(request).getMessageId();
-            } catch (AmazonServiceException e) {
-                logger.warn("Could not sent message to SQS queue: {}. Retrying.", url);
-                try {
-                    Thread.sleep(1000);
-                } catch (InterruptedException e1) {
-                    logger.error("Thread.sleep error,{}",e1);
-                }
-            }
+        try {
+            return sqsClient.sendMessage(request).getMessageId();
+        } catch (AmazonServiceException e) {
+            logger.warn("Could not sent message to SQS queue: {}. Retrying.", url);
         }
-        throw new RuntimeException("Exceeded redelivery value: " + deliveryRetryLimit + "; message not sent!");
+        throw new RuntimeException("Exceeded  message not sent!");
     }
 
     public void publishOnBackend(final String queue, final Serializable message){
