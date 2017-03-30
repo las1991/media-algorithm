@@ -105,6 +105,9 @@ public class ProcessorManager {
 			public int compare(PythonProcessor o1, PythonProcessor o2) {
 				int q1ActiveCount = o1.getSingleThread().getActiveCount();
 				int q2ActiveCount = o2.getSingleThread().getActiveCount();
+				LOGGER.info("PythonId:{},ActiveCount:{}",o1,q1ActiveCount);
+				LOGGER.info("PythonId:{},ActiveCount:{}",o2,q2ActiveCount);
+				
 				if( q1ActiveCount> q2ActiveCount){
 					return 1;
 				}
