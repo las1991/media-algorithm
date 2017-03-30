@@ -56,7 +56,7 @@ public class StreamingContext implements Closeable{
 	 * @return
 	 */
 	public void feed(final YUVImage yuvImage,final FeedListener listener){
-		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters().toString());
+		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters());
 		if(action != null){
 			action.feed(this,yuvImage,listener);	
 		}else{

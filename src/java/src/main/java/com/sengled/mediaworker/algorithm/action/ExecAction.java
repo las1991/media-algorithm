@@ -35,7 +35,7 @@ public class ExecAction extends Action {
 			}
 		}
 		
-		LOGGER.debug("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters().toString());
+		LOGGER.debug("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters());
 		Future<String> result = context.getProcessor().submit(new Operation<String>() {
 			@Override
 			public String apply(Function function) {
