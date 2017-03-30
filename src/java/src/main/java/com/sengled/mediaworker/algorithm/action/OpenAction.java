@@ -11,7 +11,7 @@ public class OpenAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenAction.class);
 	
 	@Override
-	public void feed(final StreamingContext context,final YUVImage yuvImage, final FeedListener listener) {
+	public void feed(final StreamingContext context,final YUVImage yuvImage, final FeedListener listener)throws Exception {
 		context.close();
 		context.reloadAlgorithmModel("Open action");
 		context.setAction(context.execAction);
