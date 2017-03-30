@@ -57,7 +57,7 @@ public class ProcessorManager {
 	public YUVImage decode(final String token,final byte[] src) throws Exception{
 		PythonProcessor processor = null;
 		Future<YUVImage> future = null;
-		processor = selectByQueueSize();
+		processor = selectByActiveCount();
 		try {
 			future = processor.submit(new Operation<YUVImage>(){
 				@Override
@@ -83,7 +83,7 @@ public class ProcessorManager {
 	 * @throws Exception
 	 */
 	public StreamingContext newAlgorithmContext(String model,String token,Map<String,Object> configs) throws Exception{
-		PythonProcessor processor =  selectByQueueSize();
+		PythonProcessor processor =  selectByActiveCount();
 		LOGGER.info("select processor end");
 		//初始化算法模型
 		String pythonObjectId = processor.newAlgorithm(model,token);
@@ -100,20 +100,25 @@ public class ProcessorManager {
 	 */
 	private PythonProcessor selectByActiveCount() {
 		LOGGER.debug("Select one  processor");
-		return Collections.min(processorList, new Comparator<PythonProcessor>() {
+		PythonProcessor processor =  Collections.min(processorList, new Comparator<PythonProcessor>() {
 			@Override
 			public int compare(PythonProcessor o1, PythonProcessor o2) {
 				int q1ActiveCount = o1.getSingleThread().getActiveCount();
 				int q2ActiveCount = o2.getSingleThread().getActiveCount();
+				LOGGER.info("PythonId:{},ActiveCount:{}",o1,q1ActiveCount);
+				LOGGER.info("PythonId:{},ActiveCount:{}",o2,q2ActiveCount);
+				
 				if( q1ActiveCount> q2ActiveCount){
-					return -1;
+					return 1;
 				}
 				if(q1ActiveCount == q2ActiveCount){
 					return 0;
 				}
-				return 1;
+				return -1;
 			}
 		});
+		LOGGER.info("Select Result: {} is selected",processor);
+		return processor;
 	}
 	private PythonProcessor selectByQueueSize() {
 		LOGGER.debug("Select one  processor");
@@ -121,14 +126,14 @@ public class ProcessorManager {
 			@Override
 			public int compare(PythonProcessor o1, PythonProcessor o2) {
 				int q1Size = o1.getSingleThread().getQueue().size();
-				int q2Size = o2.getSingleThread().getQueue().size(); 
+				int q2Size = o2.getSingleThread().getQueue().size();
 				if(q1Size  > q2Size ){
-					return -1;
+					return 1;
 				}
 				if(q1Size  == q2Size){
 					return 0;
 				}
-				return 1;
+				return -1;
 			}
 		});
 	}

@@ -2,6 +2,7 @@ package com.sengled.mediaworker;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -27,6 +28,8 @@ import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorCheckpointer;
 import com.amazonaws.services.kinesis.clientlibrary.types.ShutdownReason;
 import com.amazonaws.services.kinesis.model.Record;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.sengled.mediaworker.algorithm.Constants;
 import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
@@ -49,17 +52,18 @@ public class RecordProcessor implements IRecordProcessor {
 	private ProcessorManager processorManager;
 	private Map<String, StreamingContext> contextMap;
 	private FeedListener feedListener;
-
+	private ExecutorService handleThread;
 
 	private AtomicLong recordCount;
     
 	
-	public RecordProcessor(
+	public RecordProcessor(ExecutorService executor,
 						   ProcessorManager processorManager, 
 			               AtomicLong recordCount, 
 						   FeedListener feedListener) {
 		this.processorManager = processorManager;
 		this.recordCount = recordCount;
+		this.handleThread = executor;
 		this.feedListener = feedListener;
 		this.contextMap = new HashMap<String, StreamingContext>();
 	}
@@ -75,8 +79,20 @@ public class RecordProcessor implements IRecordProcessor {
 	public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
 		LOGGER.info("received records...{}",records.size());
 		recordCount.addAndGet(records.size());
+		final Multimap<String, Record> RecordMap = ArrayListMultimap.create();
 		for (Record record : records) {
-			processRecord(record);
+			RecordMap.put(record.getPartitionKey(), record);
+		}
+		
+		for(final String key : RecordMap.keySet()){
+			handleThread.submit(new Runnable() {
+				@Override
+				public void run() {
+					for(Record record : RecordMap.get(key)){
+						processRecord(record);	
+					}
+				}
+			});
 		}
 	}
 
@@ -92,6 +108,8 @@ public class RecordProcessor implements IRecordProcessor {
 			LOGGER.warn("Record d ata is null");
 			return;
 		}
+		
+		
 		try {
 			pushData(record.getPartitionKey(), data);
 		} catch (Exception e) {
@@ -151,5 +169,12 @@ public class RecordProcessor implements IRecordProcessor {
 				context.feed(image, feedListener);
 			}
 		}
+	}
+	public static void main(String[] args) {
+		Multimap<String, Object> map = ArrayListMultimap.create();
+		map.put("a", "a");
+		map.put("a", "a");
+		map.put("a", "a");
+		System.out.println(map);
 	}
 }
