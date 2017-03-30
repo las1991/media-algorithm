@@ -45,8 +45,8 @@ public class StreamingContext implements Closeable{
 		this.model = model;
 		this.algorithm = algorithm;
 		this.processor = processor;
-		LOGGER.info("create StreamingContext token:{},algorithm:{}",token,algorithm);
-		LOGGER.info("create StreamingContext processor:{}",processor);
+		LOGGER.debug("create StreamingContext token:{},algorithm:{}",token,algorithm);
+		LOGGER.debug("create StreamingContext processor:{}",processor);
 	}
 
 	/**
