@@ -178,5 +178,9 @@ public class RecordProcessor implements IRecordProcessor {
 				context.close();
 			}
 		}
+<<<<<<< HEAD
 	}	
+=======
+	}
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 }

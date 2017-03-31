@@ -115,4 +115,16 @@ public class StreamingContext implements Closeable{
 		}
 		return null;
 	}
+
+	public void reloadAlgorithmModel(String cause) throws Exception {
+		LOGGER.info("reloadAlgorithmModel cause:{}",cause);
+		processor.submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				algorithm.setPythonObjectId(function.newAlgorithmModel(model, token));
+				return null;
+			}
+		}).get();
+	}
 }
