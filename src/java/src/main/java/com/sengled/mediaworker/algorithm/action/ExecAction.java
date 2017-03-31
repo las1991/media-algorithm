@@ -37,7 +37,7 @@ public class ExecAction extends Action {
 		}
 		
 		LOGGER.debug("token:{},model:{},pythonObjectId:{},parameters:{}", token, model,context.getAlgorithm().getPythonObjectId(), context.getAlgorithm().getParameters());
-		Future<String> result = context.getProcessor().submit(new Operation<String>() {
+		Future<String> result = context.submit(new Operation<String>() {
 			@Override
 			public String apply(Function function) {
 				return function.feed(context.getAlgorithm(), yuvImage);
@@ -64,7 +64,7 @@ public class ExecAction extends Action {
 		LOGGER.debug("token:{},model:{},OpenAction feed finisthed...", token, model);
 	}
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{
-		Future<byte[]> jpgDate = context.getProcessor().submit(new Operation<byte[]>() {
+		Future<byte[]> jpgDate = context.submit(new Operation<byte[]>() {
 			@Override
 			public byte[] apply(Function function) {
 				return function.encode(context.getToken(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(),

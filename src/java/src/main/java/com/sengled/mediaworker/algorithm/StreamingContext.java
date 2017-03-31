@@ -3,7 +3,7 @@ package com.sengled.mediaworker.algorithm;
 import java.io.Closeable;
 import java.text.ParseException;
 import java.util.Date;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
@@ -73,9 +73,7 @@ public class StreamingContext implements Closeable{
 	public String getToken() {
 		return token;
 	}
-	public PythonProcessor getProcessor() {
-		return processor;
-	}
+	
 	public Algorithm getAlgorithm() {
 		return algorithm;
 	}
@@ -118,7 +116,7 @@ public class StreamingContext implements Closeable{
 
 	public void reloadAlgorithmModel(String cause) throws Exception {
 		LOGGER.info("reloadAlgorithmModel cause:{}",cause);
-		processor.submit(new Operation<Void>() {
+		submit(new Operation<Void>() {
 			@Override
 			public Void apply(Function function) {
 				function.close(algorithm);
@@ -127,4 +125,8 @@ public class StreamingContext implements Closeable{
 			}
 		}).get();
 	}
+
+    public <T> Future<T> submit(Operation<T> operation) {
+        return processor.submit(operation);
+    }
 }
