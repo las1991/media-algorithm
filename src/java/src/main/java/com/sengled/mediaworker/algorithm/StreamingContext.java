@@ -67,7 +67,17 @@ public class StreamingContext implements Closeable{
 	}
 	@Override
 	public void close()  {
+<<<<<<< HEAD
 		processor.removeAlgorithm(this);
+=======
+		processor.submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				return null;
+			}
+		});
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 	}
 	
 	public String getToken() {
@@ -114,5 +124,17 @@ public class StreamingContext implements Closeable{
 			LOGGER.error(e.getMessage(),e);
 		}
 		return null;
+	}
+
+	public void reloadAlgorithmModel(String cause) throws Exception {
+		LOGGER.info("reloadAlgorithmModel cause:{}",cause);
+		processor.submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				algorithm.setPythonObjectId(function.newAlgorithmModel(model, token));
+				return null;
+			}
+		}).get();
 	}
 }

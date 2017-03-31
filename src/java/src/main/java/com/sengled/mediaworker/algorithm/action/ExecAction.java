@@ -15,7 +15,10 @@ import com.sengled.mediaworker.algorithm.StreamingContext;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.exception.FeedException;
+<<<<<<< HEAD
 import com.sengled.mediaworker.algorithm.exception.StreamingContextNotFoundException;
+=======
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
 public class ExecAction extends Action {
@@ -56,7 +59,10 @@ public class ExecAction extends Action {
 			return;
 		}
 		try {
+<<<<<<< HEAD
 			context.close();
+=======
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 			handleListenerEvent(text,context, yuvImage, listener);
 		} catch (Exception e) {
 			throw new FeedException("feed failed.token:["+token+"]", e);

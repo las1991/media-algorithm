@@ -12,6 +12,10 @@ public class OpenAction extends Action{
 	
 	@Override
 	public void feed(final StreamingContext context,final YUVImage yuvImage, final FeedListener listener)throws Exception {
+<<<<<<< HEAD
+=======
+		context.reloadAlgorithmModel("Open action");
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
 	}

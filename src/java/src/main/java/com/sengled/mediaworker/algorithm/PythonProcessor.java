@@ -8,7 +8,10 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
+<<<<<<< HEAD
 import java.util.concurrent.ExecutionException;
+=======
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
@@ -125,6 +128,7 @@ public class PythonProcessor{
 		try {
 			pythonObjectId = pythonObjectIdFuture.get();
 			if( null == pythonObjectId ){
+<<<<<<< HEAD
 				throw new StreamingContextInitException("StreamingContextInit failed token:["+token+"]");
 			}
 		} catch (StreamingContextInitException e) {
@@ -150,6 +154,15 @@ public class PythonProcessor{
 		}
 		
 		return context;
+=======
+				throw new StreamingContextInitException("StreamingContextInit failed token:["+token+"] pythonObjectId is null");
+			}
+		} catch (Exception e) {
+			throw new StreamingContextInitException("StreamingContextInit failed token:["+token+"]",e);
+		}
+		Algorithm algorithm = new Algorithm(pythonObjectId, parameters);
+		return new StreamingContext(token, model, this, algorithm );
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 	}
 	/**
 	 * 销毁python进程的算法模型
@@ -174,10 +187,13 @@ public class PythonProcessor{
 	}
 	public int getCurrentContextCount(){
 		return streamingContextMap.size();
+<<<<<<< HEAD
 	}
 	
 	public StreamingContext getStreamingContext(String token,String model){
 		return streamingContextMap.get(token + "_" + model);
+=======
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 	}
 	
 }

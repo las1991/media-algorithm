@@ -52,18 +52,40 @@ public class ProcessorManager {
 	 * @throws InterruptedException 
 	 * @throws Exception
 	 */
+<<<<<<< HEAD
 	public  Future<YUVImage> decode(final String token,final byte[] src) throws InterruptedException,DecodeException{
 		PythonProcessor processor = null;
 		try {
 			processor = idles.take();
 			return processor.submit(new Operation<YUVImage>(){
+=======
+	public YUVImage decode(final String token,final byte[] src) throws InterruptedException,DecodeException{
+		PythonProcessor processor = null;
+		Future<YUVImage> future = null;
+		try {
+			processor = idles.take();
+			future = processor.submit(new Operation<YUVImage>(){
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 				@Override
 				public YUVImage apply(Function function) {
 					return function.decode(token,src);
 				}
 			});
+<<<<<<< HEAD
 		} catch (InterruptedException e1) {
 			throw e1;
+=======
+			YUVImage image;
+			image = future.get();
+			if(null == image){
+				throw new DecodeException("Decode fail [" + token + "] result is null");
+			}
+			return image;
+		} catch (InterruptedException e1) {
+			throw e1;
+		} catch (ExecutionException e) {
+			throw new DecodeException("Decode fail [" + token + "]", e.getCause());
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 		}finally{
 			if(processor !=null){
 				idles.put(processor);	
@@ -84,6 +106,7 @@ public class ProcessorManager {
 	}
 	public boolean  removeIdleProcessor(PythonProcessor processor){
 		return idles.remove(processor);
+<<<<<<< HEAD
 	}
 	public void  addIdleProcessor(PythonProcessor processor){
 		if(idles.contains(processor) || null == processor){
@@ -91,6 +114,15 @@ public class ProcessorManager {
 		}
 		idles.add(processor);
 	}
+=======
+	}
+	public void  addIdleProcessor(PythonProcessor processor){
+		if(idles.contains(processor) || null == processor){
+			return;
+		}
+		idles.add(processor);
+	}
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 
     public void stop() {
         LOGGER.info("Stop all ProcessorInstance ...");
@@ -113,6 +145,7 @@ public class ProcessorManager {
 			}
 		});
     }
+<<<<<<< HEAD
 	public StreamingContext findStreamingContext(String token, String model) {
 		for(   PythonProcessor proc :  processorList){
 			StreamingContext sc = proc.getStreamingContext(token, model);
@@ -122,4 +155,6 @@ public class ProcessorManager {
 		}
 		return null;
 	}
+=======
+>>>>>>> b8922f60a2b57dfefa857cb933c099136ecc2152
 }
