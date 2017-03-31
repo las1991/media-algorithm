@@ -73,7 +73,7 @@ public class PythonProcessor{
 			pythonProcess = builder.start();
 			func = (Function) gateway.getPythonServerEntryPoint(new Class[] { Function.class });
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			LOGGER.error("python Process start exception."+e.getMessage(),e);
 		}
 		
 	}
@@ -92,13 +92,28 @@ public class PythonProcessor{
 				boolean removed = processorManager.removeIdleProcessor(process);
 				try {
 					return  operation.apply(func);
-				} finally {
+				}catch(Exception e){
+					handleException(e);
+					throw e;
+				}finally {
 					if(removed){
 						processorManager.addIdleProcessor(process);
 					}
 				}
 			}
+
 		});
+	}
+
+	private void handleException(Exception e) {
+		LOGGER.error(e.getMessage(),e);
+		try {
+			func.hello();
+		} catch (Exception e1) {
+			LOGGER.error("call PythonProcessor.hello error. restart...",e1);
+			shutdown();
+			start();
+		}
 	}
 
 	/**
