@@ -3,14 +3,9 @@ package com.sengled.mediaworker;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Timer;
-import java.util.TimerTask;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -40,14 +35,11 @@ import com.sengled.mediaworker.algorithm.pydto.YUVImage;
  */
 public class RecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
-	private static final long CONTEXT_TIMEOUT_MSEL = 300000;
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	private String kinesisShardId;
 	private ProcessorManager processorManager;
-	private Map<String, StreamingContext> contextMap;
 	private FeedListener feedListener;
 	private ExecutorService handleThread;
-	private Timer timer = new Timer();
 	
 	private AtomicLong recordCount;
     
@@ -60,15 +52,6 @@ public class RecordProcessor implements IRecordProcessor {
 		this.recordCount = recordCount;
 		this.handleThread = executor;
 		this.feedListener = feedListener;
-		this.contextMap = new HashMap<String, StreamingContext>();
-		
-		timer.schedule(new TimerTask(){
-			@Override
-			public void run() {
-				cleanContext();
-			}
-			
-		}, 10000, 10000);
 	}
 
 
@@ -135,13 +118,11 @@ public class RecordProcessor implements IRecordProcessor {
 		Future<YUVImage> image = processorManager.decode(token,imageData);
 
 		for(String model : MODEL_LIST){
-			String key =  token + "_" + model;//key format e.g: <TOKEN>_motion
 			if (params.containsKey(model)) {
 				Map<String,Object> newModelConfig = (Map<String,Object>)params.get(model);
 				StreamingContext context = processorManager.findStreamingContext( model,token);
 				if(context == null){
 					context = processorManager.newAlgorithmContext(model, token,newModelConfig);
-					contextMap.put(key, context);
 				}
 
 				String utcDate = (String)params.get("utcDateTime");
@@ -157,7 +138,6 @@ public class RecordProcessor implements IRecordProcessor {
 						break;
 					case "close":
 						context.setAction(context.closeAction);
-						contextMap.remove(key);
 						break;
 					default :
 						LOGGER.error("action:{} not supported",action);
@@ -168,15 +148,5 @@ public class RecordProcessor implements IRecordProcessor {
 			}
 		}
 	}
-	private void cleanContext(){
-		long currentTime = System.currentTimeMillis();
-		for(Entry<String, StreamingContext> entry:contextMap.entrySet()){
-			StreamingContext context = entry.getValue();
-			if((currentTime  - context.getLastUtcDateTime().getTime()) > CONTEXT_TIMEOUT_MSEL){
-				LOGGER.info("StreamingContext token:{} timeout.remove...",context.getToken());
-				contextMap.remove(context.getToken() + "_" + context.getModel() );
-				context.close();
-			}
-		}
-	}	
+
 }
