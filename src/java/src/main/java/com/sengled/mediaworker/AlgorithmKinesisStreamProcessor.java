@@ -81,7 +81,7 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
         	LOGGER.info("Shutdown all recordProcessorFactory thread");
         	recordProcessorFactory.shutdown();
             LOGGER.info("Shutdown all python process");
-            processorManager.destroyAll();
+            processorManager.stop();
         }
     }
 }

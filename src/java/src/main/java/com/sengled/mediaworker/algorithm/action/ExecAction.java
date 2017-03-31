@@ -14,6 +14,7 @@ import com.sengled.mediaworker.algorithm.Operation;
 import com.sengled.mediaworker.algorithm.StreamingContext;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
+import com.sengled.mediaworker.algorithm.exception.FeedException;
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
 public class ExecAction extends Action {
@@ -55,7 +56,11 @@ public class ExecAction extends Action {
 			LOGGER.debug("Feed result NORESULT. token:{}",token);
 			return;
 		}
-		handleListenerEvent(text,context, yuvImage, listener);
+		try {
+			handleListenerEvent(text,context, yuvImage, listener);
+		} catch (Exception e) {
+			throw new FeedException("feed failed.token:["+token+"]", e);
+		}
 		LOGGER.debug("token:{},model:{},OpenAction feed finisthed...", token, model);
 	}
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{

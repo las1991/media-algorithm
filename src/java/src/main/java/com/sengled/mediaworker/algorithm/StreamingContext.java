@@ -3,6 +3,7 @@ package com.sengled.mediaworker.algorithm;
 import java.io.Closeable;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.concurrent.ExecutionException;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
@@ -64,21 +65,15 @@ public class StreamingContext implements Closeable{
 		}
 		
 	}
-	public void reloadAlgorithmModel(String reason){
-		LOGGER.info("StreamingContext reloadAlgorithmModel. model:{} token:{} reason:{}",model,token,reason);
-		try {
-			processor.removeAlgorithm(algorithm);
-			String pythonObjectId = processor.newAlgorithm(model, token);
-			LOGGER.debug("ReloadAlgorithmModel  pythonObjectId old:{} new:{}",algorithm.getPythonObjectId(),pythonObjectId);
-			algorithm.setPythonObjectId(pythonObjectId);
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage(),e);
-		}
-		
-	}
 	@Override
 	public void close()  {
-			processor.removeAlgorithm(algorithm);
+		processor.submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				return null;
+			}
+		});
 	}
 	
 	public String getToken() {
@@ -125,5 +120,17 @@ public class StreamingContext implements Closeable{
 			LOGGER.error(e.getMessage(),e);
 		}
 		return null;
+	}
+
+	public void reloadAlgorithmModel(String cause) throws Exception {
+		LOGGER.info("reloadAlgorithmModel cause:{}",cause);
+		processor.submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				algorithm.setPythonObjectId(function.newAlgorithmModel(model, token));
+				return null;
+			}
+		}).get();
 	}
 }
