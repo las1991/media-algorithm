@@ -2,32 +2,30 @@
 PUBLIC_IPV4=$PUBLIC_IPV4
 PRIVATE_IPV4=$PRIVATE_IPV4
 
-#redis
-REDIS_ADDR={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/REDIS_ADDR"}}
-REDIS_PORT={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/REDIS_PORT" "6379"}}
-REDIS_PWD={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/REDIS_PWD" ""}}
+#aws s3 key
+aws_access_key_id=AKIAOWUZVLZBHCIDUFUQ
+aws_secret_access_key=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
+aws_s3_region=cn-north-1
+aws_screenshot_bucket=sengled-debug-image-cn-north-1
 
 
-#consul_http_url
-consul_http_url={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/consul_http_url" "http://127.0.0.1:8500"}}
+AWS_SERVICE_NAME_PREFIX=test-bj1
 
-#AWS Service name prefix
-AWS_SERVICE_NAME_PREFIX={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SERVICE_NAME_PREFIX" "test-jx1"}}
+# kinesis
+AWS_KINESIS_KEY=AKIAOJ3W3WYJF5TPQZAQ
+AWS_KINESIS_SECRET=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
+AWS_KINESIS_REGION=cn-north-1
 
-#AWS SQS
-AWS_SQS_KEY={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SQS_KEY" "AKIAPWC56F2DMX5LT4JQ"}}
-AWS_SQS_SECRET={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SQS_SECRET" "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"}}
-AWS_SQS_REGION={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SQS_REGION" "cn-north-1"}}
-AWS_SQS_NAME_PREFIX={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SQS_NAME_PREFIX" "test-jx1"}}
+# dynamo
+AWS_DYNAMO_KEY=AKIAOJ3W3WYJF5TPQZAQ
+AWS_DYNAMO_SECRET=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
+AWS_DYNAMO_REGION=cn-north-1
 
+# sqs
+AWS_SQS_KEY=AKIAOJ3W3WYJF5TPQZAQ
+AWS_SQS_SECRET=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
+AWS_SQS_REGION=cn-north-1
 
-#aws kinesis key
-AWS_KINESIS_KEY={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_KINESIS_KEY"}}
-AWS_KINESIS_SECRET={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_KINESIS_SECRET"}}
-AWS_KINESIS_REGION={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_KINESIS_REGION"}}
-
-
-#aws dynamoDB key
-AWS_DYNAMO_KEY={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_DYNAMO_KEY" "AKIAPPQJTPLPPHY2ASDA"}}
-AWS_DYNAMO_SECRET={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_DYNAMO_SECRET" "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"}}
-AWS_DYNAMO_REGION={{key_or_default "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_DYNAMO_REGION" "cn-north-1"}}
+# gateway
+MEDIA_SNAPGATEWAY_SERVER_ADDR=8.8.8.8
+MEDIA_SNAPGATEWAY_SERVER_PORT=8880
