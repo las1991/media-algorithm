@@ -138,7 +138,7 @@ public class RecordProcessor implements IRecordProcessor {
 			String key =  token + "_" + model;//key format e.g: <TOKEN>_motion
 			if (params.containsKey(model)) {
 				Map<String,Object> newModelConfig = (Map<String,Object>)params.get(model);
-				StreamingContext context = processorManager.findStreamingContext( token,model);
+				StreamingContext context = processorManager.findStreamingContext( model,token);
 				if(context == null){
 					context = processorManager.newAlgorithmContext(model, token,newModelConfig);
 					contextMap.put(key, context);

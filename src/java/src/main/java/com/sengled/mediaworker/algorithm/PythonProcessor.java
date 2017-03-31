@@ -4,17 +4,12 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,9 +17,7 @@ import org.slf4j.LoggerFactory;
 import com.sengled.mediaworker.algorithm.exception.StreamingContextInitException;
 import com.sengled.mediaworker.algorithm.pydto.Algorithm;
 
-import py4j.DefaultGatewayServerListener;
 import py4j.GatewayServer;
-import py4j.GatewayServerListener;
 
 public class PythonProcessor{
 	private static final Logger LOGGER = LoggerFactory.getLogger(PythonProcessor.class);
@@ -137,7 +130,7 @@ public class PythonProcessor{
 		
 		Algorithm algorithm = new Algorithm(pythonObjectId, parameters);
 		StreamingContext context  =  new StreamingContext(token, model, this, algorithm );
-		final StreamingContext oldContext = streamingContextMap.put(token + "_" + model, context);
+		final StreamingContext oldContext = streamingContextMap.put(key(model, token), context);
 		
 		if(oldContext != null){
 			submit(new Operation<Void>() {
@@ -151,6 +144,8 @@ public class PythonProcessor{
 		
 		return context;
 	}
+
+  
 	/**
 	 * 销毁python进程的算法模型
 	 * 
@@ -176,8 +171,11 @@ public class PythonProcessor{
 		return streamingContextMap.size();
 	}
 	
-	public StreamingContext getStreamingContext(String token,String model){
-		return streamingContextMap.get(token + "_" + model);
+	public StreamingContext getStreamingContext(String model,String token){
+		return streamingContextMap.get(key(model, token));
 	}
 	
+    private String key(final String model, final String token) {
+        return token + "_" + model;
+    }
 }

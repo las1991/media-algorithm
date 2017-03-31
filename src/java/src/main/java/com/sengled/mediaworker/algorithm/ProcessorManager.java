@@ -113,9 +113,9 @@ public class ProcessorManager {
 			}
 		});
     }
-	public StreamingContext findStreamingContext(String token, String model) {
+	public StreamingContext findStreamingContext(String model, String token) {
 		for(   PythonProcessor proc :  processorList){
-			StreamingContext sc = proc.getStreamingContext(token, model);
+			StreamingContext sc = proc.getStreamingContext(model, token);
 			if(sc !=null ){
 				return sc;
 			}
