@@ -14,6 +14,8 @@ import com.sengled.mediaworker.algorithm.Operation;
 import com.sengled.mediaworker.algorithm.StreamingContext;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
+import com.sengled.mediaworker.algorithm.exception.FeedException;
+import com.sengled.mediaworker.algorithm.exception.StreamingContextNotFoundException;
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
 public class ExecAction extends Action {
@@ -31,7 +33,6 @@ public class ExecAction extends Action {
 				return;
 			}else{
 				context.setLastMotionDate(null);
-				context.reloadAlgorithmModel("Motion after pass 15s");
 			}
 		}
 		
@@ -48,14 +49,18 @@ public class ExecAction extends Action {
 		LOGGER.debug("token:{},model:{},feed return:{}", token, model, text);
 		if (Action.NULL_ALGORITHM_MODEL.equals(text)) {// feed 返回ERROR 时，重新初始化算法模型，丢弃本次接收的数据不再调用feed
 			LOGGER.error("Feed result "+Action.NULL_ALGORITHM_MODEL+". run reloadAlgorithmModel");
-			context.reloadAlgorithmModel("Feed return "+Action.NULL_ALGORITHM_MODEL);
-			return;
+			throw new StreamingContextNotFoundException("NULL ALGORITHM MODEL");
 		}
 		if (Action.NORESULT.equals(text)) {
 			LOGGER.debug("Feed result NORESULT. token:{}",token);
 			return;
 		}
-		handleListenerEvent(text,context, yuvImage, listener);
+		try {
+			context.close();
+			handleListenerEvent(text,context, yuvImage, listener);
+		} catch (Exception e) {
+			throw new FeedException("feed failed.token:["+token+"]", e);
+		}
 		LOGGER.debug("token:{},model:{},OpenAction feed finisthed...", token, model);
 	}
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{

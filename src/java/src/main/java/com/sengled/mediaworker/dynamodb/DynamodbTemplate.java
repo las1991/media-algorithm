@@ -39,12 +39,8 @@ public class DynamodbTemplate implements InitializingBean{
 		return bool;
 	}
 	public void putItem(String tableName,Item item){
-		try {
-			Table table = dynamoDB.getTable(tableName);
-			table.putItem(item);
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage(),e);
-		}
+		Table table = dynamoDB.getTable(tableName);
+		table.putItem(item);
 	}
 	public  DynamoDB getDynamoDB(){
 		return dynamoDB;

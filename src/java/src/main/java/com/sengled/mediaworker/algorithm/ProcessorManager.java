@@ -4,10 +4,12 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.LinkedBlockingQueue;
 
@@ -15,6 +17,7 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sengled.mediaworker.algorithm.exception.DecodeException;
 import com.sengled.mediaworker.algorithm.pydto.Algorithm;
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
@@ -23,56 +26,49 @@ public class ProcessorManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManager.class);
 	private static final int PYTHON_PROCESSOR_COUNT = Constants.CPU_CORE_COUNT;
 	
+	private LinkedBlockingQueue<PythonProcessor> idles;
 	private List<PythonProcessor> processorList;
-	private Timer timer = new Timer();
-	public ProcessorManager(){
-		init(PYTHON_PROCESSOR_COUNT);
-	}
-	public ProcessorManager(int pythonProcessorCount){
-		init(pythonProcessorCount);
-	}
 	
-	public void init(int pythonProcessorCount){
-		LOGGER.info("ProcessorManager init. processorCount:{}",pythonProcessorCount);
-		processorList  = new ArrayList<PythonProcessor>(pythonProcessorCount);
-		for(int i=0;i<pythonProcessorCount;i++){
-			PythonProcessor processor = new PythonProcessor();
-			processor.startup();
-			processorList.add(processor);
+	public ProcessorManager(){
+		LOGGER.info("ProcessorManager init. processorCount:{}",PYTHON_PROCESSOR_COUNT);
+		idles  = new LinkedBlockingQueue<PythonProcessor>(PYTHON_PROCESSOR_COUNT);
+		for(int i=0;i<PYTHON_PROCESSOR_COUNT;i++){
+			PythonProcessor processor = new PythonProcessor(this);
+			idles.add(processor);
 		}
-		
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
-				exceptionProcessorsCheck();
-			}
-		}, 10000, 10000);
+		processorList = new ArrayList<>();
+		processorList.addAll(idles);
+
+		for (PythonProcessor pythonProcessor : processorList) {
+			pythonProcessor.start();
+		}
 	}
 	/**
 	 * 解码flv
 	 * @param src
+	 * @return 
 	 * @return
+	 * @throws ExecutionException 
+	 * @throws InterruptedException 
 	 * @throws Exception
 	 */
-	public YUVImage decode(final String token,final byte[] src) throws Exception{
+	public  Future<YUVImage> decode(final String token,final byte[] src) throws InterruptedException,DecodeException{
 		PythonProcessor processor = null;
-		Future<YUVImage> future = null;
-		processor = selectByActiveCount();
 		try {
-			future = processor.submit(new Operation<YUVImage>(){
+			processor = idles.take();
+			return processor.submit(new Operation<YUVImage>(){
 				@Override
 				public YUVImage apply(Function function) {
 					return function.decode(token,src);
 				}
 			});
-		} catch (Exception e) {
-			throw e;
+		} catch (InterruptedException e1) {
+			throw e1;
+		}finally{
+			if(processor !=null){
+				idles.put(processor);	
+			}
 		}
-		YUVImage image =  future.get();
-		if(image == null){
-			throw new Exception("Decode failed");
-		}
-		return image;
 	}
 	
 	/**
@@ -83,79 +79,47 @@ public class ProcessorManager {
 	 * @throws Exception
 	 */
 	public StreamingContext newAlgorithmContext(String model,String token,Map<String,Object> configs) throws Exception{
-		PythonProcessor processor =  selectByActiveCount();
-		//初始化算法模型
-		String pythonObjectId = processor.newAlgorithm(model,token);
-		if(StringUtils.isBlank(pythonObjectId)){
-			throw new Exception("CALL newAlgorithmContext failed.pythonObjectId is null");
+		PythonProcessor processor = selectProcessor();
+		return processor.newAlgorithm(model, token,configs);
+	}
+	public boolean  removeIdleProcessor(PythonProcessor processor){
+		return idles.remove(processor);
+	}
+	public void  addIdleProcessor(PythonProcessor processor){
+		if(idles.contains(processor) || null == processor){
+			return;
 		}
-		Algorithm algorithm = new Algorithm(pythonObjectId,configs);
-		return new StreamingContext(token,model, processor,algorithm);
+		idles.add(processor);
 	}
-	
-	/**
-	 * 选择一个进程 
-	 * @return
-	 */
-	private PythonProcessor selectByActiveCount() {
-		LOGGER.debug("Select one  processor");
-		PythonProcessor processor =  Collections.min(processorList, new Comparator<PythonProcessor>() {
-			@Override
-			public int compare(PythonProcessor o1, PythonProcessor o2) {
-				int q1ActiveCount = o1.getSingleThread().getActiveCount();
-				int q2ActiveCount = o2.getSingleThread().getActiveCount();
-				if( q1ActiveCount> q2ActiveCount){
-					return 1;
-				}
-				if(q1ActiveCount == q2ActiveCount){
-					return 0;
-				}
-				return -1;
-			}
-		});
-		LOGGER.debug("Select Result: {} is selected",processor);
-		return processor;
-	}
-	private PythonProcessor selectByQueueSize() {
-		LOGGER.debug("Select one  processor");
-		return Collections.min(processorList, new Comparator<PythonProcessor>() {
-			@Override
-			public int compare(PythonProcessor o1, PythonProcessor o2) {
-				int q1Size = o1.getSingleThread().getQueue().size();
-				int q2Size = o2.getSingleThread().getQueue().size();
-				if(q1Size  > q2Size ){
-					return 1;
-				}
-				if(q1Size  == q2Size){
-					return 0;
-				}
-				return -1;
-			}
-		});
-	}
-	private void exceptionProcessorsCheck() {
-		LOGGER.debug("run exceptionProcessorsCheck");
-		for(PythonProcessor processor :processorList ){
-			try {
-				processor.hello();
-			} catch (Exception e) {
-				LOGGER.error("Call Python processor hello() failed.");
-				processor.shutdown();
-				processor.startup();
-			}
-		}
-	}
-    public void destroyAll() {
-        try {
-            LOGGER.info("stop check exceptionProcessors...");
-            timer.cancel();
-        } catch (Exception e) {
-           LOGGER.error(e.getMessage(),e);
-        }
-        LOGGER.info("ProcessorInstance shutdown...");
+
+    public void stop() {
+        LOGGER.info("Stop all ProcessorInstance ...");
         for(PythonProcessor processor:processorList){
         	processor.shutdown();
         }
-        
     }
+    
+    private PythonProcessor selectProcessor(){
+    	return  Collections.min(processorList, new Comparator<PythonProcessor>() {
+			@Override
+			public int compare(PythonProcessor o1,PythonProcessor o2) {
+				if(o1.getCurrentContextCount() > o2.getCurrentContextCount()){
+					return 1;
+				}
+				if(o1.getCurrentContextCount() == o2.getCurrentContextCount()){
+					return 0;
+				}
+				return -1;
+			}
+		});
+    }
+	public StreamingContext findStreamingContext(String token, String model) {
+		for(   PythonProcessor proc :  processorList){
+			StreamingContext sc = proc.getStreamingContext(token, model);
+			if(sc !=null ){
+				return sc;
+			}
+		}
+		return null;
+	}
 }

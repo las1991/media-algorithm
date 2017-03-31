@@ -138,7 +138,7 @@ public class AlgorithmWriter {
         validateStream(kinesisClient, streamName);
 
         // Repeatedly send stock trades with a 100 milliseconds wait in between
-        int i=1000;
+        
         while(true) {
 //            StockTrade trade = stockTradeGenerator.getRandomTrade();
 //            sendStockTrade(trade, kinesisClient, streamName);
@@ -151,7 +151,8 @@ public class AlgorithmWriter {
             byte[] imageBytes = new byte[(int)file.length()];
             fis.read(imageBytes);
             fis.close();
-            sendImageData(i++,imageBytes , kinesisClient, streamName);
+            int i=RandomUtils.nextInt()%100;
+            sendImageData(i,imageBytes , kinesisClient, streamName);
             
             Thread.sleep(millis);
         }
