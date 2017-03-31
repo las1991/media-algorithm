@@ -5,5 +5,5 @@ appService: media-algorithm-v3
 
 exec:
   - type: java
-    version: 1.7
+    version: 1.8
     verify: java -version
