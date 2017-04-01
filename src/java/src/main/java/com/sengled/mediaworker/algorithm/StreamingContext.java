@@ -8,6 +8,7 @@ import java.util.concurrent.Future;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
@@ -57,12 +58,11 @@ public class StreamingContext implements Closeable{
 	 * @return
 	 */
 	public void feed(final YUVImage yuvImage,final FeedListener listener) throws Exception{
-		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters());
-		if(action != null){
-			action.feed(this,yuvImage,listener);	
-		}else{
-			LOGGER.error("Action is null");
+		if(yuvImage ==null || listener==null){
+			throw new IllegalArgumentException("params exception.");
 		}
+		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters());
+		action.feed(this,yuvImage,listener);
 		
 	}
 	@Override
