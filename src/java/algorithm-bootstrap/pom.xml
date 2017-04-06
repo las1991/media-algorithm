@@ -32,6 +32,12 @@
     </dependencyManagement>
     
 	<dependencies>
+        <!-- jna -->
+		<dependency>
+			<groupId>com.sengled.media</groupId>
+			<artifactId>sengled-algorithm-v3-jna</artifactId>
+			<version>${project.version}</version>
+		</dependency>
 		
         <!-- spring boot -->
         <dependency>
