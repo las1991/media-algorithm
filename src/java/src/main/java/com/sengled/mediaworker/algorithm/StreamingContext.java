@@ -3,10 +3,12 @@ package com.sengled.mediaworker.algorithm;
 import java.io.Closeable;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.concurrent.Future;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.Assert;
 
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
@@ -45,8 +47,8 @@ public class StreamingContext implements Closeable{
 		this.model = model;
 		this.algorithm = algorithm;
 		this.processor = processor;
-		LOGGER.info("create StreamingContext token:{},algorithm:{}",token,algorithm);
-		LOGGER.info("create StreamingContext processor:{}",processor);
+		LOGGER.debug("create StreamingContext token:{},algorithm:{}",token,algorithm);
+		LOGGER.debug("create StreamingContext processor:{}",processor);
 	}
 
 	/**
@@ -55,38 +57,23 @@ public class StreamingContext implements Closeable{
 	 * @param listener
 	 * @return
 	 */
-	public void feed(final YUVImage yuvImage,final FeedListener listener){
-		LOGGER.info("parameters:"+this.getAlgorithm().getParameters().toString());
-		if(action != null){
-			action.feed(this,yuvImage,listener);	
-		}else{
-			LOGGER.error("Action is null");
+	public void feed(final YUVImage yuvImage,final FeedListener listener) throws Exception{
+		if(yuvImage ==null || listener==null){
+			throw new IllegalArgumentException("params exception.");
 		}
-		
-	}
-	public void reloadAlgorithmModel(String reason){
-		LOGGER.info("StreamingContext reloadAlgorithmModel. model:{} token:{} reason:{}",model,token,reason);
-		try {
-			processor.removeAlgorithm(algorithm);
-			String pythonObjectId = processor.newAlgorithm(model, token);
-			LOGGER.info("ReloadAlgorithmModel  pythonObjectId old:{} new:{}",algorithm.getPythonObjectId(),pythonObjectId);
-			algorithm.setPythonObjectId(pythonObjectId);
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage(),e);
-		}
+		LOGGER.debug("parameters:"+this.getAlgorithm().getParameters());
+		action.feed(this,yuvImage,listener);
 		
 	}
 	@Override
 	public void close()  {
-			processor.removeAlgorithm(algorithm);
+		processor.removeAlgorithm(this);
 	}
 	
 	public String getToken() {
 		return token;
 	}
-	public PythonProcessor getProcessor() {
-		return processor;
-	}
+	
 	public Algorithm getAlgorithm() {
 		return algorithm;
 	}
@@ -126,4 +113,20 @@ public class StreamingContext implements Closeable{
 		}
 		return null;
 	}
+
+	public void reloadAlgorithmModel(String cause) throws Exception {
+		LOGGER.info("reloadAlgorithmModel cause:{}",cause);
+		submit(new Operation<Void>() {
+			@Override
+			public Void apply(Function function) {
+				function.close(algorithm);
+				algorithm.setPythonObjectId(function.newAlgorithmModel(model, token));
+				return null;
+			}
+		}).get();
+	}
+
+    public <T> Future<T> submit(Operation<T> operation) {
+        return processor.submit(operation);
+    }
 }

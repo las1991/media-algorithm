@@ -7,6 +7,7 @@ import com.sengled.mediaworker.dynamodb.Dynamodb;
 import com.sengled.mediaworker.dynamodb.DynamodbInit;
 import com.sengled.mediaworker.s3.S3;
 import com.sengled.mediaworker.spring.DefaultBootApplication;
+import com.sengled.mediaworker.sqs.SQSTemplate;
 
 
 
@@ -33,11 +34,12 @@ public class AlgorithmServer {
 		                                    DefaultBootApplication.class,
 		                                    AlgorithmKinesisStreamProcessor.class,
 											S3.class,
+											SQSTemplate.class,
 											Dynamodb.class,
 											DynamodbInit.class
 
 								}, args);
-		System.out.println("ScreenshotServer v3 started at " + new Timestamp(System.currentTimeMillis()) + ", cost " + (System.currentTimeMillis() - startAt) + "ms");
+		System.out.println("AlgorithmServer v3 started at " + new Timestamp(System.currentTimeMillis()) + ", cost " + (System.currentTimeMillis() - startAt) + "ms");
 		
 	}
 }

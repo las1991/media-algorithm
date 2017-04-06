@@ -27,9 +27,10 @@ public class DynamodbEventListener {
 
 	public final static String tableName = "m_algorithm_results";
 
-	@Value("${AWS_SQS_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
+	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
 	private String queue;
-	private String bucketName = "sengledimagebucket";
+	@Value("${aws_screenshot_bucket}")
+	private String bucketName;
 
 	@Autowired
 	private DynamodbTemplate dynamodbTemplate;
@@ -56,61 +57,51 @@ public class DynamodbEventListener {
 	 */
 	@Subscribe
 	public void feedEvent(MotionEvent event) {
+		LOGGER.info("Get MotionEvent:{}",event);
 		Date utcDateTime = event.getUtcDate();
 		byte[] jpgData = event.getJpgData();
 		String token = event.getToken();
 		String zoneId = event.getZoneId();
 		String imageS3Path = token + "_motion_" + utcDateTime.getTime() + ".jpg";
 
-		saveS3(imageS3Path, jpgData);
-		saveDynamodb(utcDateTime, token, imageS3Path, zoneId);
-		saveSqs(utcDateTime, token, zoneId);
-
+		try {
+			saveS3(imageS3Path, jpgData);
+			saveDynamodb(utcDateTime, token, imageS3Path, zoneId);
+			putSqs(utcDateTime, token, zoneId,imageS3Path);
+		} catch (Exception e) {
+			LOGGER.info("token:{},imageS3Path:{},utcDateTime:{},zoneId:{}",token,imageS3Path,utcDateTime,zoneId);
+			LOGGER.error("feedEvent failed.",e);
+		}
+		
+		LOGGER.info("feedEvent finished token:{}",event.getToken());
 	}
 
 
 
-	private void saveS3(String imageS3Path,byte[] jpgData) {
-		try {
-			LOGGER.info("imageS3Path:" + imageS3Path);
-			amazonS3Template.putObject(bucketName, imageS3Path, jpgData);
-		} catch (Exception e) {
-			LOGGER.error("Motion image put s3 failed.", e);
-			return;
-		}
+	private void saveS3(String imageS3Path,byte[] jpgData) throws Exception{
+		LOGGER.info("imageS3Path:" + imageS3Path);
+		amazonS3Template.putObject(bucketName, imageS3Path, jpgData);
 	}
-	private void saveDynamodb(Date utcDateTime,String token,String imageS3Path,String zoneId) {
-		try {
-			LOGGER.info("===dynamodbTemplate.putItem===");
-			Item item = new Item()
-					.withPrimaryKey("token", token, "created",
-							DateFormatUtils.format(utcDateTime, "yyyy-MM-dd HH:mm:ss.SSS"))
-					.withString("token", token).withString("imgUri", imageS3Path).withString("thumbUri", imageS3Path)
-					.withJSON("zone_" + zoneId, "{\"events\":[\"motion\"]}").withJSON("zone_all", "{}");
-			dynamodbTemplate.putItem(tableName, item);
-		} catch (Exception e) {
-			LOGGER.error("Motion data save dynamodb failed.", e);
-			return;
-		}
+	private void saveDynamodb(Date utcDateTime,String token,String imageS3Path,String zoneId)throws Exception {
+		LOGGER.info("saveDynamodb: zoneId:{},token:{},imageS3Path:{} utcDateTime:{}",zoneId,token,imageS3Path,utcDateTime);
+		Item item = new Item()
+				.withPrimaryKey("token", token, "created",
+						DateFormatUtils.format(utcDateTime, "yyyy-MM-dd HH:mm:ss.SSS"))
+				.withString("token", token).withString("imgUri", imageS3Path).withString("thumbUri", imageS3Path)
+				.withJSON("zone_" + zoneId, "{\"events\":[\"motion\"]}").withJSON("zone_all", "{}");
+		dynamodbTemplate.putItem(tableName, item);
 	}
 	
-	private void saveSqs(Date utcDate,String token,String zoneId) {
-		try {
-			// TODO sqs
-			// sqsTemplate.publish(queue, message);
-			AlgorithmResult result = new AlgorithmResult();
-			result.setEventType(AlgorithmResult.SLS_EVENT_TYPE_MOTION);
-			result.setDataList(Collections.<ObjectRecognitionInnerDto>emptyList());
-			result.setStreamId(token);
-			result.setBigImage("");
-			result.setSmallImage("");
-			result.setTimeStamp(DateFormatUtils.format(utcDate, "yyyy-MM-dd HH:mm:ss"));
-			result.setZoneId(Long.valueOf(zoneId));
-			sqsTemplate.publish(zoneId, JSON.toJSONString(result));
-			LOGGER.info("===sqsTemplate.publish===");
-		} catch (Exception e) {
-			LOGGER.error("Motion data put sqs failed.", e);
-			return;
-		}
+	private void putSqs(Date utcDateTime,String token,String zoneId,String imageS3Path) throws Exception{
+		LOGGER.info("putSqs: zoneId:{},token:{},imageS3Path:{} utcDate:{}",zoneId,token,imageS3Path,utcDateTime);
+		AlgorithmResult result = new AlgorithmResult();
+		result.setEventType(AlgorithmResult.SLS_EVENT_TYPE_MOTION);
+		result.setDataList(Collections.<ObjectRecognitionInnerDto>emptyList());
+		result.setStreamId(token);
+		result.setBigImage(imageS3Path);
+		result.setSmallImage(imageS3Path);
+		result.setTimeStamp(DateFormatUtils.format(utcDateTime, "yyyy-MM-dd HH:mm:ss"));
+		result.setZoneId(Long.valueOf(zoneId));
+		sqsTemplate.publish(queue, JSON.toJSONString(result));
 	}
 }

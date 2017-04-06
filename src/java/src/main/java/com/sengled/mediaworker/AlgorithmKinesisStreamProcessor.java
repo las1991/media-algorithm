@@ -1,21 +1,15 @@
 package com.sengled.mediaworker;
 
-import javax.annotation.PostConstruct;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.ApplicationEvent;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.context.event.ContextClosedEvent;
 
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorFactory;
-import com.codahale.metrics.MetricRegistry;
-import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.kinesis.AbsKinesisStreamProcessor;
 /**
  * ScreenShot KinesisStream Processor
@@ -40,20 +34,9 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
     @Value("${AWS_KINESIS_REGION}")
     private String region;
     
-
     @Autowired
     private RecordProcessorFactory recordProcessorFactory;
-//    @Autowired
-//    private MetricRegistry metricRegistry;
-    
-    private ProcessorManager processorManager;
-    
-    @PostConstruct
-    public void init(){
-        processorManager = new ProcessorManager();
-        recordProcessorFactory.setProcessorManager(processorManager);//设置python进程管理线程池
-    }
-    
+
     @Override
     public IRecordProcessorFactory getRecordProcessorFactory() {
         return recordProcessorFactory;
@@ -78,10 +61,8 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
     public void onApplicationEvent(ApplicationEvent event) {
         super.onApplicationEvent(event);
         if(event instanceof ContextClosedEvent ){
-        	LOGGER.info("Shutdown all recordProcessorFactory thread");
+        	LOGGER.info("RecordProcessorFactory shutdown");
         	recordProcessorFactory.shutdown();
-            LOGGER.info("Shutdown all python process");
-            processorManager.destroyAll();
         }
     }
 }

@@ -1,33 +1,29 @@
 package com.sengled.mediaworker.algorithm.decode;
 
-import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.alibaba.fastjson.JSON;
-import com.alibaba.fastjson.JSONObject;
-import com.fasterxml.jackson.core.JsonParseException;
-import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sengled.mediaworker.RecordProcessor;
+import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class KinesisFrameDecoder {
-	
+public class KinesisFrameDecoder {	
 	private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFrameDecoder.class);
 
-    
-    public static Frame decode(byte[] iframe) throws IOException {
-        final int fullLength = iframe.length;
-        
-        ByteBuf buf = Unpooled.wrappedBuffer(iframe);
-        
+    public static Frame decode(ByteBuffer buffer) throws FrameDecodeException {
+    	int remaining =  buffer.remaining();
+		if ( remaining <= 0) {
+			LOGGER.error("record data size is null.");
+			throw new FrameDecodeException("record data size is null");
+		}
+        ByteBuf buf = Unpooled.wrappedBuffer(buffer);
         int firstByte = buf.readByte();
         if ('$' != firstByte) {
             throw new IllegalArgumentException("非法数据"+firstByte);
@@ -36,11 +32,15 @@ public class KinesisFrameDecoder {
         int jsonBytesLength = buf.readUnsignedShort();
         
         final byte[] jsonBytes = new byte[jsonBytesLength];
-        final byte[] dataBytes = new byte[fullLength - jsonBytesLength - 2 - 1];
+        final byte[] dataBytes = new byte[remaining - jsonBytesLength - 2 - 1];
         buf.readBytes(jsonBytes);
         buf.readBytes(dataBytes);
         
-        return new Frame(new String(jsonBytes, "UTF-8"), dataBytes);
+        try {
+			return new Frame(new String(jsonBytes, "UTF-8"), dataBytes);
+		} catch (UnsupportedEncodingException e) {
+			throw new FrameDecodeException(e.getMessage(),e);
+		}
     }
     
     public static class Frame {

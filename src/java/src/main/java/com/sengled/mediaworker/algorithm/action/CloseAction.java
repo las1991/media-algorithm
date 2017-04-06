@@ -11,10 +11,10 @@ public class CloseAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(CloseAction.class);
 
 	@Override
-	public void feed(final StreamingContext context,final YUVImage yuvImage,final FeedListener listener) {
-		LOGGER.info("CloseAction feed...");
+	public void feed(final StreamingContext context,final YUVImage yuvImage,final FeedListener listener) throws Exception{
+		LOGGER.debug("CloseAction feed...");
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
-		context.close();		
+		context.close();	
 	}
 }

@@ -1,7 +1,7 @@
 ---
 os: linux
 version: 1.0
-appService: media-screenshot-v3
+appService: media-algorithm-v3
 appVersion: APP_VERSION
 appType: spring-boot
 
@@ -83,20 +83,20 @@ hooks:
   ApplicationStart:
      - location: /opt/sengled/apps/scripts/ApplicationStart.sh 
        timeout: 30
-       runas: cloud
+       runas: root
   ValidateService:
      - location: /opt/sengled/apps/scripts/ValidateService.sh 
        timeout: 120
-       runas: cloud
+       runas: root
   ApplicationStop:
      - location: /opt/sengled/apps/scripts/ApplicationStop.sh 
        timeout: 30
-       runas: cloud
+       runas: root
   ApplicationRestart:
      - location: /opt/sengled/apps/scripts/ApplicationRestart.sh 
        timeout: 30
-       runas: cloud
+       runas: root
   ApplicationReload:
      - location: /opt/sengled/apps/scripts/ApplicationReload.sh 
        timeout: 30
-       runas: cloud
+       runas: root

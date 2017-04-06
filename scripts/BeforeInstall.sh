@@ -30,6 +30,4 @@ sed -i "s/\$PRIVATE_IPV4/${private_ip}/g" ${basepath}/../config/sengled.properti
 sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../config/sengled.properties.ctmpl
 sed -i  "s/DEPLOY_GROUP_NAME/$DEPLOY_GROUP_NAME/g" ${basepath}/../config/haproxy.cfg.ctmpl
 
-
-
 exit 0

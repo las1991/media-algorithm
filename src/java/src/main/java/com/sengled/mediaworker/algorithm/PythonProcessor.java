@@ -4,21 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.ProcessBuilder.Redirect;
 import java.util.Map;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.sengled.mediaworker.algorithm.exception.StreamingContextInitException;
 import com.sengled.mediaworker.algorithm.pydto.Algorithm;
 
-import py4j.DefaultGatewayServerListener;
 import py4j.GatewayServer;
-import py4j.GatewayServerListener;
 
 public class PythonProcessor{
 	private static final Logger LOGGER = LoggerFactory.getLogger(PythonProcessor.class);
@@ -27,40 +26,27 @@ public class PythonProcessor{
 	private final static String PYTHON_C_LIB = PYTHON_MODULE_PATH;
 	private final static String PYTHON_LOG_PATH = PYTHON_MODULE_PATH;
 	private final static String PYTHON_MODULE_MAIN = PYTHON_MODULE_PATH + Constants.FILE_SEPARATOR + "function.py";
-	private final static int TASK_QUEUE_SIZE = 10;
+	
+	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
 
-	/**
-	 * 需要构造的成员
-	 */
-	private ThreadPoolExecutor singleThread;
-	private GatewayServerListener gatewayServerListener;
-
+	private ProcessorManager processorManager;
+	private ExecutorService  singleThread;
 	private GatewayServer gateway;
-	private Function func;
 	private Process pythonProcess;
+	private Function func;
+	
+	
 
-	public PythonProcessor() {
-		LOGGER.info("PythonProcessor Construct...");
-		gatewayServerListener = new DefaultGatewayServerListener();
-		initThread();
-	}
-
-	public PythonProcessor(GatewayServerListener listener) {
+	public PythonProcessor(ProcessorManager processorManager) {
 		LOGGER.info("PythonProcessor Construct with GatewayServerListener ...");
-		gatewayServerListener = listener;
-		initThread();
+		singleThread =  Executors.newSingleThreadExecutor();
+		streamingContextMap = new ConcurrentHashMap<>();
+		this.processorManager = processorManager;
 	}
-
-	private void initThread() {
-		singleThread = new ThreadPoolExecutor(1, 1, 
-											  60, TimeUnit.SECONDS, 
-											  new ArrayBlockingQueue<Runnable>(TASK_QUEUE_SIZE),
-											  new ThreadPoolExecutor.CallerRunsPolicy());
-	}
-
-	public void startup() {
+	
+	public void start() {
+		streamingContextMap.clear();
 		gateway = new GatewayServer(null, 0);
-		gateway.addListener(gatewayServerListener);
 		Thread thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
@@ -85,10 +71,11 @@ public class PythonProcessor{
 		LOGGER.info("pythonMain:{} javaPort:{} ", PYTHON_MODULE_MAIN, javaPort);
 		try {
 			pythonProcess = builder.start();
+			func = (Function) gateway.getPythonServerEntryPoint(new Class[] { Function.class });
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			LOGGER.error("python Process start exception."+e.getMessage(),e);
 		}
-		func = (Function) gateway.getPythonServerEntryPoint(new Class[] { Function.class });
+		
 	}
 
 	/**
@@ -98,15 +85,35 @@ public class PythonProcessor{
 	 * @return
 	 */
 	public <T> Future<T> submit(final Operation<T> operation) {
-		// final PythonProcessor processor = this;
-		return singleThread.submit(new Callable<T>() {// 单线程执行，保证顺序调用processor
+		final PythonProcessor process = this;		
+		return singleThread.submit(new Callable<T>() {	
 			@Override
 			public T call() throws Exception {
-				// processorManager.removeProcessor(processor);
-				return operation.apply(func);
-				// processorManager.addProcessor(processor);
+				boolean removed = processorManager.removeIdleProcessor(process);
+				try {
+					return  operation.apply(func);
+				}catch(Exception e){
+					handleException(e);
+					throw e;
+				}finally {
+					if(removed){
+						processorManager.addIdleProcessor(process);
+					}
+				}
 			}
+
 		});
+	}
+
+	private void handleException(Exception e) {
+		LOGGER.error(e.getMessage(),e);
+		try {
+			func.hello();
+		} catch (Exception e1) {
+			LOGGER.error("call PythonProcessor.hello error. restart...",e1);
+			shutdown();
+			start();
+		}
 	}
 
 	/**
@@ -115,30 +122,53 @@ public class PythonProcessor{
 	 * @param token
 	 * @return
 	 */
-	public String newAlgorithm(String model,String token) throws Exception {
+	public StreamingContext newAlgorithm(final String model,final String token,final Map<String, Object> parameters) throws StreamingContextInitException{
+		Future<String> pythonObjectIdFuture = singleThread.submit(new Callable<String>() {
+			@Override
+			public String call() throws Exception {
+				return func.newAlgorithmModel(model,token);
+			}
+		});
+		String pythonObjectId=null;
 		try {
-			return func.newAlgorithmModel(model,token);
-		} catch (Exception e) {
-			LOGGER.error("Call newAlgorithm failed.",e);
-			throw e;
+			pythonObjectId = pythonObjectIdFuture.get();
+			if( null == pythonObjectId ){
+				throw new StreamingContextInitException("StreamingContextInit failed token:["+token+"]");
+			}
+		} catch (StreamingContextInitException e) {
+			throw  e;
+		} catch (ExecutionException e) {
+			throw new StreamingContextInitException(e.getMessage(), e.getCause());
+		} catch (InterruptedException e) {
+			throw new StreamingContextInitException(e.getMessage(), e);
 		}
+		
+		Algorithm algorithm = new Algorithm(pythonObjectId, parameters);
+		StreamingContext context  =  new StreamingContext(token, model, this, algorithm );
+		final StreamingContext oldContext = streamingContextMap.put(key(model, token), context);
+		
+		if(oldContext != null){
+			submit(new Operation<Void>() {
+				@Override
+				public Void apply(Function function) {
+					function.close(oldContext.getAlgorithm());
+					return null;
+				}
+			});
+		}
+		
+		return context;
 	}
 
+  
 	/**
 	 * 销毁python进程的算法模型
 	 * 
 	 * @param algorithm
 	 */
-	public void removeAlgorithm(Algorithm algorithm) {
-		try {
-			func.close(algorithm);
-		} catch (Exception e) {
-			LOGGER.error("RemoveAlgorithm failed." + e.getMessage(), e);
-		}
+	public void removeAlgorithm(final StreamingContext streamingContext) {
+		//TODO
 	}
-
-
-
 	public void shutdown() {
 		try {
 			if (gateway != null) {
@@ -152,11 +182,15 @@ public class PythonProcessor{
 			}
 		}
 	}
-	public void hello(){
-		func.hello();
+	public int getCurrentContextCount(){
+		return streamingContextMap.size();
 	}
-
-	public ThreadPoolExecutor getSingleThread() {
-		return singleThread;
+	
+	public StreamingContext getStreamingContext(String model,String token){
+		return streamingContextMap.get(key(model, token));
 	}
+	
+    private String key(final String model, final String token) {
+        return token + "_" + model;
+    }
 }

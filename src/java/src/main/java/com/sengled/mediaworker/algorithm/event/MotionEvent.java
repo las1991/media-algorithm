@@ -44,9 +44,9 @@ public class MotionEvent {
 	public void setUtcDate(Date utcDate) {
 		this.utcDate = utcDate;
 	}
-	public void setJpgDate(byte[] jpgData) {
-		this.jpgData = jpgData;
-		
+	@Override
+	public String toString() {
+		return "MotionEvent [token=" + token + ", model=" + model + ", utcDate=" + utcDate + ", zoneId=" + zoneId + "]";
 	}
 	
 	
