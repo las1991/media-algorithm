@@ -234,12 +234,12 @@ static int DestroyContext(DecodeContext** opaque)
 	return 0;
 }
 
-int DecodeNal(char* data_buffer, int len, char* token, OUTDATA* outdata)
+int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame)
 {
     int ret = 0;
     int tmp_size;
     char* dst_ptr;
-    memset(outdata, 0, sizeof(OUTDATA));
+    memset(yuv_frame, 0, sizeof(YUVFrame));
     DecodeContext* decodectx = (DecodeContext* )av_mallocz(sizeof(DecodeContext));
 
     decodectx->frame = av_frame_alloc();
@@ -258,15 +258,15 @@ int DecodeNal(char* data_buffer, int len, char* token, OUTDATA* outdata)
     if(ret < 0)
     	goto failed;
 
-    outdata->data = av_mallocz(decodectx->width * decodectx->height * 3 / 2);
-    outdata->size = decodectx->width * decodectx->height * 3 / 2;
-    outdata->width = decodectx->width;
-    outdata->height = decodectx->height;
+    yuv_frame->data = av_mallocz(decodectx->width * decodectx->height * 3 / 2);
+    yuv_frame->size = decodectx->width * decodectx->height * 3 / 2;
+    yuv_frame->width = decodectx->width;
+    yuv_frame->height = decodectx->height;
 
     tmp_size = decodectx->width * decodectx->height;
-    dst_ptr = outdata->data;
+    dst_ptr = yuv_frame->data;
     memcpy(dst_ptr, /*decodectx->need_scale ? decodectx->scale_frame->data[0] : */decodectx->frame->data[0], tmp_size);
-    dst_ptr = outdata->data + tmp_size;
+    dst_ptr = yuv_frame->data + tmp_size;
     tmp_size = tmp_size / 4;
     memcpy(dst_ptr, /*decodectx->need_scale ? decodectx->scale_frame->data[1] : */decodectx->frame->data[1], tmp_size);
     dst_ptr += tmp_size;
@@ -282,9 +282,9 @@ failed:
     return -1;
 }
 
-int Destroy(OUTDATA* outdata)
+int Destroy(YUVFrame* yuv_frame)
 {
-    if(outdata->data)
-        av_free(outdata->data);
+    if(yuv_frame->data)
+        av_free(yuv_frame->data);
     return 0;
 }

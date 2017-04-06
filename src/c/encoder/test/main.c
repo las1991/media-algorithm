@@ -35,7 +35,7 @@ void debugCore()
 
 int main(int argc, char* argv[])
 {
-    OUTDATA outdata;
+    JPGFrame outdata;
    //outdata.data = malloc(100*1024);
     //char dst_jpg[100*1024];
     int dst_size;

@@ -16,20 +16,23 @@ import java.util.concurrent.LinkedBlockingQueue;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.stereotype.Component;
 
 import com.sengled.mediaworker.algorithm.exception.DecodeException;
 import com.sengled.mediaworker.algorithm.pydto.Algorithm;
 import com.sengled.mediaworker.algorithm.pydto.YUVImage;
 
-
-public class ProcessorManager {
+@Component
+public class ProcessorManager implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManager.class);
 	private static final int PYTHON_PROCESSOR_COUNT = Constants.CPU_CORE_COUNT;
 	
 	private LinkedBlockingQueue<PythonProcessor> idles;
 	private List<PythonProcessor> processorList;
 	
-	public ProcessorManager(){
+	@Override
+	public void afterPropertiesSet() throws Exception {
 		LOGGER.info("ProcessorManager init. processorCount:{}",PYTHON_PROCESSOR_COUNT);
 		idles  = new LinkedBlockingQueue<PythonProcessor>(PYTHON_PROCESSOR_COUNT);
 		for(int i=0;i<PYTHON_PROCESSOR_COUNT;i++){
@@ -42,7 +45,9 @@ public class ProcessorManager {
 		for (PythonProcessor pythonProcessor : processorList) {
 			pythonProcessor.start();
 		}
+		
 	}
+	
 	/**
 	 * 解码flv
 	 * @param src
@@ -122,5 +127,6 @@ public class ProcessorManager {
 		}
 		return null;
 	}
+
 
 }

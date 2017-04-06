@@ -11,7 +11,7 @@
         <groupId>com.sengled.media</groupId>
         <artifactId>sengled-algorithm-v3</artifactId>
         <version>3.1.0.SNAPSHOT4</version>
-        <relativePath>../../../../</relativePath>
+        <relativePath>../../../</relativePath>
     </parent>
 
 	<artifactId>sengled-algorithm-v3-assembly</artifactId>

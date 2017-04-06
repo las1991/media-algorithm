@@ -8,8 +8,8 @@
     <packaging>pom</packaging>
     
     <modules>
-        <module>src/java/src/algorithm-assembly</module>
-        <module>src/java/src/algorithm-bootstrap</module>
+        <module>src/java/algorithm-assembly</module>
+        <module>src/java/algorithm-bootstrap</module>
     </modules>
 
 
