@@ -25,14 +25,17 @@
 
     <dependencyManagement>
         <dependencies>
-           
-            
+     
             
         </dependencies>
     </dependencyManagement>
     
 	<dependencies>
-		
+            <dependency>
+		        <groupId>com.sengled.media</groupId>
+				<artifactId>sengled-algorithm-v3-bootstrap</artifactId>
+				<version>${project.version}</version>
+            </dependency>
 	</dependencies>
 
 	<build>
