@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.algorithm.decode;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -8,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
 
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
@@ -15,11 +17,11 @@ import io.netty.buffer.Unpooled;
 public class KinesisFrameDecoder {	
 	private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFrameDecoder.class);
 
-    public static Frame decode(ByteBuffer buffer) throws Exception {
+    public static Frame decode(ByteBuffer buffer) throws FrameDecodeException {
     	int remaining =  buffer.remaining();
 		if ( remaining <= 0) {
 			LOGGER.error("record data size is null.");
-			throw new Exception("record data size is null");
+			throw new FrameDecodeException("record data size is null");
 		}
         ByteBuf buf = Unpooled.wrappedBuffer(buffer);
         int firstByte = buf.readByte();
@@ -34,7 +36,11 @@ public class KinesisFrameDecoder {
         buf.readBytes(jsonBytes);
         buf.readBytes(dataBytes);
         
-        return new Frame(new String(jsonBytes, "UTF-8"), dataBytes);
+        try {
+			return new Frame(new String(jsonBytes, "UTF-8"), dataBytes);
+		} catch (UnsupportedEncodingException e) {
+			throw new FrameDecodeException(e.getMessage(),e);
+		}
     }
     
     public static class Frame {
