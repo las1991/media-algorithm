@@ -212,12 +212,12 @@ static int DestroyContext(EncodeContext** opaque)
 	return 0;
 }
 
-int EncodeJPG(char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, char* token, OUTDATA* outdata)
+int EncodeJPG(const char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame)
 {
     int ret = 0;
     int tmp_size;
     char* dst_ptr;
-    memset(outdata, 0, sizeof(OUTDATA));
+    memset(jpg_frame, 0, sizeof(JPGFrame));
     EncodeContext* encodectx = (EncodeContext* )av_mallocz(sizeof(EncodeContext));
 
     encodectx->frame = av_frame_alloc();
@@ -274,9 +274,9 @@ int EncodeJPG(char* data_buffer, int src_width, int src_height, int dst_width, i
     if(ret < 0)
     	goto failed;
 
-    outdata->data = av_malloc(encodectx->pkt.size);
-    memcpy(outdata->data, encodectx->pkt.data, encodectx->pkt.size);
-    outdata->size = encodectx->pkt.size;
+    jpg_frame->data = av_malloc(encodectx->pkt.size);
+    memcpy(jpg_frame->data, encodectx->pkt.data, encodectx->pkt.size);
+    jpg_frame->size = encodectx->pkt.size;
 
     if(encodectx)
         DestroyContext(&encodectx);
@@ -288,9 +288,9 @@ failed:
     return -1;
 }
 
-int Destroy(OUTDATA* outdata)
+int Destroy(JPGFrame* jpg_frame)
 {
-    if(outdata->data)
-        av_free(outdata->data);
+    if(jpg_frame->data)
+        av_free(jpg_frame->data);
     return 0;
 }

@@ -1,16 +1,16 @@
 #ifndef __YUVENCODER__H
 #define __YUVENCODER__H
 
-typedef struct OUTDATA
+typedef struct JPGFrame
 {
 	char* data;
 	int   size;
-}OUTDATA;
+}JPGFrame;
 
 int Init(void (*log_callback )(int level, char* ));
 
-int EncodeJPG(char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, char* token, OUTDATA* outdata);
+int EncodeJPG(const char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame);
 
-int Destroy(OUTDATA* outdata);
+int Destroy(JPGFrame* jpg_frame);
 
 #endif
