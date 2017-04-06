@@ -1,0 +1,83 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+
+	<!-- <parent> <groupId>com.sengled.media</groupId> <artifactId>sengled-media-servers</artifactId> 
+		<version>1.0.64.SNAPSHOT1</version> </parent> -->
+    <parent>
+        <groupId>com.sengled.media</groupId>
+        <artifactId>sengled-algorithm-v3</artifactId>
+        <version>3.1.0.SNAPSHOT4</version>
+        <relativePath>../../../../</relativePath>
+    </parent>
+
+	<artifactId>sengled-algorithm-v3-assembly</artifactId>
+	<name>algorithm-v3-assembly</name>
+
+	<properties>
+		<py4j.version>0.10.3</py4j.version>
+		<metric.version>3.1.2</metric.version>
+		<aws.version>1.11.27</aws.version>
+	</properties>
+
+    <dependencyManagement>
+        <dependencies>
+           
+            
+            
+        </dependencies>
+    </dependencyManagement>
+    
+	<dependencies>
+		
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<includes>
+					<include>**/*.html</include>
+				</includes>
+				<excludes>
+					<exclude>**/*.properties</exclude>
+					<exclude>**/*.xml</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
+				</configuration>
+			</plugin>
+			<!-- 生成独立运行的 jar 包 -->
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>make-zip</id>
+						<!-- 绑定到package生命周期阶段上 -->
+						<phase>package</phase>
+						<goals>
+							<!-- 绑定到package生命周期阶段上 -->
+							<goal>single</goal>
+						</goals>
+						<configuration>
+							<descriptors> <!--描述文件路径 -->
+								<descriptor>src/main/assembly/src.xml</descriptor>
+							</descriptors>
+
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+		</plugins>
+	</build>
+</project>
