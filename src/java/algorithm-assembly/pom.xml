@@ -49,14 +49,7 @@
 			</resource>
 		</resources>
 		<plugins>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
+			
 			<!-- 生成独立运行的 jar 包 -->
 			<plugin>
 				<artifactId>maven-assembly-plugin</artifactId>
@@ -70,6 +63,8 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
+		                    <finalName>media-algorithm-v3</finalName>  
+		                    <appendAssemblyId>true</appendAssemblyId> 
 							<descriptors> <!--描述文件路径 -->
 								<descriptor>src/main/assembly/src.xml</descriptor>
 							</descriptors>
