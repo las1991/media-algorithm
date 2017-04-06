@@ -20,13 +20,6 @@
 	<properties>
 	</properties>
 
-    <dependencyManagement>
-        <dependencies>
-           
-            
-            
-        </dependencies>
-    </dependencyManagement>
     
 	<dependencies>
 		<dependency>
@@ -52,6 +45,14 @@
 				<excludes>
 					<exclude>**/*.properties</exclude>
 					<exclude>**/*.xml</exclude>
+				</excludes>
+			</resource>
+			
+			<resource>
+				<directory>${basedir}/src/main/java</directory>
+				<excludes>
+					<exclude>lib</exclude>
+					<exclude>**/*.so</exclude>
 				</excludes>
 			</resource>
 		</resources>
