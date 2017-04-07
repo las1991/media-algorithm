@@ -19,7 +19,7 @@ phases:
 
 artifacts:
   files:
-    - source: src/java/screenshot-assembly/target/media-algorithm-v3-distribution.zip
+    - source: src/java/algorithm-assembly/target/media-algorithm-v3-distribution.zip
       destination: content/
       action: unzip
 
