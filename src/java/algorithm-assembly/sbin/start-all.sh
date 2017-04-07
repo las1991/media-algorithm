@@ -40,11 +40,9 @@ done
 
 
 export JMEDIA_OPTS=" -Dserver.name=media-algorithm-v3 -Dspring.config.location=${CONFIGS}file:/etc/sengled/sengled.properties"
-export JMEDIA_OPTS=" -Dstogare.log.maxBytes=134217728 "$JMEDIA_OPTS
-export JMEDIA_OPTS=" -Dstogare.log.flushDisk=1000 "$JMEDIA_OPTS
-export JMEDIA_OPTS=" -Dstogare.log.cleanDisk=60000 "$JMEDIA_OPTS
-export LD_LIBRARY_PATH=$SENGLED_APP_HOME/clib:$LD_LIBRARY_PATH
-export SENGLED_APP_HOME
+export JMEDIA_OPTS=" -Djna.platform.library.path=$SENGLED_APP_HOME/libc $JMEDIA_OPTS"
+export LD_LIBRARY_PATH=$SENGLED_APP_HOME/libc:$LD_LIBRARY_PATH
+
 
 EXTRA_ARGS="-name media-algorithm-v3 -loggc "
 COMMAND=$1

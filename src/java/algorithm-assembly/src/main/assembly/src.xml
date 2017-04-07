@@ -28,6 +28,11 @@
            <outputDirectory>bin</outputDirectory>
            <fileMode>755</fileMode>
         </fileSet>
+       <fileSet>
+           <directory>${project.basedir}/libc</directory>
+           <outputDirectory>libc</outputDirectory>
+           <fileMode>755</fileMode>
+        </fileSet>
     </fileSets>
     <dependencySets>
         <dependencySet>
