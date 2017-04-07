@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<project
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
+	xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<modelVersion>4.0.0</modelVersion>
+
+
+	<!-- <parent> <groupId>com.sengled.media</groupId> <artifactId>sengled-media-servers</artifactId> 
+		<version>1.0.64.SNAPSHOT1</version> </parent> -->
+    <parent>
+        <groupId>com.sengled.media</groupId>
+        <artifactId>sengled-algorithm-v3</artifactId>
+        <version>3.1.0.SNAPSHOT4</version>
+        <relativePath>../../../</relativePath>
+    </parent>
+
+	<artifactId>sengled-algorithm-v3-jna</artifactId>
+	<name>algorithm-v3-jna</name>
+
+	<properties>
+	</properties>
+
+    
+	<dependencies>
+		<dependency>
+		  <groupId>net.java.dev.jna</groupId>
+		  <artifactId>jna-platform</artifactId>
+		  <version>4.2.2</version>
+		</dependency>
+		<dependency>
+		  <groupId>com.nativelibs4java</groupId>
+		  <artifactId>jnaerator</artifactId>
+		  <version>0.12</version>
+		  <scope>test</scope>
+		</dependency>
+	</dependencies>
+
+	<build>
+		<resources>
+			<resource>
+				<directory>${basedir}/src/main/resources</directory>
+				<includes>
+					<include>**/*.html</include>
+				</includes>
+				<excludes>
+					<exclude>**/*.properties</exclude>
+					<exclude>**/*.xml</exclude>
+				</excludes>
+			</resource>
+			
+			<resource>
+				<directory>${basedir}/src/main/java</directory>
+				<excludes>
+					<exclude>lib</exclude>
+					<exclude>**/*.so</exclude>
+				</excludes>
+			</resource>
+		</resources>
+		<plugins>
+
+			
+		</plugins>
+	</build>
+</project>

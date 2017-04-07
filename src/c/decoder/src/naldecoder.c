@@ -234,7 +234,7 @@ static int DestroyContext(DecodeContext** opaque)
 	return 0;
 }
 
-int DecodeNal(const char* data_buffer, int len, const char* token, YUVFrame* yuv_frame)
+int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame)
 {
     int ret = 0;
     int tmp_size;

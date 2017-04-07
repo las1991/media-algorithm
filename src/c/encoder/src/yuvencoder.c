@@ -212,7 +212,7 @@ static int DestroyContext(EncodeContext** opaque)
 	return 0;
 }
 
-int EncodeJPG(const char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame)
+int EncodeJPG(char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame)
 {
     int ret = 0;
     int tmp_size;
