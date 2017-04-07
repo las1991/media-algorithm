@@ -3,8 +3,8 @@ CP=cp -rf
 RM=rm -rf
 all:
 	$(RM) include/* lib/*		
-	#chmod +x ./3rd/build.sh
-	#sh ./3rd/build.sh
+	chmod +x ./3rd/build.sh
+	sh ./3rd/build.sh
 	sh ./run_motion.sh
 	$(CP) ./motion/build/lib/* lib/*
 	make -C ./encoder 
