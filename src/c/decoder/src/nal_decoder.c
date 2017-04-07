@@ -5,7 +5,7 @@
 #include <stdlib.h>
 
 #include "log.h"
-#include "naldecoder.h"
+#include "nal_decoder.h"
 void (*pp_log_callback)(int level, char* ptr) = NULL;
 
 static int log_convert(int level)

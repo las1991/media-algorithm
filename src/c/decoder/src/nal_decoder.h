@@ -1,13 +1,6 @@
 #ifndef __CONVERTJPG__H
 #define __CONVERTJPG__H
-
-typedef struct YUVFrame
-{
-    int   width;
-    int   height;
-    char* data;
-    int   size;
-}YUVFrame;
+#include <yuv.h>
 
 int Init(void (*log_callback )(int level, char* ));
 

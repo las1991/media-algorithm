@@ -2,13 +2,14 @@ CURRENT_DIR:=$(shell pwd)
 #LD_LIB= $(CURRENT_DIR)/../../install_md/lib/libavfilter.a	$(CURRENT_DIR)/../../install_md/lib/libavformat.a $(CURRENT_DIR)/../../install_md/lib/libavcodec.a $(CURRENT_DIR)/../../install_md/lib/libavutil.a $(CURRENT_DIR)/../../install_md/lib/libswresample.a $(CURRENT_DIR)/../../install_md/lib/libswscale.a
 LD_LIB=	$(CURRENT_DIR)/../../3rd/install/lib/libavformat.a $(CURRENT_DIR)/../../3rd/install/lib/libavcodec.a $(CURRENT_DIR)/../../3rd/install/lib/libavutil.a $(CURRENT_DIR)/../../3rd/install/lib/libswresample.a $(CURRENT_DIR)/../../3rd/install/lib/libswscale.a 
 LD_INCLUDE=$(CURRENT_DIR)/../../3rd/install/include
-FILE_OUT=libencoder.so
+COMMON_INCLUDE=$(CURRENT_DIR)/../../common
+FILE_OUT=libjpg_encoder.so
 CC=gcc -g
 CC_OUT=gcc -o
 CC_SHARE_OUT=gcc -fPIC -shared -o 
 AR=ar crs
 CP=cp -rf
-CC_FLAGS= -fPIC -I$(LD_INCLUDE)
+CC_FLAGS= -fPIC -I$(LD_INCLUDE) -I$(COMMON_INCLUDE)
 LD_FLAGS= -Wl,-Bsymbolic #$(LD_LIB)  
 LD_FLAGS1=$(LD_LIB)  -lm -lz -lpthread #-L/usr/lib/x86_64-linux-gnu/
 CC_DEPFLAGS=-MMD -MF $(@:.o=.d) -MT $@

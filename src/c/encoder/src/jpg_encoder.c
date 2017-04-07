@@ -4,8 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "log.h"
-#include "yuvencoder.h"
+#include "jpg_encoder.h"
 void (*pp_log_callback)(int level, char* ptr) = NULL;
 
 static int log_convert(int level)
@@ -212,12 +211,26 @@ static int DestroyContext(EncodeContext** opaque)
 	return 0;
 }
 
-int EncodeJPG(char* data_buffer, int src_width, int src_height, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame)
+int EncodeJPG(const YUVFrame* yuv_frame, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame)
 {
     int ret = 0;
     int tmp_size;
     char* dst_ptr;
+    
     memset(jpg_frame, 0, sizeof(JPGFrame));
+    
+    if(yuv_frame == NULL || yuv_frame->width == 0 || yuv_frame->height == 0 || yuv_frame->data == NULL)
+    {
+        av_log(NULL, AV_LOG_ERROR, "input yuv frame have error!\n");
+        return -1;
+    }
+    if(yuv_frame->size == 0)
+        av_log(NULL, AV_LOG_WARNING, "input yuv frame size = 0\n");
+
+    int src_width = yuv_frame->width;
+    int src_height = yuv_frame->height;
+    char* data_buffer = yuv_frame->data;
+
     EncodeContext* encodectx = (EncodeContext* )av_mallocz(sizeof(EncodeContext));
 
     encodectx->frame = av_frame_alloc();

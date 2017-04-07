@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include<yuvencoder.h>
+#include<jpg_encoder.h>
 #include<stdarg.h>
 #include<stdlib.h>
 #include<sys/resource.h>
@@ -36,15 +36,17 @@ void debugCore()
 int main(int argc, char* argv[])
 {
     JPGFrame outdata;
-   //outdata.data = malloc(100*1024);
+    //outdata.data = malloc(100*1024);
     //char dst_jpg[100*1024];
     int dst_size;
-    char yuv_data[] = "/home/pang/git/media-algorithm-v3/c/encoder/test/yuv_data"; 
+    char yuv_data[] = "yuv_data"; 
     char token[] = "ABCDEFG";
     FILE* fp = NULL;
     int file_size;
     int file_ret;
     char* data_buffer = NULL;
+    YUVFrame yuv_frame;
+    memset(&yuv_frame, 0, sizeof(YUVFrame));
     debugCore();
     fp = fopen(yuv_data, "r");
     if(!fp)
@@ -52,7 +54,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "It is fail to open yuv_data file %s.\n", yuv_data);
         return -1;
     }
-    printf("open data file ok");
+    printf("open data file ok\n");
     fseek(fp, 0, SEEK_END);
     file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -69,18 +71,20 @@ int main(int argc, char* argv[])
 
     static int number = 0;
     char jpg_name[1024];
-    char jpg[] = "/home/pang/git/media-algorithm-v3/c/encoder/test/";
-
+    char jpg[] = "./";
+    yuv_frame.data = data_buffer;
+    yuv_frame.width = 1280;
+    yuv_frame.height = 720;
     for(;; i++)
     {
         //sleep(2);
-        EncodeJPG(data_buffer, 1280, 720, 1280, 720, token, &outdata);
+        EncodeJPG(&yuv_frame, 1280, 720, token, &outdata);
 
         number++;
         sprintf(jpg_name, "%s%s_%d.jpg", jpg, token, number);
-        //fp = fopen(jpg_name, "wr");
-        //fwrite(outdata.data, 1, outdata.size, fp);
-        //fclose(fp);
+        fp = fopen(jpg_name, "wr");
+        fwrite(outdata.data, 1, outdata.size, fp);
+        fclose(fp);
         Destroy(&outdata);
     }
 

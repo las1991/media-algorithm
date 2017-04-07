@@ -1,5 +1,5 @@
 #include<stdio.h>
-#include<naldecoder.h>
+#include<nal_decoder.h>
 #include<stdarg.h>
 #include<stdlib.h>
 #include<sys/resource.h>
@@ -39,7 +39,8 @@ int main(int argc, char* argv[])
    //outdata.data = malloc(100*1024);
     //char dst_jpg[100*1024];
     int dst_size;
-    char h264_data[] = "/home/pang/git/media-algorithm-v3/python/decode/176_144_1490260801604";
+    //char h264_data[] = "/home/pang/git/media-algorithm-v3/python/decode/176_144_1490260801604";
+    char h264_data[] = "data";
     char token[] = "ABCDEFG";
     FILE* fp = NULL;
     int file_size;
@@ -52,7 +53,7 @@ int main(int argc, char* argv[])
         fprintf(stderr, "It is fail to open h264_data file %s.\n", h264_data);
         return -1;
     }
-    printf("open data file ok");
+    printf("open data file ok\n");
     fseek(fp, 0, SEEK_END);
     file_size = ftell(fp);
     fseek(fp, 0, SEEK_SET);
@@ -73,14 +74,15 @@ int main(int argc, char* argv[])
 
     for(;; i++)
     {
-        //sleep(0.1);
+        //sleep(1);
         DecodeNal(data_buffer, file_size, token, &outdata);
-
+        
         number++;
         sprintf(jpg_name, "%s%s_%d.yuv", jpg, token, number);
-        //fp = fopen(jpg_name, "wr");
-        //fwrite(outdata.data, 1, outdata.size, fp);
-        //fclose(fp);
+        fp = fopen(jpg_name, "wr");
+        fwrite(outdata.data, 1, outdata.size, fp);
+        fclose(fp);
+        
         Destroy(&outdata);
     }
 

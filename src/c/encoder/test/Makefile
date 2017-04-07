@@ -3,13 +3,14 @@ CURRENT_DIR:=$(shell pwd)
 #LD_LIB1=	$(CURRENT_DIR)/../lib/libavformat.a $(CURRENT_DIR)/../lib/libavcodec.a $(CURRENT_DIR)/../lib/libavutil.a $(CURRENT_DIR)/../lib/libswresample.a 
 LD_INCLUDE=$(CURRENT_DIR)/../../include
 LD_LIB=$(CURRENT_DIR)/../../lib
+COMMON_INCLUDE=$(CURRENT_DIR)/../../common
 #FILE_OUT=librtpdecoder.so
 BIN=encode
 CC=gcc -g
 CC_OUT=gcc -o
 CP=cp -rf
-CC_FLAGS= -fPIC -I$(LD_INCLUDE)
-LD_FLAGS= -L$(LD_LIB) -lencoder # -lm -lz -lpthread#-L/usr/lib/x86_64-linux-gnu/
+CC_FLAGS= -fPIC -I$(LD_INCLUDE) -I$(COMMON_INCLUDE)
+LD_FLAGS= -L$(LD_LIB) -ljpg_encoder # -lm -lz -lpthread#-L/usr/lib/x86_64-linux-gnu/
 #LD_FLAGS += -Wl,-rpath,$(LD_LIB)
 CC_DEPFLAGS=-MMD -MF $(@:.o=.d) -MT $@
 all:$(BIN)  
