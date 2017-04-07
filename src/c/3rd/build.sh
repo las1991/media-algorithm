@@ -2,6 +2,7 @@
 basepath=$(cd `dirname $0`; pwd)
 cd ${basepath}/ffmpeg
 chmod +x configure
+chmod +x *.sh
 make clean
 make distclean
 #--extra-cflags="-fvisibility=hidden" 
