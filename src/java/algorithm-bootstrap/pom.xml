@@ -9,7 +9,7 @@
 		<version>1.0.64.SNAPSHOT1</version> </parent> -->
     <parent>
         <groupId>com.sengled.media</groupId>
-        <artifactId>sengled-algorithm-v3</artifactId>
+        <artifactId>algorithm-v3</artifactId>
         <version>3.1.0.SNAPSHOT4</version>
         <relativePath>../../../</relativePath>
     </parent>
@@ -125,6 +125,12 @@
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-kinesis</artifactId>
 			<version>1.11.27</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>com.amazonaws</groupId>
