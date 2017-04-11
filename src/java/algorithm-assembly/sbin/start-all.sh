@@ -40,7 +40,7 @@ done
 
 
 export JMEDIA_OPTS=" -Dserver.name=media-algorithm-v3 -Dspring.config.location=${CONFIGS}file:/etc/sengled/sengled.properties"
-export JMEDIA_OPTS=" -Djna.platform.library.path=$SENGLED_APP_HOME/libc $JMEDIA_OPTS"
+export JMEDIA_OPTS=" -Djna.library.path=$SENGLED_APP_HOME/libc $JMEDIA_OPTS"
 export LD_LIBRARY_PATH=$SENGLED_APP_HOME/libc:$LD_LIBRARY_PATH
 
 
