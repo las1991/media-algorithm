@@ -18,7 +18,7 @@ LINK_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/external/libs)
 
 message (STATUS "LINK_LIBRARY_PATG=${JNI_INCLUDE_DIRS}/external/libs")
 
-add_library(motion SHARED 
+add_library(sengled_algorithm SHARED 
 		motion/motionAction.cpp
 		main/AlgorithmManager.cpp
 		main/robot_vision.cpp
@@ -27,7 +27,7 @@ add_library(motion SHARED
 )
 
 
-target_link_libraries(motion 
+target_link_libraries(sengled_algorithm 
   -lopencv_highgui -lopencv_video -lopencv_imgproc -lopencv_core -lopencv_ml -lopencv_objdetect 
   -lIlmImf -lIlmThread -lIlmImfUtil -lImath -lIex -lIexMath -ltiff -lHalf
   -llibjpeg -llibpng -llibjasper -lz -llzma -llapack -ltmglib -lblas_LINUX -lgfortran -lpthread ) 

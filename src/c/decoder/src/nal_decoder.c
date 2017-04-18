@@ -54,10 +54,17 @@ static void log_default_callback(void* ptr, int level, const char* fmt, va_list 
     }*/
 }
 
-int Init(void (*log_callback)(int level, char* buf))
+void SetLogCallback(void* log_callback)
 {
     pp_log_callback = log_callback;
     av_log_set_callback(log_default_callback);
+}
+
+//int Init(void (*log_callback)(int level, char* buf))
+int Init()
+{
+    //pp_log_callback = log_callback;
+    //av_log_set_callback(log_default_callback);
     
     av_register_all();
     return 0;

@@ -10,7 +10,9 @@ typedef struct JPGFrame
     int   size;
 }JPGFrame;
 
-int Init(void (*log_callback )(int level, char* ));
+void SetLogCallback(void* callback);
+
+int Init();
 
 int EncodeJPG(const YUVFrame* yuv_frame, int dst_width, int dst_height, const char* token, JPGFrame* jpg_frame);
 

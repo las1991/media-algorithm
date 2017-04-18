@@ -4,7 +4,7 @@ RM=rm -rf
 all:
 	$(RM) include/* lib/*		
 	chmod +x ./3rd/build.sh
-	sh ./3rd/build.sh
+	#sh ./3rd/build.sh
 	sh ./run_motion.sh
 	$(CP) motion/build/lib/*.so lib/
 	make -C ./encoder 

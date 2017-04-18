@@ -65,7 +65,8 @@ int main(int argc, char* argv[])
         fprintf(stderr, "sdp file read is error.\n");
         return -1;
     }
-    Init(log_callback);
+    SetLogCallback(log_callback);
+    Init();
     int i = 0;
 
     static int number = 0;

@@ -2,7 +2,9 @@
 #define __CONVERTJPG__H
 #include <yuv.h>
 
-int Init(void (*log_callback )(int level, char* ));
+void SetLogCallback(void* callback);
+
+int Init();
 
 int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame);
 

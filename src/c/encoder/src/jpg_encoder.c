@@ -54,10 +54,17 @@ static void log_default_callback(void* ptr, int level, const char* fmt, va_list 
     */
 }
 
-int Init(void (*log_callback)(int level, char* buf))
+void SetLogCallback(void* log_callback)
 {
     pp_log_callback = log_callback;
     av_log_set_callback(log_default_callback);
+}
+
+//int Init(void (*log_callback)(int level, char* buf))
+int Init()
+{
+    //pp_log_callback = log_callback;
+    //av_log_set_callback(log_default_callback);
     
     av_register_all();
     return 0;
@@ -225,7 +232,7 @@ int EncodeJPG(const YUVFrame* yuv_frame, int dst_width, int dst_height, const ch
         return -1;
     }
     if(yuv_frame->size == 0)
-        av_log(NULL, AV_LOG_WARNING, "input yuv frame size = 0\n");
+        av_log(NULL, AV_LOG_DEBUG, "input yuv frame size = 0\n");
 
     int src_width = yuv_frame->width;
     int src_height = yuv_frame->height;
