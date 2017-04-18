@@ -1,5 +1,4 @@
 package com.sengled.media.jna.jpg_encoder;
-import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
@@ -24,30 +23,31 @@ public interface Jpg_encoderLibrary extends Library {
 	public static final int SLS_LOG_ERROR = (int)0x0004;
 	/** <i>native declaration : ./log.h</i> */
 	public static final int SLS_LOG_FATAL = (int)0x0005;
-	/** <i>native declaration : jpg_encoder.h:12</i> */
-	public interface Init_log_callback_callback extends Callback {
-		void apply(int level, Pointer charPtr1);
-	};
 	/**
-	 * Original signature : <code>int Init(Init_log_callback_callback*)</code><br>
+	 * Original signature : <code>void SetLogCallback(void*)</code><br>
 	 * <i>native declaration : jpg_encoder.h:12</i>
 	 */
-	int Init(Jpg_encoderLibrary.Init_log_callback_callback log_callback);
+	void SetLogCallback(Pointer callback);
+	/**
+	 * Original signature : <code>int Init()</code><br>
+	 * <i>native declaration : jpg_encoder.h:14</i>
+	 */
+	int Init();
 	/**
 	 * Original signature : <code>int EncodeJPG(const YUVFrame*, int, int, const char*, JPGFrame*)</code><br>
-	 * <i>native declaration : jpg_encoder.h:14</i><br>
+	 * <i>native declaration : jpg_encoder.h:16</i><br>
 	 * @deprecated use the safer methods {@link #EncodeJPG(com.sengled.media.jna.jpg_encoder.YUVFrame, int, int, java.lang.String, com.sengled.media.jna.jpg_encoder.JPGFrame)} and {@link #EncodeJPG(com.sengled.media.jna.jpg_encoder.YUVFrame, int, int, com.sun.jna.Pointer, com.sengled.media.jna.jpg_encoder.JPGFrame)} instead
 	 */
 	@Deprecated 
 	int EncodeJPG(YUVFrame yuv_frame, int dst_width, int dst_height, Pointer token, JPGFrame jpg_frame);
 	/**
 	 * Original signature : <code>int EncodeJPG(const YUVFrame*, int, int, const char*, JPGFrame*)</code><br>
-	 * <i>native declaration : jpg_encoder.h:14</i>
+	 * <i>native declaration : jpg_encoder.h:16</i>
 	 */
 	int EncodeJPG(YUVFrame yuv_frame, int dst_width, int dst_height, String token, JPGFrame jpg_frame);
 	/**
 	 * Original signature : <code>int Destroy(JPGFrame*)</code><br>
-	 * <i>native declaration : jpg_encoder.h:16</i>
+	 * <i>native declaration : jpg_encoder.h:18</i>
 	 */
 	int Destroy(JPGFrame jpg_frame);
 }
