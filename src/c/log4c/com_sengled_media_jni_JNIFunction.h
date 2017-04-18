@@ -7,8 +7,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-
 /*
  * Class:     com_sengled_media_jni_JNIFunction
  * Method:    getLog4CFunction
@@ -20,10 +18,10 @@ JNIEXPORT jlong JNICALL Java_com_sengled_media_jni_JNIFunction_getLog4CFunction
 /*
  * Class:     com_sengled_media_jni_JNIFunction
  * Method:    invokeLog4CFunction
- * Signature: (JLjava/lang/String;)I
+ * Signature: (JILjava/lang/String;)I
  */
 JNIEXPORT jint JNICALL Java_com_sengled_media_jni_JNIFunction_invokeLog4CFunction
-  (JNIEnv *, jobject, jlong, jstring);
+  (JNIEnv *, jobject, jlong, jint, jstring);
 
 #ifdef __cplusplus
 }

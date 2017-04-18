@@ -7,8 +7,11 @@ import java.nio.file.Files;
 
 public class JNIGenerator {
     public static void main(String[] args) throws IOException, InterruptedException {
+    	
         File file = new File("../../c/log4c");
         file.mkdirs();
+
+        System.setProperty("jni.library.path", file.getAbsolutePath());
         
         // System.load("/home/chenxh/workspace/gitlab.com/media-demo-v3/src/java/demo-jnr/libc/liblog4c.so");
         
@@ -41,6 +44,10 @@ public class JNIGenerator {
             System.out.println(new String(bytes));
             System.out.println("/*===================================*/");
         }
+        
+        long ptr = JNIFunction.getInstance().getLog4CFunction();
+        JNIFunction.getInstance().invokeLog4CFunction(ptr, 1, "hello");
+        
         
     }
     

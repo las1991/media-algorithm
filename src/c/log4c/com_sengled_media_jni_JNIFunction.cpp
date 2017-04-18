@@ -14,7 +14,7 @@ static JavaVM* LOG4C_VM = NULL;
 static jclass LOG4C_CLASS = NULL;
 static jmethodID LOG4C_METHOD_ID = 0;
 
-void LOG4C_Funtion (const char* chars) {
+void LOG4C_Funtion (int level, const char* chars) {
 	jstring info;
 	jint version = JNI_VERSION_1_8;
 	JavaVMAttachArgs* args = NULL;
@@ -26,14 +26,14 @@ void LOG4C_Funtion (const char* chars) {
 	switch(got){
 	case JNI_OK:
 		info = env->NewStringUTF(chars);
-		env->CallStaticVoidMethod(LOG4C_CLASS, LOG4C_METHOD_ID,info);
+		env->CallStaticVoidMethod(LOG4C_CLASS, LOG4C_METHOD_ID, level, info);
 		env->DeleteLocalRef(info);
 		break;
 	case JNI_EDETACHED:
 		got = LOG4C_VM->AttachCurrentThreadAsDaemon((void**)&env, (void*)args);
 		if (JNI_OK == got) {
 			info = env->NewStringUTF(chars);
-			env->CallStaticVoidMethod(LOG4C_CLASS, LOG4C_METHOD_ID, info);
+			env->CallStaticVoidMethod(LOG4C_CLASS, LOG4C_METHOD_ID, level, info);
 			env->DeleteLocalRef(info);
 			LOG4C_VM->DetachCurrentThread();
 		}
@@ -51,7 +51,7 @@ JNIEXPORT jlong JNICALL Java_com_sengled_media_jni_JNIFunction_getLog4CFunction
 
 
 	jclass loggerClass = env->GetObjectClass(logger);
-	LOG4C_METHOD_ID = env->GetStaticMethodID(loggerClass, "log", "(Ljava/lang/String;)V");
+	LOG4C_METHOD_ID = env->GetStaticMethodID(loggerClass, "log", "(ILjava/lang/String;)V");
 
 	if (!LOG4C_METHOD_ID) {
 		goto end;
@@ -69,13 +69,13 @@ end:
 	return rst;
 }
 JNIEXPORT jint JNICALL Java_com_sengled_media_jni_JNIFunction_invokeLog4CFunction
-(JNIEnv *env, jobject, jlong funcPtr, jstring log) {
-	void (*funtion) (const char* chars);
-	funtion = (void(*)(const char* chars))funcPtr;
+(JNIEnv *env, jobject, jlong funcPtr, jint level, jstring log) {
+	void (*funtion) (int level, const char* chars);
+	funtion = (void(*)(int level, const char* chars))funcPtr;
 
 	jboolean copy = JNI_FALSE;
 	const char* chars = env->GetStringUTFChars(log, &copy);
-	funtion(chars);
+	funtion(level, chars);
 	env->ReleaseStringUTFChars(log, chars);
 
 	return 1;

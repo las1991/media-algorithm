@@ -50,11 +50,13 @@ public class JNIFunction {
         }
     };
     
-    public static void log(String chars) {
-        LOGGER.info("JNI:{}", chars);
+    public static void log(int level, String chars) {
+        LOGGER.info("[{}] JNI:{}", level, chars);
     }
 
+    // public native void log2(int level, String chars);
+    
     public native long getLog4CFunction();
     
-    public native int invokeLog4CFunction(long funcPtr, String hello);
+    public native int invokeLog4CFunction(long funcPtr, int level, String hello);
 }
