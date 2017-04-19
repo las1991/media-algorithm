@@ -140,6 +140,7 @@ void DispatchAlgorithm( rvResource *rv,void *frame,int frame_width,int frame_hei
     }*/
 
     CopyAlgorithmParams(rv,algorithm_param);
+    LocalPrint(rv);
 	mMotionAction(rv,result);
 }
 
