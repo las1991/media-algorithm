@@ -34,6 +34,9 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
     @Value("${AWS_KINESIS_REGION}")
     private String region;
     
+    @Value("${PRIVATE_IPV4}")
+    private String privateIp;
+    
     @Autowired
     private RecordProcessorFactory recordProcessorFactory;
 
@@ -47,6 +50,11 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
         return streamName;
     }
     
+	@Override
+	public String getWorkerIdPrefix() {
+		return privateIp;
+	}
+	
     @Override
     public BasicAWSCredentials getBasicAWSCredentials() {
         return new BasicAWSCredentials(accessKey, secretKey);

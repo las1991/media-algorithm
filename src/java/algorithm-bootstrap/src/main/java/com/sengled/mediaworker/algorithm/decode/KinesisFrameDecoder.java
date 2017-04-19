@@ -17,13 +17,9 @@ import io.netty.buffer.Unpooled;
 public class KinesisFrameDecoder {	
 	private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFrameDecoder.class);
 
-    public static Frame decode(ByteBuffer buffer) throws FrameDecodeException {
-    	int remaining =  buffer.remaining();
-		if ( remaining <= 0) {
-			LOGGER.error("record data size is null.");
-			throw new FrameDecodeException("record data size is null");
-		}
-        ByteBuf buf = Unpooled.wrappedBuffer(buffer);
+    public static Frame decode(byte[] data) throws FrameDecodeException {
+
+        ByteBuf buf = Unpooled.wrappedBuffer(data);
         int firstByte = buf.readByte();
         if ('$' != firstByte) {
             throw new IllegalArgumentException("非法数据"+firstByte);
@@ -32,10 +28,9 @@ public class KinesisFrameDecoder {
         int jsonBytesLength = buf.readUnsignedShort();
         
         final byte[] jsonBytes = new byte[jsonBytesLength];
-        final byte[] dataBytes = new byte[remaining - jsonBytesLength - 2 - 1];
+        final byte[] dataBytes = new byte[data.length - jsonBytesLength - 2 - 1];
         buf.readBytes(jsonBytes);
         buf.readBytes(dataBytes);
-        
         try {
 			return new Frame(new String(jsonBytes, "UTF-8"), dataBytes);
 		} catch (UnsupportedEncodingException e) {

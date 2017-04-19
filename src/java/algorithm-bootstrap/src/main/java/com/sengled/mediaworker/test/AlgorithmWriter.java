@@ -44,8 +44,8 @@ public class AlgorithmWriter {
 //    final static String secretKey = "5Mrgea20GNXwqZy+5Cox5fwqMAqj+FB0UnXYEOoK";
 //    final static String STREAM_NAME = "capturer";
     
-  final static String accessKey = "AKIAOBUUWDH7ATB6AEXA";
-  final static String secretKey = "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";
+  final static String accessKey = "AKIAOJ3W3WYJF5TPQZAQ";
+  final static String secretKey = "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";
   final static String STREAM_NAME = "test-bj1_algorithm";
     
     private static final Log LOG = LogFactory.getLog(AlgorithmWriter.class);
@@ -115,7 +115,7 @@ public class AlgorithmWriter {
     }
 
     public static void main(String[] args) throws Exception {
-    	int millis = Integer.valueOf(args[0]);
+    	//int millis = Integer.valueOf(args[0]);
         //checkUsage(args);
 
         String streamName = STREAM_NAME;
@@ -138,23 +138,24 @@ public class AlgorithmWriter {
         validateStream(kinesisClient, streamName);
 
         // Repeatedly send stock trades with a 100 milliseconds wait in between
-        
+        int i=1;
         while(true) {
 //            StockTrade trade = stockTradeGenerator.getRandomTrade();
 //            sendStockTrade(trade, kinesisClient, streamName);
         	
-            File file = new  File("D:\\test\\cutout1WithConfigExec.flv");
+            File file = new  File("D:\\test\\naldataWithConfigExec");
             if( !file.exists()){
-                file = new File("/root/data");
+                file = new File("/root/naldataWithConfigExec");
             }
             FileInputStream fis = new FileInputStream(file);
             byte[] imageBytes = new byte[(int)file.length()];
             fis.read(imageBytes);
             fis.close();
-            int i=RandomUtils.nextInt()%100;
-            sendImageData(i,imageBytes , kinesisClient, streamName);
+            //int i=RandomUtils.nextInt()%100;
             
-            Thread.sleep(millis);
+            sendImageData(i++,imageBytes , kinesisClient, streamName);
+            
+            Thread.sleep(1000);
         }
     }
 

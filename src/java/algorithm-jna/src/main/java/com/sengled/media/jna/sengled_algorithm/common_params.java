@@ -31,8 +31,8 @@ public class common_params extends Structure {
 	 */
 	public common_params(byte token[], common_params.log_callback_callback log_callback) {
 		super();
-		if ((token.length != this.token.length)) 
-			throw new IllegalArgumentException("Wrong array size !");
+//		if ((token.length != this.token.length)) 
+//			throw new IllegalArgumentException("Wrong array size !");
 		this.token = token;
 		this.log_callback = log_callback;
 	}

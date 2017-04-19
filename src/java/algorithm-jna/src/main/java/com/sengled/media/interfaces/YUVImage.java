@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.algorithm.pydto;
+package com.sengled.media.interfaces;
 
 public class YUVImage {
 	private int width;
@@ -8,7 +8,7 @@ public class YUVImage {
 	public YUVImage(){
 		
 	}
-	public YUVImage(int width, int hight, byte[] YUVData) {
+	public YUVImage(int width, int hight, byte[]  YUVData) {
 		this.width = width;
 		this.height = hight;
 		this.YUVData = YUVData;
@@ -25,10 +25,10 @@ public class YUVImage {
 	public void setHight(int hight) {
 		this.height = hight;
 	}
-	public byte[] getYUVData() {
+	public byte[]  getYUVData() {
 		return YUVData;
 	}
-	public void setYUVData(byte[] YUVData) {
+	public void setYUVData(byte[]  YUVData) {
 		this.YUVData = YUVData;
 	}
 }

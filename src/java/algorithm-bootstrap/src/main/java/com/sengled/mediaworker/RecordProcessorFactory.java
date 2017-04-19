@@ -15,6 +15,7 @@ import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.ProcessorManagerImpl;
 
 /**
  * kinesis stream record 处理器工厂类
@@ -43,6 +44,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
     	LOGGER.info("RecordProcessorFactory afterPropertiesSet...");
         executor = Executors.newWorkStealingPool();
 		recordCount = new AtomicLong();
+		processorManager.setFeedListener(feedListener);
         metricRegistry.register( MetricRegistry.name(METRICS_NAME, "recordCount"), new Gauge<Long>(){
             @Override
             public Long getValue() {
@@ -60,23 +62,16 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
 
     }
 
-    /**
-     * {@inheritDoc}
-     */
     @Override
     public IRecordProcessor createProcessor() {
     	LOGGER.info("Create RecordProcessor...");//会根据分片创建多个RecordProcessor
-    	return  new ForkJoinRecordProcessor(executor,processorManager,recordCount,feedListener);
+    	return  new RecordProcessor(recordCount,processorManager);
     }
     public void shutdown(){
     	try {
     		executor.shutdown();
-    		processorManager.stop();
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
 		}
     }
-
-
-
 }

@@ -1,5 +1,9 @@
 package com.sengled.mediaworker.algorithm.service;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
@@ -64,6 +68,16 @@ public class DynamodbEventListener {
 		String zoneId = event.getZoneId();
 		String imageS3Path = token + "_motion_" + utcDateTime.getTime() + ".jpg";
 
+		//test
+		try {
+			File file = new File("/root/save/" + token+".jpg");
+			FileOutputStream out = new FileOutputStream(file);
+			out.write(jpgData);
+			out.close();
+		} catch (Exception e1) {
+			LOGGER.error(e1.getMessage(),e1);
+		} 
+		//end
 		try {
 			saveS3(imageS3Path, jpgData);
 			saveDynamodb(utcDateTime, token, imageS3Path, zoneId);

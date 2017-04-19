@@ -28,6 +28,10 @@
 		  <version>4.2.2</version>
 		</dependency>
 		<dependency>
+			<groupId>com.alibaba</groupId>
+			<artifactId>fastjson</artifactId>
+		</dependency>
+		<dependency>
 		  <groupId>com.nativelibs4java</groupId>
 		  <artifactId>jnaerator</artifactId>
 		  <version>0.12</version>
