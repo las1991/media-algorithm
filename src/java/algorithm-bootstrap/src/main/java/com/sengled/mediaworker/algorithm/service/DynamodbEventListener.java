@@ -67,17 +67,6 @@ public class DynamodbEventListener {
 		String token = event.getToken();
 		String zoneId = event.getZoneId();
 		String imageS3Path = token + "_motion_" + utcDateTime.getTime() + ".jpg";
-
-		//test
-		try {
-			File file = new File("/root/save/" + token+".jpg");
-			FileOutputStream out = new FileOutputStream(file);
-			out.write(jpgData);
-			out.close();
-		} catch (Exception e1) {
-			LOGGER.error(e1.getMessage(),e1);
-		} 
-		//end
 		try {
 			saveS3(imageS3Path, jpgData);
 			saveDynamodb(utcDateTime, token, imageS3Path, zoneId);
