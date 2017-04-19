@@ -30,64 +30,70 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
 {
     char *json_message = (char*)algorithm_param;
     rv->plog->log_print(SLS_LOG_DEBUG,"params=%s",json_message);
-
-    cJSON *pjson = cJSON_Parse(json_message);
-    if( pjson == NULL )
+    cJSON *pjson = NULL;
+    do
     {
-        rv->plog->log_print(SLS_LOG_ERROR,"parse json error");
-        return;
-    }
-    cJSON *psensi = cJSON_GetObjectItem(pjson,"sensitivity");
-    if( psensi == NULL )
-    {
-        rv->plog->log_print(SLS_LOG_ERROR,"parse json sensitivity error");
-        return;
-    }
-	rv->pAlgoParams->motion_setting_params.sensitivity = psensi->valueint;
-
-    cJSON *pparam_array= cJSON_GetObjectItem(pjson,"dataList");
-    if(pparam_array == NULL || cJSON_Array != pparam_array->type)
-    {
-        rv->plog->log_print(SLS_LOG_ERROR,"parse json dataList error");
-        return;
-    } 
-    int size = cJSON_GetArraySize(pparam_array);
-    if(size > 3 )
-    {
-        rv->plog->log_print(SLS_LOG_ERROR,"params number overflow");
-        return;
-    }
-	rv->pAlgoParams->motion_params.zone_count = size;
-    for( int i = 0; i < size; i++ )
-    {
-        cJSON *item = cJSON_GetArrayItem(pparam_array,i);
-        if( item==NULL ) return;
-        cJSON *subitem = item->child;
-        if(subitem == NULL || subitem->next == NULL )
+        pjson = cJSON_Parse(json_message);
+        if( pjson == NULL )
         {
-            rv->plog->log_print(SLS_LOG_ERROR,"parse dataList element error");
-            return;
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json error");
+            break;
         }
-        rv->plog->log_print(SLS_LOG_DEBUG,"%s:%d\n",subitem->string,subitem->valueint);
-        rv->pAlgoParams->motion_params.zone_id[i] = subitem->valueint;
-
-        rv->plog->log_print(SLS_LOG_DEBUG,"%s:%s\n",subitem->next->string,subitem->next->valuestring);
-        char *str = subitem->next->valuestring;
-        char *token = strtok(str,",");
-        int z_pos[4]={0},count=0;
-        while( token != NULL && count < 4)
+        cJSON *psensi = cJSON_GetObjectItem(pjson,"sensitivity");
+        if( psensi == NULL )
         {
-            int p = atoi(token);
-            rv->plog->log_print(SLS_LOG_DEBUG,"pos=%d\n",p);
-            z_pos[count]=p;
-            token = strtok(NULL,",");
-            count++;
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json sensitivity error");
+            break;
         }
-        rv->pAlgoParams->motion_params.zone_pos[i].x = z_pos[0];
-        rv->pAlgoParams->motion_params.zone_pos[i].y = z_pos[1];
-        rv->pAlgoParams->motion_params.zone_pos[i].width = z_pos[2];
-        rv->pAlgoParams->motion_params.zone_pos[i].height = z_pos[3];
-    }
+        rv->plog->log_print(SLS_LOG_DEBUG,"sensitivity=%d\n",psensi->valueint);
+        rv->pAlgoParams->motion_setting_params.sensitivity = psensi->valueint;
+
+        cJSON *pparam_array= cJSON_GetObjectItem(pjson,"dataList");
+        if(pparam_array == NULL || cJSON_Array != pparam_array->type)
+        {
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json dataList error");
+            break;
+        } 
+        int size = cJSON_GetArraySize(pparam_array);
+        if(size > 3 )
+        {
+            rv->plog->log_print(SLS_LOG_ERROR,"params number overflow");
+            break;
+        }
+        rv->pAlgoParams->motion_params.zone_count = size;
+        rv->plog->log_print(SLS_LOG_DEBUG,"zone_count=%d",size);
+    
+        for( int i = 0; i < size; i++ )
+        {
+            cJSON *item = cJSON_GetArrayItem(pparam_array,i);
+            if( item==NULL ) break;
+            cJSON *subitem = item->child;
+            if(subitem == NULL || subitem->next == NULL )
+            {
+                rv->plog->log_print(SLS_LOG_ERROR,"parse dataList element error");
+                break;
+            }
+            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%d\n",subitem->string,subitem->valueint);
+            rv->pAlgoParams->motion_params.zone_id[i] = subitem->valueint;
+
+            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%s\n",subitem->next->string,subitem->next->valuestring);
+            char *str = subitem->next->valuestring;
+            char *token = strtok(str,",");
+            int z_pos[4]={0},count=0;
+            while( token != NULL && count < 4)
+            {
+                int p = atoi(token);
+                rv->plog->log_print(SLS_LOG_DEBUG,"pos=%d\n",p);
+                z_pos[count]=p;
+                token = strtok(NULL,",");
+                count++;
+            }
+            rv->pAlgoParams->motion_params.zone_pos[i].x = z_pos[0];
+            rv->pAlgoParams->motion_params.zone_pos[i].y = z_pos[1];
+            rv->pAlgoParams->motion_params.zone_pos[i].width = z_pos[2];
+            rv->pAlgoParams->motion_params.zone_pos[i].height = z_pos[3];
+        }
+    }while(0);
     cJSON_Delete(pjson);
      
 }
