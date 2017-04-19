@@ -67,6 +67,7 @@ struct rvResource
         
 		//vibe algorithm
 		memset( model,0,sizeof(model) );
+        memset(token,0,SLS_MAX_BUFFER_LENGTH);
 		//memset( motion_count,0,sizeof(motion_count));
 		isModelUpdate = true;
 

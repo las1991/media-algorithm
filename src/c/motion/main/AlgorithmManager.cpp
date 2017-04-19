@@ -26,6 +26,28 @@ void LocalPrint( void* context )
 		m_setting_params.sensitivity );
 }
 
+void GetPos(char *str,int pos[4])
+{
+    int len = strlen(str);
+    len = len > 15 ? 15:len;
+    char tmp[4] = {0};
+    int c = 0,p=0;
+    for( int i = 0; i < len; i++ )
+    {
+        if(*(str+i) == ',' && p < 3)
+        {
+            pos[p++] = atoi(tmp);
+            memset( tmp,0,4);
+            c=0;
+        }
+        else
+        {
+           tmp[c++]=*(str+i);
+        }
+    }
+    pos[p] = atoi(tmp);
+}
+
 void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
 {
     char *json_message = (char*)algorithm_param;
@@ -78,16 +100,17 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
 
             rv->plog->log_print(SLS_LOG_DEBUG,"%s:%s\n",subitem->next->string,subitem->next->valuestring);
             char *str = subitem->next->valuestring;
-            char *token = strtok(str,",");
+            //char *token = strtok(str,",");
             int z_pos[4]={0},count=0;
-            while( token != NULL && count < 4)
+            GetPos(str,z_pos);
+            rv->plog->log_print(SLS_LOG_DEBUG,"%d:%d:%d:%d\n",z_pos[0],z_pos[1],z_pos[2],z_pos[3]);
+            /*while( token != NULL && count < 4)
             {
                 int p = atoi(token);
+                z_pos[count++]=p;
                 rv->plog->log_print(SLS_LOG_DEBUG,"pos=%d\n",p);
-                z_pos[count]=p;
                 token = strtok(NULL,",");
-                count++;
-            }
+            }*/
             rv->pAlgoParams->motion_params.zone_pos[i].x = z_pos[0];
             rv->pAlgoParams->motion_params.zone_pos[i].y = z_pos[1];
             rv->pAlgoParams->motion_params.zone_pos[i].width = z_pos[2];
