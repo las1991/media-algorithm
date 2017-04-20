@@ -49,7 +49,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
         		.withClientExecutionTimeout(CLIENT_EXECUTION_TIMEOUT)
         		.withRequestTimeout(REQUEST_TIMEOUT)
         		.withSocketTimeout(SOCKET_TIMEOUT)
-        		.withTcpKeepAlive(true)
+        		//.withTcpKeepAlive(true)
         		.withMaxErrorRetry(3)
         		.withMaxConnections(150)
         		.withConnectionTTL(5 * 60 * 1000)

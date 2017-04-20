@@ -15,17 +15,20 @@ import com.sengled.mediaworker.algorithm.StreamingContext;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.exception.FeedException;
-import com.sengled.mediaworker.algorithm.exception.StreamingContextNotFoundException;
 
 public class ExecAction extends Action {
 	private static final int  MOTION_INTERVAL = 15;
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecAction.class);
 
 	@Override
-	public void feed(StreamingContext context, YUVImage yuvImage,ProcessorManager processor, FeedListener listener) throws Exception {
+	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener) throws Exception {
 
 		final String token = context.getToken();
 		final String model = context.getModel();
+		
+		LOGGER.debug("ExecAction feed token:{}",context.getToken());
+		
+		ProcessorManager processor = context.getProcessorManager();
 		Date lastMotionDate = context.getLastMotionDate();
 		if(lastMotionDate !=null){
 			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) <= MOTION_INTERVAL){

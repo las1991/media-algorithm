@@ -68,6 +68,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			final Frame frame;
 			try {
 				frame = KinesisFrameDecoder.decode(data);
+				LOGGER.debug("Frame Config:{}",frame.getConfigs());
 			} catch (FrameDecodeException e) {
 				LOGGER.error(e.getMessage(),e);
 				continue;

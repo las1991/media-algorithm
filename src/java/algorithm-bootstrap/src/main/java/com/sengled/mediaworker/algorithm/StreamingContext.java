@@ -52,7 +52,7 @@ public class StreamingContext {
 			throw new IllegalArgumentException("params exception.");
 		}
 		LOGGER.debug("parameters:" + this.getAlgorithm().getParameters());
-		action.feed(this, yuvImage, processorManager, listener);
+		action.feed(this, yuvImage, listener);
 	}
  
 

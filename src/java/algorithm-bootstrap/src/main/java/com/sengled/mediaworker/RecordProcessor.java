@@ -1,8 +1,9 @@
 package com.sengled.mediaworker;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
@@ -30,11 +31,14 @@ public class RecordProcessor implements IRecordProcessor {
 	private String kinesisShardId;
 	private AtomicLong recordCount;
 	private ProcessorManager processorManager;
+	private Future<?> future;
+	private ExecutorService executorService;
     
 	public RecordProcessor(AtomicLong recordCount,
 							ProcessorManager processorManager) {
 		this.recordCount = recordCount;
 		this.processorManager = processorManager;
+		this.executorService = Executors.newSingleThreadExecutor();
 	}
 
 	@Override
@@ -46,8 +50,30 @@ public class RecordProcessor implements IRecordProcessor {
 	@Override
 	public void processRecords(List<Record> records, IRecordProcessorCheckpointer checkpointer) {
 		LOGGER.info("received records...{}",records.size());
-		recordCount.addAndGet(records.size());		
-				
+		recordCount.addAndGet(records.size());	
+		long startTime = System.currentTimeMillis();
+		while(true){
+			if((future == null) || future.isDone() || future.isCancelled()){
+				future = executorService.submit(new Runnable() {
+					@Override
+					public void run() {
+						submitTask(records);
+					}
+				});
+				LOGGER.debug("submited records size:{}",records.size());
+				return;
+			}else{
+				LOGGER.info("wait submit sleep 1 sec...Had been waiting for {} sec",(System.currentTimeMillis() - startTime)/1000);
+				try {
+					Thread.sleep(1000);
+				} catch (InterruptedException e) {
+					LOGGER.error(e.getMessage(),e);
+				}
+			}
+		}
+
+	}
+	private void submitTask(List<Record> records) {
 		final Multimap<String, byte[]> dataMap = ArrayListMultimap.create();
 		long startTime = System.currentTimeMillis();
 		for (Record record : records) {

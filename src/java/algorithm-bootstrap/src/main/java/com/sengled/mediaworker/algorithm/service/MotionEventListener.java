@@ -1,9 +1,5 @@
 package com.sengled.mediaworker.algorithm.service;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.Date;
 
@@ -26,11 +22,13 @@ import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 
 @Component
-public class DynamodbEventListener {
-	private static final Logger LOGGER = LoggerFactory.getLogger(DynamodbEventListener.class);
+public class MotionEventListener {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventListener.class);
 
-	public final static String tableName = "m_algorithm_results";
-
+	
+	
+	@Value("${AWS_SERVICE_NAME_PREFIX}_${m_algorithm_results}")
+	public  String tableName;
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
 	private String queue;
 	@Value("${aws_screenshot_bucket}")
@@ -43,16 +41,6 @@ public class DynamodbEventListener {
 	@Autowired
 	private AmazonS3Template amazonS3Template;
 
-	/**
-	 * 物体识别
-	 * 
-	 * @param event
-	 */
-	@Subscribe
-	public void feedEvent(ObjectEvent event) {
-		// FIXME
-		LOGGER.info("ObjectEvent ...");
-	}
 
 	/**
 	 * motion事件

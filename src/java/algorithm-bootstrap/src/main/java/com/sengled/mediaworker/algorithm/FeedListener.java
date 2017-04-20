@@ -13,7 +13,7 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
-import com.sengled.mediaworker.algorithm.service.DynamodbEventListener;
+import com.sengled.mediaworker.algorithm.service.MotionEventListener;
 
 
 
@@ -23,7 +23,7 @@ public class FeedListener implements InitializingBean{
 	private final static int EVENT_BUS_THREAD_COUNT = 100;
 	private AsyncEventBus eventBus;
 	@Autowired
-	private DynamodbEventListener dynamodbEventListener;
+	private MotionEventListener dynamodbEventListener;
 	
 	public FeedListener(){
 		LOGGER.info("FeedListener init.EVENT_BUS_THREAD_COUNT:{}",EVENT_BUS_THREAD_COUNT);
