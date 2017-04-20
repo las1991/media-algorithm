@@ -80,7 +80,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				@Override
 				public YUVImageWrapper call() throws Exception {
 					LOGGER.debug("decode start...");
-					YUVImage yuvImage = decode(token, frame.getData());
+					YUVImage yuvImage = decode(token, frame.getNalData());
 					return new YUVImageWrapper(frame.getConfigs(), yuvImage);
 				}
 			});

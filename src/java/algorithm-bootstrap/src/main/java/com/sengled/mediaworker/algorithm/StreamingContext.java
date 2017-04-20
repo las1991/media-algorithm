@@ -2,6 +2,8 @@ package com.sengled.mediaworker.algorithm;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
 
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
@@ -9,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
+import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
@@ -21,6 +24,8 @@ import com.sengled.mediaworker.algorithm.action.OpenAction;
  */
 public class StreamingContext {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
+
+	private static final long  MOTION_INTERVAL_SCE = 15;
 
 	private String token;
 	/**
@@ -117,5 +122,19 @@ public class StreamingContext {
 	public void setStreamingContextManager(StreamingContextManager streamingContextManager) {
 		this.streamingContextManager = streamingContextManager;
 	}
-	
+	public boolean isSkipHandle(){
+		boolean isSkip = false;
+		Date lastMotionDate = getLastMotionDate();
+		if(lastMotionDate !=null){
+			long sinceLastMotion = getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000;
+			if(sinceLastMotion <= MOTION_INTERVAL_SCE){
+				LOGGER.info("Token:{},Since last time motion:{} sec <= {} sec",token,sinceLastMotion,MOTION_INTERVAL_SCE);
+				isSkip = true;
+			}else{
+				setLastMotionDate(null);
+				isSkip = false;
+			}
+		}
+		return isSkip;
+	}
 }

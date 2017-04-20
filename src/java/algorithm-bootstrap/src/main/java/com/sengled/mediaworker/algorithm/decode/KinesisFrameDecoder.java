@@ -41,7 +41,7 @@ public class KinesisFrameDecoder {
     public static class Frame {
     	
     	private Map<String, Object>  configs;
-        private byte[] data;
+        private byte[] nalData;
         ObjectMapper objectMapper = new ObjectMapper();
         
         public Frame(String string, byte[] dataBytes) {
@@ -50,7 +50,7 @@ public class KinesisFrameDecoder {
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 			}
-            this.data = dataBytes;
+            this.nalData = dataBytes;
         }
 
 		public Map<String, Object> getConfigs() {
@@ -61,12 +61,14 @@ public class KinesisFrameDecoder {
 			this.configs = configs;
 		}
 
-		public byte[] getData() {
-			return data;
+		public byte[] getNalData() {
+			return nalData;
 		}
 
-		public void setData(byte[] data) {
-			this.data = data;
-		}   
+		public void setNalData(byte[] yuvData) {
+			this.nalData = yuvData;
+		}
+
+   
     }
 }
