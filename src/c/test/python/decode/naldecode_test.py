@@ -16,8 +16,8 @@ if __name__ == "__main__":
     
     decode = H264NalDecoder(CALL_BACK_FUN(log_print))
 
-    #b = open('./../data/nal_data_1280x720', "rb").read()
-    b = open('./../data/nal_813_1280x720', "rb").read()
+    b = open('./../2828CD00B6061FD6B794B4EB4B7B1C0E.data', "rb").read()
+    #b = open('./../data/nal_813_1280x720', "rb").read()
     print ("b len = %d"%len(b))
     token = "ABCDE"
     decode_results = decode.decode(token, str(b), True)

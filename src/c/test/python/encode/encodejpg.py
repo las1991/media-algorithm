@@ -29,7 +29,8 @@ class EncodeJPG(object):
     def _encode_jpg(self, token, src_width, src_height, dst_width, dst_height, src_data, always_encode=False):
 
         encoder = ctypes.CDLL(str(os.environ['PYTHON_C_LIB']) + "/../clib/libjpg_encoder.so")
-        encoder.Init(self.log_callback)
+        encoder.SetLogCallback(self.log_callback)
+        encoder.Init()
         initialized = False
 
         frame = VideoFrame()

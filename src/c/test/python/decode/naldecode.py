@@ -25,7 +25,8 @@ class H264NalDecoder(object):
     def _decode_nal(self, token, nal, always_decode=False):
         
         decoder = ctypes.CDLL(str(os.environ['PYTHON_C_LIB']) + "/../clib/libnal_decoder.so")
-        decoder.Init(self.log_callback)
+        decoder.SetLogCallback(self.log_callback)
+        decoder.Init()
         initialized = False
         frame = VideoFrame()
         try:

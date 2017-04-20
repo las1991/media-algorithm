@@ -56,17 +56,18 @@ class my_void_p(ctypes.c_void_p):
 class MotionDetect(object):
 
     def __init__(self, log_callback):
-        self.motion = ctypes.CDLL(str(os.environ['PYTHON_C_LIB']) + "/../clib/libmotion.so")
+        self.motion = ctypes.CDLL(str(os.environ['PYTHON_C_LIB']) + "/../clib/libsengled_algorithm_base.so")
         #self.motion = ctypes.CDLL("./libmotion.so")
         #self.log_fun = CALL_BACK_FUN(log_print)
         self.log_fun = log_callback
 
     def init(self, token):
-        common_params = CommonParams(token, self.log_fun)
-        
-        init_fun = self.motion.create_algorithm_instance
+        #common_params = CommonParams(token, self.log_fun)
+        self.motion.SetLogCallback(self.log_fun)
+        init_fun = self.motion.create_instance
         init_fun.restype = my_void_p
-        self.context = init_fun(ctypes.byref(common_params))
+        #self.context = init_fun(ctypes.byref(common_params))
+        self.context = init_fun(str(token))
         self.token = token
         if not self.context:
             return None
@@ -76,6 +77,7 @@ class MotionDetect(object):
     def feed(self, frame, frame_width, frame_height, motion_params):
         
         recognition_result = Recognition_Result()
+        '''
         zone_count = motion_params["zone_count"]
         
         zone_ids = []
@@ -91,8 +93,9 @@ class MotionDetect(object):
            zone_pos.append(point_num)
         
         params = create_motion_params(int(motion_params["zone_count"]), zone_ids, zone_pos, int(motion_params["sensitivity"]))
-
-        self.motion.feed_frame(self.context, str(frame), frame_width, frame_height, ctypes.byref(params), ctypes.byref(recognition_result))
+        '''
+        #self.motion.feed(self.context, str(frame), frame_width, frame_height, ctypes.byref(params), ctypes.byref(recognition_result))
+        self.motion.feed(self.context, str(frame), frame_width, frame_height, motion_params, ctypes.byref(recognition_result))
         if int(recognition_result.bresult) == 0:
             return 0
         elif int(recognition_result.bresult) == 1:
@@ -103,5 +106,5 @@ class MotionDetect(object):
 
     def close(self):
 
-        self.motion.delete_algorithm_instance(self.context)
+        self.motion.delete_instance(self.context)
 
