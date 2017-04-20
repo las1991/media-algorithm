@@ -61,7 +61,7 @@ public class RecordProcessor implements IRecordProcessor {
 		recordCount.addAndGet(records.size());	
 		long startTime = System.currentTimeMillis();
 		
-        boolean isDown = false;
+        //boolean isDown = false;
  
 		while(true){
 			if((future == null) || future.isDone() || future.isCancelled()){
@@ -72,7 +72,7 @@ public class RecordProcessor implements IRecordProcessor {
 					}
 				});
 				LOGGER.debug("submited records size:{}",records.size());
-				isDown = true;
+				//isDown = true;
 				break;
 			}else{
 				LOGGER.info("wait submit sleep 1 sec...Had been waiting for {} sec",(System.currentTimeMillis() - startTime)/1000);
@@ -84,13 +84,13 @@ public class RecordProcessor implements IRecordProcessor {
 			}
 		}
  
-		if(isDown){
-	        // Checkpoint once every checkpoint interval
-	        if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
-	            checkpoint(checkpointer);
-	            nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
-	        }
-		}
+//		if(isDown){
+//	        // Checkpoint once every checkpoint interval
+//	        if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
+//	            checkpoint(checkpointer);
+//	            nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
+//	        }
+//		}
 
 	}
 	private synchronized void submitTask(List<Record> records) {
