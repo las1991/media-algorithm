@@ -51,7 +51,12 @@ public class JNIFunction {
     };
     
     public static void log(int level, String chars) {
-        LOGGER.info("[{}] JNI:{}", level, chars);
+    	int lastCharIndex = chars.length() - 1;
+		if (chars.length() > 0 && '\n' == chars.charAt(lastCharIndex)) {
+    		LOGGER.info("[{}] {}.(\\n ignored)", level, chars.substring(0, lastCharIndex - 1));
+    	} else {
+    		LOGGER.info("[{}] {}.", level, chars);
+    	}
     }
 
     // public native void log2(int level, String chars);
