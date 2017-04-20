@@ -1,7 +1,5 @@
 package com.sengled.mediaworker.algorithm.action;
 
-import java.util.Date;
-
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,7 +15,7 @@ import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.exception.FeedException;
 
 public class ExecAction extends Action {
-	private static final int  MOTION_INTERVAL = 15;
+	
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecAction.class);
 
 	@Override
@@ -29,15 +27,7 @@ public class ExecAction extends Action {
 		LOGGER.debug("Token:{},ExecAction feed",context.getToken());
 		
 		ProcessorManager processor = context.getProcessorManager();
-		Date lastMotionDate = context.getLastMotionDate();
-		if(lastMotionDate !=null){
-			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) <= MOTION_INTERVAL){
-				LOGGER.info("Token:{},Motion MOTION_INTERVAL:{} sec",token,MOTION_INTERVAL);
-				return;
-			}else{
-				context.setLastMotionDate(null);
-			}
-		}
+
 		
 		LOGGER.debug("Token:{},model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
 		

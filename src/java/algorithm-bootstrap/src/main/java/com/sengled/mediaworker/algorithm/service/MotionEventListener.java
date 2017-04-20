@@ -2,10 +2,14 @@ package com.sengled.mediaworker.algorithm.service;
 
 import java.util.Collections;
 import java.util.Date;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -22,8 +26,9 @@ import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 
 @Component
-public class MotionEventListener {
+public class MotionEventListener implements InitializingBean {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventListener.class);
+	private static final int THREAD_MAXCOUNT = 150;
 
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${m_algorithm_results}")
 	public  String tableName;
@@ -39,6 +44,18 @@ public class MotionEventListener {
 	@Autowired
 	private AmazonS3Template amazonS3Template;
 
+	private ThreadPoolExecutor pool;
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(THREAD_MAXCOUNT * 10);
+    	pool = new ThreadPoolExecutor(20
+										,THREAD_MAXCOUNT
+										,60L,TimeUnit.SECONDS
+										,queue
+										,new ThreadPoolExecutor.CallerRunsPolicy());
+	}
+	
 
 	/**
 	 * motion事件
@@ -47,6 +64,16 @@ public class MotionEventListener {
 	 */
 	@Subscribe
 	public void feedEvent(MotionEvent event) {
+		pool.submit(new Runnable() {
+			@Override
+			public void run() {
+				handle(event);
+			}
+		});
+	}
+
+
+	private void handle(MotionEvent event) {
 		LOGGER.info("Get MotionEvent:{}",event);
 		Date utcDateTime = event.getUtcDate();
 		byte[] jpgData = event.getJpgData();
@@ -61,11 +88,8 @@ public class MotionEventListener {
 			LOGGER.info("token:{},imageS3Path:{},utcDateTime:{},zoneId:{}",token,imageS3Path,utcDateTime,zoneId);
 			LOGGER.error("feedEvent failed.",e);
 		}
-		
 		LOGGER.info("Token:{},feedEvent finished",event.getToken());
 	}
-
-
 
 	private void saveS3(String imageS3Path,byte[] jpgData) throws Exception{
 		LOGGER.info("imageS3Path:" + imageS3Path);

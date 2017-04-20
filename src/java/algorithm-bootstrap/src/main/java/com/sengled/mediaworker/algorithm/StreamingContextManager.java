@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.algorithm;
 
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
@@ -14,6 +15,8 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 
 public class StreamingContextManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
+	
+	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 360 * 1000;
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap = new ConcurrentHashMap<>();
 
 	private Timer timer = new Timer();
@@ -25,6 +28,12 @@ public class StreamingContextManager {
 				LOGGER.info("streamingContextMap size:{}",streamingContextMap.size());
 			}
 		}, 10000, 5000);
+//		timer.schedule(new TimerTask() {
+//			@Override
+//			public void run() {
+//				cleanExpiredContext();
+//			}
+//		}, 1000, 1000);
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
@@ -68,5 +77,23 @@ public class StreamingContextManager {
 			}
 		}
 		return context;
+	}
+	private void cleanExpiredContext() {
+		for ( Entry<String, StreamingContext> entry : streamingContextMap.entrySet()) {
+			StreamingContext context = entry.getValue();
+			LOGGER.info("cleanExpireContext...");
+			long currentTime = System.currentTimeMillis();
+			if((currentTime - context.getLastUtcDateTime().getTime()) > CONTEXT_EXPIRE_TIME_MILLIS){
+				LOGGER.info("Token:{} Context expired clean...",context.getToken());
+				ProcessorManager manager = context.getProcessorManager();
+				try {
+					manager.close(context);
+				} catch (AlgorithmIntanceCloseException e) {
+					LOGGER.error(e.getMessage(),e);
+				}
+			}
+			
+		}
+
 	}
 }
