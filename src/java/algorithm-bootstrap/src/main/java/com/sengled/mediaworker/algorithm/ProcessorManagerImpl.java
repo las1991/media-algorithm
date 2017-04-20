@@ -31,8 +31,9 @@ import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
-	private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
+	
+	private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
 	private ExecutorService  decodethreadPool;
@@ -62,14 +63,15 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	private  void handleDatas(final String token,final Collection<byte[]> datas){
-		LOGGER.debug("handleDatas start...datas size:{}",datas.size());
+		LOGGER.debug("Token:{},handleDatas start...datas size:{}",token,datas.size());
 		final List<Future<YUVImageWrapper>> decodeTasks = new ArrayList<>(datas.size());
 		for (byte[] data : datas) {
 			final Frame frame;
 			try {
 				frame = KinesisFrameDecoder.decode(data);
-				LOGGER.debug("Frame Config:{}",frame.getConfigs());
+				LOGGER.debug("Token:{},Frame Config:{}",token,frame.getConfigs());
 			} catch (FrameDecodeException e) {
+				LOGGER.error("Token:{},KinesisFrameDecoder falied.",token);
 				LOGGER.error(e.getMessage(),e);
 				continue;
 			}

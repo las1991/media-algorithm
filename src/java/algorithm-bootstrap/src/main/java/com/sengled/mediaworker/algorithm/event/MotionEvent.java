@@ -14,6 +14,14 @@ public class MotionEvent {
 	private String zoneId;
 	
 	
+	public MotionEvent(String token, String model, Date utcDate, byte[] jpgData, String zoneId) {
+		this.token = token;
+		this.model = model;
+		this.utcDate = utcDate;
+		this.jpgData = jpgData;
+		this.zoneId = zoneId;
+	}
+	private MotionEvent(){}
 	public byte[] getJpgData() {
 		return jpgData;
 	}

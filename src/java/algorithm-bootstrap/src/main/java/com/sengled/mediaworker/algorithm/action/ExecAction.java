@@ -26,25 +26,24 @@ public class ExecAction extends Action {
 		final String token = context.getToken();
 		final String model = context.getModel();
 		
-		LOGGER.debug("ExecAction feed token:{}",context.getToken());
+		LOGGER.debug("Token:{},ExecAction feed",context.getToken());
 		
 		ProcessorManager processor = context.getProcessorManager();
 		Date lastMotionDate = context.getLastMotionDate();
 		if(lastMotionDate !=null){
 			if((context.getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000 ) <= MOTION_INTERVAL){
-				LOGGER.info("Motion MOTION_INTERVAL:{}s",MOTION_INTERVAL);
+				LOGGER.info("Token:{},Motion MOTION_INTERVAL:{} sec",token,MOTION_INTERVAL);
 				return;
 			}else{
 				context.setLastMotionDate(null);
 			}
 		}
 		
-		LOGGER.debug("token:{},model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
-		
+		LOGGER.debug("Token:{},model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
 		
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
 		if(StringUtils.isBlank(text)){
-			LOGGER.debug("Feed result NORESULT. token:{}",token);
+			LOGGER.debug("Token:{},Feed result NORESULT. ",token);
 			return;
 		}
 //		LOGGER.debug("token:{},model:{},feed return:{}", token, model, text);
@@ -61,12 +60,12 @@ public class ExecAction extends Action {
 		} catch (Exception e) {
 			throw new FeedException("feed failed.token:["+token+"]", e);
 		}
-		LOGGER.debug("token:{},model:{},OpenAction feed finisthed...", token, model);
+		LOGGER.debug("Token:{},model:{},OpenAction feed finisthed...", token, model);
 		
 	}
 	
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{
-		LOGGER.debug("feed result:{}",text);
+		LOGGER.debug("Token:{},Feed result:{}",context.getToken(),text);
 		
 		ProcessorManager processor = context.getProcessorManager();
 		byte[] jpgData = processor.encode(context.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
@@ -77,23 +76,18 @@ public class ExecAction extends Action {
 		
 		switch(model){
 			case "motion":
-				MotionEvent event = new MotionEvent();
-				event.setToken(token);
-				event.setModel(model);
-				event.setZoneId(zoneId);
-				event.setUtcDate(context.getLastUtcDateTime());
-				event.setJpgData(jpgData);
+				MotionEvent event = new MotionEvent(token,model,context.getLastUtcDateTime(),jpgData,zoneId);
 				listener.post(event);
-				//update motion time
 				context.setLastMotionDate(context.getLastUtcDateTime());
 				break;
 			case "object":
+				//FIXME
 				ObjectEvent objectEvent = new ObjectEvent();
 				objectEvent.setToken(token);
 				listener.post(objectEvent);
 				break;
 			default:
-				LOGGER.error("model:{} nonsupport",model);
+				LOGGER.error("Token:{},model:{} nonsupport",token,model);
 				return;
 		}
 	}

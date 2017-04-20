@@ -13,7 +13,7 @@ public class CloseAction extends Action{
 
 	@Override
 	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener)throws Exception {
-		LOGGER.debug("CloseAction feed token:{}",context.getToken());
+		LOGGER.debug("Token:{} CloseAction feed",context.getToken());
 		
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);

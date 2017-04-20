@@ -25,8 +25,6 @@ import com.sengled.mediaworker.sqs.SQSTemplate;
 public class MotionEventListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventListener.class);
 
-	
-	
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${m_algorithm_results}")
 	public  String tableName;
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
@@ -64,7 +62,7 @@ public class MotionEventListener {
 			LOGGER.error("feedEvent failed.",e);
 		}
 		
-		LOGGER.info("feedEvent finished token:{}",event.getToken());
+		LOGGER.info("Token:{},feedEvent finished",event.getToken());
 	}
 
 
@@ -84,7 +82,7 @@ public class MotionEventListener {
 	}
 	
 	private void putSqs(Date utcDateTime,String token,String zoneId,String imageS3Path) throws Exception{
-		LOGGER.info("putSqs: zoneId:{},token:{},imageS3Path:{} utcDate:{}",zoneId,token,imageS3Path,utcDateTime);
+		LOGGER.info("Token:{},putSqs: zoneId:{},imageS3Path:{} utcDate:{}",token,zoneId,imageS3Path,utcDateTime);
 		AlgorithmResult result = new AlgorithmResult();
 		result.setEventType(AlgorithmResult.SLS_EVENT_TYPE_MOTION);
 		result.setDataList(Collections.<ObjectRecognitionInnerDto>emptyList());

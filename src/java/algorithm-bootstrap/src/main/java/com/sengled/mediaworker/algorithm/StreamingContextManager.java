@@ -63,10 +63,10 @@ public class StreamingContextManager {
 			try {
 				processor.close(oldcontext);
 			} catch (AlgorithmIntanceCloseException e) {
+				LOGGER.error("Token:{},close failed.",token);
 				LOGGER.error(e.getMessage(),e);
 			}
 		}
-		
 		return context;
 	}
 }

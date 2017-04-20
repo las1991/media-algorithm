@@ -44,14 +44,14 @@ public class StreamingContext {
 		this.algorithm = algorithm;
 		this.processorManager = processorManager;
 		this.streamingContextManager = streamingContextManager;
-		LOGGER.debug("create StreamingContext token:{},algorithm:{}", token, algorithm);
+		LOGGER.debug("Token:{},create StreamingContext algorithm:{}", token, algorithm);
 	}
 
 	public void feed(final YUVImage yuvImage, final FeedListener listener) throws Exception {
 		if (yuvImage == null || listener == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		LOGGER.debug("parameters:" + this.getAlgorithm().getParameters());
+		LOGGER.debug("Token:{},parameters:{}" ,token,this.getAlgorithm().getParameters());
 		action.feed(this, yuvImage, listener);
 	}
  
@@ -60,6 +60,7 @@ public class StreamingContext {
 		try {
 			return DateUtils.parseDate(utcDate, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
 		} catch (ParseException e) {
+			LOGGER.error("Token:{},parseDate failed.",token);
 			LOGGER.error(e.getMessage(), e);
 		}
 		return null;
