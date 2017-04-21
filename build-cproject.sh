@@ -11,5 +11,5 @@ sh build.sh
 
 
 cd $basepath
-cp  $basepath/src/c/lib/*  $basepath/src/java/screenshot-assembly/libc/
-cp  $basepath/src/c/log4c/*.so  $basepath/src/java/screenshot-assembly/libc/
+cp  $basepath/src/c/lib/*  $basepath/src/java/algorithm-assembly/libc/
+cp  $basepath/src/c/log4c/*.so  $basepath/src/java/algorithm-assembly/libc/
