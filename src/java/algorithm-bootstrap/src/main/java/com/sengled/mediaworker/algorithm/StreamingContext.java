@@ -2,6 +2,7 @@ package com.sengled.mediaworker.algorithm;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
@@ -76,7 +77,7 @@ public class StreamingContext {
 		}
 		return null;
 	}
-	public boolean isSkipHandle(){
+	public boolean isSkipHandle(AtomicLong skipDelayedCount){
 		boolean isSkip = false;
 		//motion 检测间隔为15s
 		Date lastMotionDate = getLastMotionDate();
@@ -97,6 +98,7 @@ public class StreamingContext {
 			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
 				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
 				isSkip = true;
+				skipDelayedCount.addAndGet(1);
 			}
 		}
 		return isSkip;

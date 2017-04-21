@@ -127,16 +127,16 @@ footer {
           </div><!--/row-->
           
           <div class="row">
-            <div class="col-6 col-sm-4 col-lg-4">
-              <h2>count</h2>
-              <p id="count"></p>
-              <p class='col-lg-9 text-left ' id="count-legend"></p>
-            </div>
-
-            <div class="col-6 col-sm-4 col-lg-4">
+            <div class="col-6 col-sm-4 col-lg-6">
               <h2>recordCount</h2>
               <p id="recordCount"></p>
-              <p class='col-lg-9 text-left ' id="recordCount-legend"></p>
+              <p class='col-lg-4 text-left ' id="recordCount-legend"></p>
+            </div>
+            
+            <div class="col-4 col-sm-4 col-lg-6">
+              <h2>delayedCount</h2>
+              <p id="delayedCount"></p>
+              <p class='col-lg-9 text-left ' id="delayedCount-legend"></p>
             </div>
           </div><!--/row-->
 
@@ -221,27 +221,7 @@ footer {
       });      
     });
      
-    d3.json('/graphics/gauge?name=algorithm.okCount&column=value', function(okCount){
-        d3.json('/graphics/gauge?name=algorithm.errorCount&column=value', function(errorCount){
-           data = new Array();
-           data.push(MG.convert.date(okCount, 'date', '%Y-%m-%d %H:%M:%S'));
-           data.push(MG.convert.date(errorCount, 'date', '%Y-%m-%d %H:%M:%S'));
-           
-           MG.data_graphic({
-             title : "单位：计数",
-             description : "",
-             data : data,
-             width : mg_width ,
-             height : mg_height,
-             right :mg_right ,
-             left :mg_left,
-             target : document.getElementById('count'),
-             legend: ['okCount', 'errorCount'],
-             legend_target: '#count-legend',
-             aggregate_rollover: true
-           });
-        });      
-      });
+
       
     d3.json('/graphics/gauge?name=algorithm.recordCount&column=value', function(recordCount){
            data = new Array();
@@ -262,7 +242,24 @@ footer {
            });
       });
 
-
+    d3.json('/graphics/gauge?name=algorithm.delayedCount&column=value', function(delayedCount){
+        data = new Array();
+        data.push(MG.convert.date(delayedCount, 'date', '%Y-%m-%d %H:%M:%S'));
+        
+        MG.data_graphic({
+          title : "单位：计数",
+          description : "",
+          data : data,
+          width : mg_width ,
+          height : mg_height,
+          right :mg_right ,
+          left :mg_left,
+          target : document.getElementById('delayedCount'),
+          legend: ['delayedCount'],
+          legend_target: '#delayedCount-legend',
+          aggregate_rollover: true
+        });
+   });
     
 
      </script>

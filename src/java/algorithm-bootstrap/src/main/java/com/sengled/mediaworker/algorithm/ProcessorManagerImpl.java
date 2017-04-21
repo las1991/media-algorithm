@@ -9,12 +9,16 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.MetricRegistry;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.JnaInterface;
 import com.sengled.media.interfaces.YUVImage;
@@ -32,16 +36,29 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
+	private final static String METRICS_NAME = "algorithm";
+	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
 	private StreamingContextManager streamingContextManager;
 	private FeedListener feedListener;
+	private AtomicLong delayedCount;
 	
+	@Autowired
+    private MetricRegistry metricRegistry;
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		jnaInterface = new JnaInterface();
 		threadPool = Executors.newSingleThreadExecutor();
 		streamingContextManager = new StreamingContextManager();
+		delayedCount = new AtomicLong();
+        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "delayedCount"), new Gauge<Long>(){
+            @Override
+            public Long getValue() {
+                return delayedCount.getAndSet(0);
+            }
+        }); 
+		
 	}
 
 	public Future<?> submit(String token, Collection<byte[]> datas) {
@@ -97,7 +114,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				context.setLastTimeUpdateDate(context.getUpdateDate());
 				context.setUpdateDate(new Date());
 				
-				if(context.isSkipHandle()){
+				if(context.isSkipHandle(delayedCount)){
 					continue;
 				}
 				YUVImage yuvImage;
