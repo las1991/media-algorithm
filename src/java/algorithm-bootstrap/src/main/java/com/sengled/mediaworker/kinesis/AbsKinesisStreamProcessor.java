@@ -19,13 +19,6 @@ import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionIn
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
 
-
-/**
- * KinesisStream Processor 
- * @author liwei
- * @Date 2017年2月28日 上午11:25:25
- * @Desc 
- */
 public abstract class AbsKinesisStreamProcessor implements ApplicationListener<ApplicationEvent>{
     private static final Logger LOGGER = LoggerFactory.getLogger(AbsKinesisStreamProcessor.class);
     public static final int SOCKET_TIMEOUT = 30 * 1000;
