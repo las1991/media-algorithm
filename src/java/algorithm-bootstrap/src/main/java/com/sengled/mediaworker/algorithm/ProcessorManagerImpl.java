@@ -1,16 +1,13 @@
 package com.sengled.mediaworker.algorithm;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.TimeUnit;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +33,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
-	private ExecutorService  decodethreadPool;
 	private StreamingContextManager streamingContextManager;
 	private FeedListener feedListener;
 	
@@ -44,7 +40,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	public void afterPropertiesSet() throws Exception {
 		jnaInterface = new JnaInterface();
 		threadPool = Executors.newSingleThreadExecutor();
-		decodethreadPool = Executors.newSingleThreadExecutor();
 		streamingContextManager = new StreamingContextManager();
 	}
 
@@ -64,7 +59,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	
 	private  void handleDatas(final String token,final Collection<byte[]> datas){
 		LOGGER.debug("Token:{},handleDatas start...datas size:{}",token,datas.size());
-		final List<Future<YUVImageWrapper>> decodeTasks = new ArrayList<>(datas.size());
 		for (byte[] data : datas) {
 			final Frame frame;
 			try {
@@ -75,33 +69,11 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				LOGGER.error(e.getMessage(),e);
 				continue;
 			}
-			 
-			Future<YUVImageWrapper> task = decodethreadPool.submit(new Callable<YUVImageWrapper>() {
-				@Override
-				public YUVImageWrapper call() throws Exception {
-					LOGGER.debug("decode start...");
-					YUVImage yuvImage = decode(token, frame.getNalData());
-					return new YUVImageWrapper(frame.getConfigs(), yuvImage);
-				}
-			});
-			decodeTasks.add(task);
-		}
-		
-		for (Future<YUVImageWrapper> decodeTask : decodeTasks) {
-			try {
-				LOGGER.debug("wait decode task...");
-				YUVImageWrapper yuvImageWrapper = decodeTask.get();
-				Map<String, Object> config = yuvImageWrapper.getConfigs();
-				YUVImage image = yuvImageWrapper.getYuvImage();
-				actionHandle(token,config,image);
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(),e);
-				continue;
-			} 
+			actionHandle(token, frame.getConfigs(), frame.getNalData());
 		}
 	}
 	
-	private void actionHandle(String token,Map<String, Object> config, final YUVImage yuvImage) {
+	private void actionHandle(String token,Map<String, Object> config, final byte[] nalData) {
 		verifiyConfig(config);
 		for (String model : MODEL_LIST) {
 			if (config.containsKey(model)) {
@@ -114,10 +86,20 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					LOGGER.error("skip token:{} model:{}",token,model);
 					continue;
 				}
- 
 				String utcDate = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");
 				context.setUtcDate(utcDate);
+				if(context.isSkipHandle()){
+					continue;
+				}
+				YUVImage yuvImage;
+				try {
+					yuvImage = decode(token, nalData);
+				} catch (DecodeException e1) {
+					LOGGER.error("Token:{} decode failed. skip...",token);
+					LOGGER.error(e1.getMessage(),e1);
+					continue;
+				}
 				
 				switch (action) {
 					case "open":
@@ -139,7 +121,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					LOGGER.error(e.getMessage(),e);
 					continue;
 				}
-				
 			}
 		}
 	}

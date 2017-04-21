@@ -28,12 +28,12 @@ public class StreamingContextManager {
 				LOGGER.info("streamingContextMap size:{}",streamingContextMap.size());
 			}
 		}, 10000, 5000);
-//		timer.schedule(new TimerTask() {
-//			@Override
-//			public void run() {
-//				cleanExpiredContext();
-//			}
-//		}, 1000, 1000);
+		timer.schedule(new TimerTask() {
+			@Override
+			public void run() {
+				cleanExpiredContext();
+			}
+		}, 1000, 1000);
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
