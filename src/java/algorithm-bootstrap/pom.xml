@@ -42,11 +42,6 @@
         <!-- spring boot -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-redis</artifactId>
-            <version>${spring-boot.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
             <version>${spring-boot.version}</version>
             <exclusions>
@@ -65,27 +60,23 @@
                     <groupId>org.eclipse.jetty.websocket</groupId>
                     <artifactId>*</artifactId>
                 </exclusion>
-                <exclusion>
-                	<artifactId>jetty-webapp</artifactId>
-                	<groupId>org.eclipse.jetty</groupId>
-                </exclusion>
-                <exclusion>
-                	<artifactId>jetty-servlets</artifactId>
-                	<groupId>org.eclipse.jetty</groupId>
-                </exclusion>
             </exclusions>
         </dependency>
-		<dependency>
-		  <groupId>org.eclipse.jetty.aggregate</groupId>
-		  <artifactId>jetty-all</artifactId>
-          <version>${jetty.version}</version>
-          <exclusions>
-          	<exclusion>
-          		<artifactId>javax.websocket-api</artifactId>
-          		<groupId>javax.websocket</groupId>
-          	</exclusion>
-          </exclusions>
-		</dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-redis</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-servlet</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.jetty</groupId>
+            <artifactId>jetty-server</artifactId>
+            <version>${jetty.version}</version>
+        </dependency>
 
         <!-- spring -->
         <dependency>
