@@ -23,15 +23,20 @@ import com.sengled.mediaworker.algorithm.action.OpenAction;
 public class StreamingContext {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
 
-	private static final long  MOTION_INTERVAL_SCE = 15;
+	//Motioné—´éš”æ—¶é—´
+	private static final long  MOTION_INTERVAL_TIME_MSCE = 15 * 1000;
+	//åŒ…æœ€å¤§å»¶æ—¶
+	private static final long  MAX_DELAYED_TIME_MSCE = 10 * 1000;
 
 	private String token;
 	/**
 	 * @see @RecordProcessor.MODEL_LIST
 	 */
 	private String model;
-	private String utcDate;
+	private String utcDateTime;
 	private Date lastMotionDate;
+	private Date lastTimeUpdateDate;
+	private Date updateDate;
 	private Algorithm algorithm;
 	private Action action;
 	private ProcessorManager processorManager;
@@ -60,11 +65,11 @@ public class StreamingContext {
  
 
 	public Date getLastUtcDateTime() {
-		if(StringUtils.isBlank(utcDate)){
+		if(StringUtils.isBlank(utcDateTime)){
 			return null;
 		}
 		try {
-			return DateUtils.parseDate(utcDate, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
+			return DateUtils.parseDate(utcDateTime, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
 		} catch (ParseException e) {
 			LOGGER.error("Token:{},parseDate failed.",token);
 			LOGGER.error(e.getMessage(), e);
@@ -73,22 +78,24 @@ public class StreamingContext {
 	}
 	public boolean isSkipHandle(){
 		boolean isSkip = false;
-		//15ÃëÒÔÄÚµÄmotion Ìø¹ý
+		//motion æ£€æµ‹é—´éš”ä¸º15s
 		Date lastMotionDate = getLastMotionDate();
-		if(lastMotionDate !=null){
-			long sinceLastMotion = (getLastUtcDateTime().getTime() - lastMotionDate.getTime())/1000;
-			if(sinceLastMotion <= MOTION_INTERVAL_SCE){
-				LOGGER.info("Token:{},Since last time motion:{} sec <= {} sec",token,sinceLastMotion,MOTION_INTERVAL_SCE);
+		Date lastUtcDateTime = getLastUtcDateTime();
+		if(lastMotionDate !=null && lastUtcDateTime !=null){
+			long sinceLastMotion = (lastUtcDateTime.getTime() - lastMotionDate.getTime());
+			if(sinceLastMotion <= MOTION_INTERVAL_TIME_MSCE){
+				LOGGER.debug("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
 				isSkip = true;
 			}else{
 				setLastMotionDate(null);
 			}
 		}
-		//10ÃëÒÔÇ°µÄÊý¾Ý£¬Ìø¹ý
-		long currentTime = System.currentTimeMillis();
+		//è¿‡æœŸæ•°æ®
 		Date lastUtcDate = getLastUtcDateTime();
-		if(lastUtcDate !=null){
-			if( (currentTime - lastUtcDate.getTime()) >= 10000){
+		if(lastUtcDate !=null && updateDate !=null){
+			long delayedTime = updateDate.getTime() - lastUtcDate.getTime();
+			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
+				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
 				isSkip = true;
 			}
 		}
@@ -114,12 +121,12 @@ public class StreamingContext {
 		return this.model;
 	}
 
-	public String getUtdDate() {
-		return utcDate;
+	public String getUtcDateTime() {
+		return utcDateTime;
 	}
 
-	public void setUtcDate(String utcDate) {
-		this.utcDate = utcDate;
+	public void setUtcDateTime(String utcDateTime) {
+		this.utcDateTime = utcDateTime;
 	}
 
 	public Date getLastMotionDate() {
@@ -144,6 +151,22 @@ public class StreamingContext {
 
 	public void setStreamingContextManager(StreamingContextManager streamingContextManager) {
 		this.streamingContextManager = streamingContextManager;
+	}
+
+	public Date getUpdateDate() {
+		return updateDate;
+	}
+
+	public void setUpdateDate(Date updateDate) {
+		this.updateDate = updateDate;
+	}
+
+	public Date getLastTimeUpdateDate() {
+		return lastTimeUpdateDate;
+	}
+
+	public void setLastTimeUpdateDate(Date lastTimeUpdateDate) {
+		this.lastTimeUpdateDate = lastTimeUpdateDate;
 	}
 
 	

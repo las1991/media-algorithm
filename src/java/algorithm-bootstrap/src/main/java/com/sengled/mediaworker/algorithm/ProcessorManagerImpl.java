@@ -2,6 +2,7 @@ package com.sengled.mediaworker.algorithm;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
@@ -89,9 +90,13 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					LOGGER.error("skip token:{} model:{}",token,model);
 					continue;
 				}
-				String utcDate = (String) config.get("utcDateTime");
+				String utcDateTime = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");
-				context.setUtcDate(utcDate);
+				context.setUtcDateTime(utcDateTime);
+				
+				context.setLastTimeUpdateDate(context.getUpdateDate());
+				context.setUpdateDate(new Date());
+				
 				if(context.isSkipHandle()){
 					continue;
 				}
