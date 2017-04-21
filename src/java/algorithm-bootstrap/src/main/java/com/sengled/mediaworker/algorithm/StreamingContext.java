@@ -2,16 +2,14 @@ package com.sengled.mediaworker.algorithm;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.Timer;
-import java.util.TimerTask;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
@@ -43,7 +41,7 @@ public class StreamingContext {
 	public final Action execAction = new ExecAction();
 	public final Action closeAction = new CloseAction();
 	
-	public StreamingContext(String token, String model,Algorithm algorithm,ProcessorManager processorManager,StreamingContextManager streamingContextManager) {
+	StreamingContext(String token, String model,Algorithm algorithm,ProcessorManager processorManager,StreamingContextManager streamingContextManager) {
 		this.token = token;
 		this.model = model;
 		this.algorithm = algorithm;
@@ -62,6 +60,9 @@ public class StreamingContext {
  
 
 	public Date getLastUtcDateTime() {
+		if(StringUtils.isBlank(utcDate)){
+			return null;
+		}
 		try {
 			return DateUtils.parseDate(utcDate, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
 		} catch (ParseException e) {
@@ -70,7 +71,29 @@ public class StreamingContext {
 		}
 		return null;
 	}
-	
+	public boolean isSkipHandle(){
+		boolean isSkip = false;
+		//15秒以内的motion 跳过
+		Date lastMotionDate = getLastMotionDate();
+		if(lastMotionDate !=null){
+			long sinceLastMotion = (getLastUtcDateTime().getTime() - lastMotionDate.getTime())/1000;
+			if(sinceLastMotion <= MOTION_INTERVAL_SCE){
+				LOGGER.info("Token:{},Since last time motion:{} sec <= {} sec",token,sinceLastMotion,MOTION_INTERVAL_SCE);
+				isSkip = true;
+			}else{
+				setLastMotionDate(null);
+			}
+		}
+		//10秒以前的数据，跳过
+		long currentTime = System.currentTimeMillis();
+		Date lastUtcDate = getLastUtcDateTime();
+		if(lastUtcDate !=null){
+			if( (currentTime - lastUtcDate.getTime()) >= 10000){
+				isSkip = true;
+			}
+		}
+		return isSkip;
+	}
 	public String getToken() {
 		return token;
 	}
@@ -122,19 +145,6 @@ public class StreamingContext {
 	public void setStreamingContextManager(StreamingContextManager streamingContextManager) {
 		this.streamingContextManager = streamingContextManager;
 	}
-	public boolean isSkipHandle(){
-		boolean isSkip = false;
-		Date lastMotionDate = getLastMotionDate();
-		if(lastMotionDate !=null){
-			long sinceLastMotion = getLastUtcDateTime().getTime()/1000 - lastMotionDate.getTime()/1000;
-			if(sinceLastMotion <= MOTION_INTERVAL_SCE){
-				LOGGER.info("Token:{},Since last time motion:{} sec <= {} sec",token,sinceLastMotion,MOTION_INTERVAL_SCE);
-				isSkip = true;
-			}else{
-				setLastMotionDate(null);
-				isSkip = false;
-			}
-		}
-		return isSkip;
-	}
+
+	
 }

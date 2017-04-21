@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.util.Date;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
@@ -16,9 +17,9 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 public class StreamingContextManager {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
 	
-	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 360 * 1000;
+	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 10 * 1000;
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap = new ConcurrentHashMap<>();
-
+	
 	private Timer timer = new Timer();
 	
 	public StreamingContextManager(){
@@ -79,21 +80,24 @@ public class StreamingContextManager {
 		return context;
 	}
 	private void cleanExpiredContext() {
+		LOGGER.info("cleanExpireContext...streamingContextMap size:{}",streamingContextMap.size());
 		for ( Entry<String, StreamingContext> entry : streamingContextMap.entrySet()) {
 			StreamingContext context = entry.getValue();
-			LOGGER.info("cleanExpireContext...");
 			long currentTime = System.currentTimeMillis();
-			if((currentTime - context.getLastUtcDateTime().getTime()) > CONTEXT_EXPIRE_TIME_MILLIS){
+			Date  lastUtcDateTime = context.getLastUtcDateTime();
+			LOGGER.info("Token:{},currentTime£º{},lastUtcDateTime:{}",entry.getKey(),new Date(currentTime),lastUtcDateTime);
+			if(lastUtcDateTime == null){
+				return;
+			}
+			if((currentTime - lastUtcDateTime.getTime() ) > CONTEXT_EXPIRE_TIME_MILLIS){
 				LOGGER.info("Token:{} Context expired clean...",context.getToken());
-				ProcessorManager manager = context.getProcessorManager();
+				StreamingContextManager manager = context.getStreamingContextManager();
 				try {
 					manager.close(context);
 				} catch (AlgorithmIntanceCloseException e) {
 					LOGGER.error(e.getMessage(),e);
 				}
 			}
-			
 		}
-
 	}
 }

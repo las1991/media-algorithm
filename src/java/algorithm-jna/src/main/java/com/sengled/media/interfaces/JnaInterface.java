@@ -191,9 +191,9 @@ public class JnaInterface implements Function{
 		LOGGER.debug("algorithmModelId:{}",algorithmModelId);
 		
 		try {
-			Pointer pointer = pointerMap.get(algorithmModelId);
+			Pointer pointer = pointerMap.remove(algorithmModelId);
 			if( null != pointer){
-				algorithmLibrary.delete_instance(pointer);	
+				algorithmLibrary.delete_instance(pointer);
 			}
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);

@@ -74,7 +74,10 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	private void actionHandle(String token,Map<String, Object> config, final byte[] nalData) {
-		verifiyConfig(config);
+		if( !verifiyConfig(config)){
+			LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
+			return;
+		}
 		for (String model : MODEL_LIST) {
 			if (config.containsKey(model)) {
 				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
