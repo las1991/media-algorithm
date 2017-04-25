@@ -32,7 +32,11 @@ public class StreamingContextManager {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				cleanExpiredContext();
+				try {
+					cleanExpiredContext();
+				} catch (Exception e) {
+					LOGGER.error(e.getMessage(),e);
+				}
 			}
 		}, 60000, 60000);
 	}

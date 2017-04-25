@@ -42,7 +42,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private ExecutorService  threadPool;
 	private StreamingContextManager streamingContextManager;
 	private FeedListener feedListener;
-	private AtomicLong delayedCount;
+	private AtomicLong dataDelayedCount;
 	
 	@Autowired
     private MetricRegistry metricRegistry;
@@ -51,11 +51,11 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		jnaInterface = new JnaInterface();
 		threadPool = Executors.newWorkStealingPool();
 		streamingContextManager = new StreamingContextManager();
-		delayedCount = new AtomicLong();
-        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "delayedCount"), new Gauge<Long>(){
+		dataDelayedCount = new AtomicLong();
+        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "dataDelayedCount"), new Gauge<Long>(){
             @Override
             public Long getValue() {
-                return delayedCount.getAndSet(0);
+                return dataDelayedCount.getAndSet(0);
             }
         }); 
 		
@@ -114,7 +114,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				context.setLastTimeUpdateDate(context.getUpdateDate());
 				context.setUpdateDate(new Date());
 				
-				if(context.isSkipHandle(delayedCount)){
+				if(context.isSkipHandle(dataDelayedCount)){
 					continue;
 				}
 				YUVImage yuvImage;
