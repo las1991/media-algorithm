@@ -45,7 +45,7 @@ public class RecordProcessor implements IRecordProcessor {
 							ProcessorManager processorManager) {
 		this.recordCount = recordCount;
 		this.processorManager = processorManager;
-		this.executorService = Executors.newWorkStealingPool();
+		this.executorService = Executors.newSingleThreadExecutor();
 	}
 
 	@Override
@@ -128,6 +128,7 @@ public class RecordProcessor implements IRecordProcessor {
 		if(reason.equals(ShutdownReason.TERMINATE)){
 			checkpoint(checkpointer);
 		}
+		shutdownNow();
 	}
     private void checkpoint(IRecordProcessorCheckpointer checkpointer) {
         LOGGER.info("Checkpointing shard " + kinesisShardId);
@@ -143,5 +144,9 @@ public class RecordProcessor implements IRecordProcessor {
             // This indicates an issue with the DynamoDB table (check for table, provisioned IOPS).
         	LOGGER.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
         }
+    }
+    private void shutdownNow(){
+    	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
+    	executorService.shutdownNow();
     }
 }

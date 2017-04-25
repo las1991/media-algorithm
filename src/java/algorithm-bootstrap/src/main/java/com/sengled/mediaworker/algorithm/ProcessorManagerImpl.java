@@ -49,7 +49,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		jnaInterface = new JnaInterface();
-		threadPool = Executors.newSingleThreadExecutor();
+		threadPool = Executors.newWorkStealingPool();
 		streamingContextManager = new StreamingContextManager();
 		delayedCount = new AtomicLong();
         metricRegistry.register( MetricRegistry.name(METRICS_NAME, "delayedCount"), new Gauge<Long>(){
@@ -182,6 +182,10 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		Algorithm algorithm = context.getAlgorithm();
 		jnaInterface.close(algorithm.getAlgorithmModelId());
 		
+	}
+	@Override
+	public void shutdown(){
+		threadPool.shutdownNow();
 	}
 	
 	public static class YUVImageWrapper {

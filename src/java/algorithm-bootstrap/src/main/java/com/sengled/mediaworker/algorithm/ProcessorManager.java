@@ -18,4 +18,5 @@ public interface ProcessorManager {
 	void   close(StreamingContext context)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;
 	byte[] encode(String token,byte[] yuvData,int width,int  height,int  dstWidth,int  dstHeight)throws EncodeException;
+	void shutdown();
 }

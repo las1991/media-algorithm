@@ -34,15 +34,12 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
     FeedListener feedListener;
     @Autowired
     private ProcessorManager processorManager;
-    
-    private ExecutorService executor;
     private AtomicLong recordCount;
     
 
 	@Override
 	public void afterPropertiesSet() throws Exception {
     	LOGGER.info("RecordProcessorFactory afterPropertiesSet...");
-        executor = Executors.newWorkStealingPool();
 		recordCount = new AtomicLong();
 		processorManager.setFeedListener(feedListener);
         metricRegistry.register( MetricRegistry.name(METRICS_NAME, "recordCount"), new Gauge<Long>(){
@@ -68,10 +65,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
     	return  new RecordProcessor(recordCount,processorManager);
     }
     public void shutdown(){
-    	try {
-    		executor.shutdown();
-		} catch (Exception e) {
-			LOGGER.error(e.getMessage(),e);
-		}
+    	LOGGER.info("processorManager shutdown.");
+    	processorManager.shutdown();
     }
 }
