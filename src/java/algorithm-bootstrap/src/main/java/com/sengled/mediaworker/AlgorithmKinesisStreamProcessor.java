@@ -9,7 +9,7 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextClosedEvent;
 
 import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorFactory;
+import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.sengled.mediaworker.kinesis.AbsKinesisStreamProcessor;
 /**
  * ScreenShot KinesisStream Processor

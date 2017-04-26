@@ -36,29 +36,17 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
-	private final static String METRICS_NAME = "algorithm";
 	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
-	private StreamingContextManager streamingContextManager;
 	private FeedListener feedListener;
-	private AtomicLong dataDelayedCount;
-	
 	@Autowired
-    private MetricRegistry metricRegistry;
+    private StreamingContextManager streamingContextManager;
+	
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		jnaInterface = new JnaInterface();
-		threadPool = Executors.newWorkStealingPool();
-		streamingContextManager = new StreamingContextManager();
-		dataDelayedCount = new AtomicLong();
-        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "dataDelayedCount"), new Gauge<Long>(){
-            @Override
-            public Long getValue() {
-                return dataDelayedCount.getAndSet(0);
-            }
-        }); 
-		
+		threadPool = Executors.newWorkStealingPool();		
 	}
 
 	public Future<?> submit(String token, Collection<byte[]> datas) {
@@ -76,7 +64,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	private  void handleDatas(final String token,final Collection<byte[]> datas){
-		LOGGER.debug("Token:{},handleDatas start...datas size:{}",token,datas.size());
+		LOGGER.debug("Token:{},handleDatas begin. datas size:{}",token,datas.size());
 		for (byte[] data : datas) {
 			final Frame frame;
 			try {
@@ -104,17 +92,19 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, modelConfig);
 				} catch (Exception e) {
 					LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
-					LOGGER.error("skip token:{} model:{}",token,model);
+					LOGGER.error("Token:{} model:{} skip.",token,model);
 					continue;
 				}
 				String utcDateTime = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");
-				context.setUtcDateTime(utcDateTime);
-				
+				//保存上次UTC时间
 				context.setLastTimeUpdateDate(context.getUpdateDate());
+				//更新本次UTC时间
+				context.setUtcDateTime(utcDateTime);
+				//更新时间
 				context.setUpdateDate(new Date());
 				
-				if(context.isSkipHandle(dataDelayedCount)){
+				if(context.isSkipHandle()){
 					continue;
 				}
 				YUVImage yuvImage;
@@ -137,7 +127,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 						context.setAction(context.closeAction);
 						break;
 					default:
-						LOGGER.error("action:{} not supported", action);
+						LOGGER.error("Token:{},action:{} not supported", token,action);
 						continue;
 				}
 				try {
@@ -157,9 +147,9 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private boolean verifiyConfig(Map<String, Object> config){
 		LOGGER.debug("verifiyConfig ...{}",config);
 		boolean  verifiyResult = 
-				null != config ||
-				! config.isEmpty() ||
-				config.containsKey("utcDateTime") ||
+				null != config &&
+				! config.isEmpty() &&
+				config.containsKey("utcDateTime") &&
 				config.containsKey("action");
 		
 		return verifiyResult;

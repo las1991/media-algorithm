@@ -2,7 +2,6 @@ package com.sengled.media.interfaces;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
-import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -18,9 +17,6 @@ import com.sengled.media.jna.jpg_encoder.JPGFrame;
 import com.sengled.media.jna.jpg_encoder.Jpg_encoderLibrary;
 import com.sengled.media.jna.nal_decoder.Nal_decoderLibrary;
 import com.sengled.media.jna.nal_decoder.YUVFrame;
-import com.sengled.media.jna.sengled_algorithm.Sengled_algorithmLibrary;
-import com.sengled.media.jna.sengled_algorithm.algorithm_result;
-import com.sengled.media.jna.sengled_algorithm.common_params;
 import com.sengled.media.jna.sengled_algorithm_base.Sengled_algorithm_baseLibrary;
 import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result;
 import com.sengled.media.jni.JNIFunction;
