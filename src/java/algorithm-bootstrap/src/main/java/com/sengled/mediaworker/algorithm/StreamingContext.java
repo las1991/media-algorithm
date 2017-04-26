@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
+import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
@@ -42,25 +43,31 @@ public class StreamingContext {
 	private Action action;
 	private ProcessorManager processorManager;
 	private StreamingContextManager streamingContextManager;
+	private RecordCounter recordCounter;
 	
 	public final Action openAction = new OpenAction();
 	public final Action execAction = new ExecAction();
 	public final Action closeAction = new CloseAction();
 	
-	StreamingContext(String token, String model,Algorithm algorithm,ProcessorManager processorManager,StreamingContextManager streamingContextManager) {
+	StreamingContext(String token, String model,
+					Algorithm algorithm,
+					ProcessorManager processorManager,
+					RecordCounter recordCounter,
+					StreamingContextManager streamingContextManager
+					) {
 		this.token = token;
 		this.model = model;
 		this.algorithm = algorithm;
 		this.processorManager = processorManager;
 		this.streamingContextManager = streamingContextManager;
-		LOGGER.debug("Token:{},create StreamingContext algorithm:{}", token, algorithm);
+		this.recordCounter = recordCounter;
+		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
 	}
 
 	public void feed(final YUVImage yuvImage, final FeedListener listener) throws Exception {
 		if (yuvImage == null || listener == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		LOGGER.debug("Token:{},parameters:{}" ,token,this.getAlgorithm().getParameters());
 		action.feed(this, yuvImage, listener);
 	}
  
@@ -77,7 +84,7 @@ public class StreamingContext {
 		}
 		return null;
 	}
-	public boolean isSkipHandle(AtomicLong skipDelayedCount){
+	public boolean isSkipHandle(){
 		boolean isSkip = false;
 		//motion 检测间隔为15s
 		Date lastMotionDate = getLastMotionDate();
@@ -98,7 +105,7 @@ public class StreamingContext {
 			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
 				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
 				isSkip = true;
-				skipDelayedCount.addAndGet(1);
+				recordCounter.getDataDelayedCount().addAndGet(1);
 			}
 		}
 		return isSkip;

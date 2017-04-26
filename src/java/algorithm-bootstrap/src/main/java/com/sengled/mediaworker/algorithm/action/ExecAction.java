@@ -36,17 +36,9 @@ public class ExecAction extends Action {
 			LOGGER.debug("Token:{},Feed result NORESULT. ",token);
 			return;
 		}
-//		LOGGER.debug("token:{},model:{},feed return:{}", token, model, text);
-//		if (Action.NULL_ALGORITHM_MODEL.equals(text)) {// feed 返回ERROR 时，重新初始化算法模型，丢弃本次接收的数据不再调用feed
-//			LOGGER.error("Feed result "+Action.NULL_ALGORITHM_MODEL+". run reloadAlgorithmModel");
-//			throw new StreamingContextNotFoundException("NULL ALGORITHM MODEL");
-//		}
-//		if (Action.NORESULT.equals(text)) {
-//			LOGGER.debug("Feed result NORESULT. token:{}",token);
-//			return;
-//		}
+
 		try {
-			handleListenerEvent(text,context, yuvImage, listener);
+			handleListenerEvent(text.trim(),context, yuvImage, listener);
 		} catch (Exception e) {
 			throw new FeedException("feed failed.token:["+token+"]", e);
 		}

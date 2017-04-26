@@ -9,26 +9,34 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
+import com.sengled.mediaworker.RecordCounter;
 
-public class StreamingContextManager {
+@Component
+public class StreamingContextManager implements InitializingBean {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
 	
 	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 60 * 1000;
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap = new ConcurrentHashMap<>();
-	
 	private Timer timer = new Timer();
 	
-	public StreamingContextManager(){
+	@Autowired
+    private RecordCounter recordCounter;
+	
+	@Override
+	public void afterPropertiesSet() throws Exception {
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
 				LOGGER.info("streamingContextMap size:{}",streamingContextMap.size());
 			}
-		}, 10000, 5000);
+		}, 10000, 60 * 1000);
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -38,7 +46,8 @@ public class StreamingContextManager {
 					LOGGER.error(e.getMessage(),e);
 				}
 			}
-		}, 60000, 60000);
+		}, 60000, CONTEXT_EXPIRE_TIME_MILLIS);
+		
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
@@ -71,7 +80,7 @@ public class StreamingContextManager {
 	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token, String model, Map<String, Object> newModelConfig) throws AlgorithmIntanceCreateException {
 		String algorithmModelId = processor.newAlgorithmModel(token, model);
 		Algorithm algorithm = new Algorithm(algorithmModelId, newModelConfig);
-		StreamingContext context =  new StreamingContext(token, model, algorithm, processor,this);
+		StreamingContext context =  new StreamingContext(token, model, algorithm, processor,recordCounter,this);
 		StreamingContext oldcontext = streamingContextMap.put(token +"_"+model, context);
 		if( null != oldcontext){
 			try {
@@ -84,7 +93,7 @@ public class StreamingContextManager {
 		return context;
 	}
 	private void cleanExpiredContext() {
-		LOGGER.info("cleanExpireContext...streamingContextMap size:{}",streamingContextMap.size());
+		LOGGER.info("CleanExpireContext. StreamingContextMap size:{}",streamingContextMap.size());
 		for ( Entry<String, StreamingContext> entry : streamingContextMap.entrySet()) {
 			StreamingContext context = entry.getValue();
 			long currentTime = System.currentTimeMillis();
@@ -101,4 +110,5 @@ public class StreamingContextManager {
 			}
 		}
 	}
+
 }

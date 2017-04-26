@@ -27,7 +27,7 @@ public class AlgorithmServer {
 											DynamodbInit.class
 
 								}, args);
-		System.out.println("AlgorithmServer v3 started at " + new Timestamp(System.currentTimeMillis()) + ", cost " + (System.currentTimeMillis() - startAt) + "ms");
+		System.out.println("media-algorithm-v3  started at " + new Timestamp(System.currentTimeMillis()) + ", cost " + (System.currentTimeMillis() - startAt) + "ms");
 		
 	}
 }

@@ -67,7 +67,7 @@ public class MotionEventListener implements InitializingBean {
 		pool.submit(new Runnable() {
 			@Override
 			public void run() {
-				//handle(event);
+				handle(event);
 				LOGGER.info("Handle MotionEvent");
 			}
 		});

@@ -14,10 +14,11 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.services.kinesis.clientlibrary.interfaces.IRecordProcessorFactory;
+import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
+import com.amazonaws.services.kinesis.metrics.interfaces.IMetricsScope;
 
 public abstract class AbsKinesisStreamProcessor implements ApplicationListener<ApplicationEvent>{
     private static final Logger LOGGER = LoggerFactory.getLogger(AbsKinesisStreamProcessor.class);
@@ -65,7 +66,10 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
                 .withMaxRecords(1000);
     }
     public void start() {
-        final Worker worker = new Worker(getRecordProcessorFactory(), createKclConfig());
+    	final Worker worker = new Worker.Builder()
+    			.recordProcessorFactory(getRecordProcessorFactory())
+    			.config(createKclConfig())
+    			.build();
         executor.submit(worker);
         this.worker = worker;
     }
