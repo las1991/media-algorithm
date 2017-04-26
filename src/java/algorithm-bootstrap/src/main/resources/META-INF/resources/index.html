@@ -133,12 +133,12 @@ footer {
               <p class='col-lg-4 text-left ' id="recordCount-legend"></p>
             </div>
             <div class="col-4 col-sm-4 col-lg-4">
-              <h2>receiveDelayedCount(BehindLatest>10s)</h2>
+              <h2>receiveDelayedCount</h2>
               <p id="receiveDelayedCount"></p>
               <p class='col-lg-9 text-left ' id="receiveDelayedCount-legend"></p>
             </div>
             <div class="col-4 col-sm-4 col-lg-4">
-              <h2>dataDelayedCount(uctDate>10s)</h2>
+              <h2>dataDelayedCount</h2>
               <p id="dataDelayedCount"></p>
               <p class='col-lg-9 text-left ' id="dataDelayedCount-legend"></p>
             </div>
@@ -259,7 +259,7 @@ footer {
           right :mg_right ,
           left :mg_left,
           target : document.getElementById('dataDelayedCount'),
-          legend: ['dataDelayedCount'],
+          legend: ['dataDelayedCount(uctDate>10s)'],
           legend_target: '#dataDelayedCount-legend',
           aggregate_rollover: true
         });
@@ -278,7 +278,7 @@ footer {
           right :mg_right ,
           left :mg_left,
           target : document.getElementById('receiveDelayedCount'),
-          legend: ['receiveDelayedCount'],
+          legend: ['receiveDelayedCount(BehindLatest>10s)'],
           legend_target: '#receiveDelayedCount-legend',
           aggregate_rollover: true
         });
