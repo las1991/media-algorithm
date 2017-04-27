@@ -23,8 +23,8 @@ public class AlgorithmServer {
 		                                    AlgorithmKinesisStreamProcessor.class,
 											S3.class,
 											SQSTemplate.class,
-											Dynamodb.class,
-											DynamodbInit.class
+											//Dynamodb.class
+											//DynamodbInit.class
 
 								}, args);
 		System.out.println("media-algorithm-v3  started at " + new Timestamp(System.currentTimeMillis()) + ", cost " + (System.currentTimeMillis() - startAt) + "ms");

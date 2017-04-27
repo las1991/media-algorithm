@@ -32,7 +32,7 @@ public class JnaInterface implements Function{
 	
 	private ConcurrentHashMap<String, Pointer> pointerMap = new ConcurrentHashMap<>();
 	
-	static{/*
+	static{
 		LOGGER.info("init...");
 		String jnaHome = System.getProperty("jna.library.path");
 		LOGGER.info("jna.library.path={}", jnaHome);
@@ -48,7 +48,7 @@ public class JnaInterface implements Function{
 		encoderLibrary.Init();
 		encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
 		LOGGER.info("init finished");
-		*/
+		
 	}
 	@Override
 	public YUVImage decode(String token, byte[] nalData) throws DecodeException {
