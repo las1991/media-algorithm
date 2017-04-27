@@ -19,18 +19,31 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.mediaworker.RecordCounter;
 
 @Component
-public class StreamingContextManager implements InitializingBean {
+public class StreamingContextManager implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
 	
 	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 60 * 1000;
-	private ConcurrentHashMap<String, StreamingContext> streamingContextMap = new ConcurrentHashMap<>();
-	private Timer timer = new Timer();
+	
+	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
+	private Timer timer;
 	
 	@Autowired
     private RecordCounter recordCounter;
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
+		LOGGER.info("Initializing...");
+		try {
+			initialize();
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			System.exit(1);
+		}	
+	}
+	
+	private void initialize(){
+		streamingContextMap = new ConcurrentHashMap<>();
+		timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
@@ -47,7 +60,6 @@ public class StreamingContextManager implements InitializingBean {
 				}
 			}
 		}, 60000, CONTEXT_EXPIRE_TIME_MILLIS);
-		
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
@@ -110,5 +122,4 @@ public class StreamingContextManager implements InitializingBean {
 			}
 		}
 	}
-
 }

@@ -2,7 +2,6 @@ package com.sengled.mediaworker.algorithm.action;
 
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.FeedListener;
-import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.StreamingContext;
 
 public abstract class Action {

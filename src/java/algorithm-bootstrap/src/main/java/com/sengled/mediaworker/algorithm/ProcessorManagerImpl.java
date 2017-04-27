@@ -59,7 +59,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		});
 	}
 	@Override
-	public void setFeedListener(FeedListener feedListener) {
+	public void setFeedListener(FeedListenerImpl feedListener) {
 		this.feedListener = feedListener;
 	}
 	

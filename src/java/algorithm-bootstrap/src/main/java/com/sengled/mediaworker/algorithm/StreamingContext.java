@@ -105,7 +105,7 @@ public class StreamingContext {
 			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
 				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
 				isSkip = true;
-				recordCounter.getDataDelayedCount().addAndGet(1);
+				recordCounter.addAndGetDataDelayedCount(1);
 			}
 		}
 		return isSkip;
@@ -118,20 +118,12 @@ public class StreamingContext {
 		return algorithm;
 	}
 
-	public Action getAction() {
-		return action;
-	}
-
 	public void setAction(Action action) {
 		this.action = action;
 	}
 
 	public String getModel() {
 		return this.model;
-	}
-
-	public String getUtcDateTime() {
-		return utcDateTime;
 	}
 
 	public void setUtcDateTime(String utcDateTime) {
@@ -150,16 +142,8 @@ public class StreamingContext {
 		return processorManager;
 	}
 
-	public void setProcessorManager(ProcessorManager processorManager) {
-		this.processorManager = processorManager;
-	}
-
 	public StreamingContextManager getStreamingContextManager() {
 		return streamingContextManager;
-	}
-
-	public void setStreamingContextManager(StreamingContextManager streamingContextManager) {
-		this.streamingContextManager = streamingContextManager;
 	}
 
 	public Date getUpdateDate() {
@@ -168,10 +152,6 @@ public class StreamingContext {
 
 	public void setUpdateDate(Date updateDate) {
 		this.updateDate = updateDate;
-	}
-
-	public Date getLastTimeUpdateDate() {
-		return lastTimeUpdateDate;
 	}
 
 	public void setLastTimeUpdateDate(Date lastTimeUpdateDate) {

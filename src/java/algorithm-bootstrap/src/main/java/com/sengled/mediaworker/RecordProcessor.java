@@ -108,6 +108,7 @@ public class RecordProcessor implements IRecordProcessor {
 
 	@Override
 	public void initialize(InitializationInput initializationInput) {
+		LOGGER.info("Initializing...");
 		String shardId = initializationInput.getShardId();
 		this.kinesisShardId = shardId;
 		nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
@@ -123,10 +124,10 @@ public class RecordProcessor implements IRecordProcessor {
 		LOGGER.info("Received records size:{}",records.size());
 		LOGGER.info("BehindLatest:{}",behindLatest);
 		
-		recordCounter.getRecordCount().addAndGet(records.size());
+		recordCounter.addAndGetRecordCount(records.size());
 		
 		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
-			recordCounter.getReceiveDelayedCount().addAndGet(records.size());
+			recordCounter.addAndGetReceiveDelayedCount(records.size());
 			LOGGER.warn("BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",behindLatest,MAX_BEHINDLASTEST_MILLIS);
 			return;
 		}

@@ -34,7 +34,7 @@ import static com.google.common.base.Preconditions.checkState;
 @Configuration
 public class SQSTemplate implements InitializingBean {
 
-    private static final Logger logger = LoggerFactory.getLogger(SQSTemplate.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(SQSTemplate.class);
 
     @Value("${AWS_SQS_KEY}")
     private String awsKey;
@@ -45,9 +45,11 @@ public class SQSTemplate implements InitializingBean {
     @Value("${AWS_SQS_REGION:cn-north-1}")
     private String regionName;
 
-
     @Value("${publisher_thread_count:3}")
     private Integer publisherThreadCount = 3; //发布消息线程数
+    
+    @Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
+	private String queue;
 
     private ExecutorService executor = Executors.newFixedThreadPool(publisherThreadCount);
 
@@ -60,20 +62,27 @@ public class SQSTemplate implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        AmazonSQS sqsClient =new AmazonSQSClient(new BasicAWSCredentials(awsKey, awsSecret));
-        Region region = null;
-        try {
-            region = Region.getRegion(Regions.fromName(regionName));
-        }catch (Exception e){
-            logger.warn("use default region,{}", region.getName());
-            region = Region.getRegion(Regions.DEFAULT_REGION);
-        }
-        sqsClient.setRegion(region);
-        this.sqsClient = sqsClient;
+    	LOGGER.info("Initializing...");
+		try {
+			initialize();
+		} catch (Exception e) {
+			LOGGER.error("Initialize AmazonSQS failed.");
+			LOGGER.error(e.getMessage(),e);
+			System.exit(1);
+		}
+
     }
 
+    private void initialize() {
+        AmazonSQS sqsClient =new AmazonSQSClient(new BasicAWSCredentials(awsKey, awsSecret));
+        Region region  =  Region.getRegion(Regions.fromName(regionName));
+        sqsClient.setRegion(region);
+        String queueUrl = sqsClient.getQueueUrl(queue).getQueueUrl();
+        LOGGER.info("QueueUrl:{}",queueUrl);
+        this.sqsClient = sqsClient;
+	}
 
-    public <T>void subscribe(String queue, Map<String, String> config, SQSMessageHandler handler) throws Exception {
+	public <T>void subscribe(String queue, Map<String, String> config, SQSMessageHandler handler) throws Exception {
         String url = sqsClient.getQueueUrl(new GetQueueUrlRequest(queue)).getQueueUrl();
         if (!CollectionUtils.isEmpty(config)){
             sqsClient.setQueueAttributes(new SetQueueAttributesRequest(url,config));
@@ -88,14 +97,14 @@ public class SQSTemplate implements InitializingBean {
             if (!msgs.isEmpty()) {
                 for (Message message: msgs){
                     try {
-                        logger.info("The message is {}", message.getBody());
+                        LOGGER.info("The message is {}", message.getBody());
 
                         String serialized = "yes";
                         Map<String, MessageAttributeValue> attrs = message.getMessageAttributes();
                         if (null != attrs && null!=attrs.get("serialized")){
                             serialized = attrs.get("serialized").getStringValue();
                         }
-                        logger.info("serialized = {}", serialized);
+                        LOGGER.info("serialized = {}", serialized);
 
                         T result = null;
                         if (serialized.equals("no")){
@@ -105,13 +114,13 @@ public class SQSTemplate implements InitializingBean {
                         }
                         handler.handler(result);
                     }catch (Exception e){
-                        logger.error("Message press fail, {}", ExceptionUtils.getStackTrace(e));
+                        LOGGER.error("Message press fail, {}", ExceptionUtils.getStackTrace(e));
                     }finally {
                         sqsClient.deleteMessage(new DeleteMessageRequest(url, message.getReceiptHandle()));
                     }
                 }
             } else {
-                logger.debug("nothing found, trying again in 5 seconds");
+                LOGGER.debug("nothing found, trying again in 5 seconds");
                 Thread.sleep(5000);
             }
         }
@@ -127,7 +136,7 @@ public class SQSTemplate implements InitializingBean {
 
         checkState(encodedMessage.length() <= 256 * 1024);
 
-        logger.debug("Serialized Message: " + encodedMessage);
+        LOGGER.debug("Serialized Message: " + encodedMessage);
 
         String url = sqsClient.getQueueUrl(new GetQueueUrlRequest(queue)).getQueueUrl();
         SendMessageRequest request = new SendMessageRequest(url, encodedMessage);
@@ -136,7 +145,7 @@ public class SQSTemplate implements InitializingBean {
         try {
             return sqsClient.sendMessage(request).getMessageId();
         } catch (AmazonServiceException e) {
-            logger.warn("Could not sent message to SQS queue: {}. Retrying.", url);
+            LOGGER.warn("Could not sent message to SQS queue: {}. Retrying.", url);
         }
         throw new RuntimeException("Exceeded  message not sent!");
     }
@@ -145,9 +154,9 @@ public class SQSTemplate implements InitializingBean {
         executor.execute(new Runnable() {
             @Override
             public void run() {
-                logger.info("publish message to sqs, queue={},content={}", queue,message);
+                LOGGER.info("publish message to sqs, queue={},content={}", queue,message);
                 publish(queue, message);
-                logger.info("publish done");
+                LOGGER.info("publish done");
             }
         });
     }

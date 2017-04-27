@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
-import com.sengled.mediaworker.algorithm.FeedListener;
+import com.sengled.mediaworker.algorithm.FeedListenerImpl;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 
 /**
@@ -21,13 +21,12 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessorFactory.class);
 
     @Autowired
-    FeedListener feedListener;
+    FeedListenerImpl feedListener;
     @Autowired
     private ProcessorManager processorManager;
     @Autowired
     private RecordCounter recordCounter;
     
-
 	@Override
 	public void afterPropertiesSet() throws Exception {
     	LOGGER.info("RecordProcessorFactory afterPropertiesSet...");
@@ -47,6 +46,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
     	LOGGER.info("Create RecordProcessor...");//会根据分片创建多个RecordProcessor
     	return  new RecordProcessor(recordCounter,processorManager);
     }
+    
     public void shutdown(){
     	LOGGER.info("processorManager shutdown.");
     	processorManager.shutdown();

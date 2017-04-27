@@ -13,7 +13,7 @@ import com.sengled.media.interfaces.exceptions.FeedException;
 
 public interface ProcessorManager {	
 	Future<?> submit(String token, Collection<byte[]> data);
-	void   setFeedListener(FeedListener feedListener);
+	void   setFeedListener(FeedListenerImpl feedListener);
 	String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException;
 	void   close(StreamingContext context)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;

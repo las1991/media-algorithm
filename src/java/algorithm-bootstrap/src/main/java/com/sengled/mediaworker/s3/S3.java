@@ -38,6 +38,17 @@ public class S3 implements InitializingBean {
 	
 	@Override
 	public void afterPropertiesSet() {
+		LOGGER.info("Initializing...");
+		try {
+			initialize();
+		} catch (Exception e) {
+			LOGGER.error("Fail connect with S3 for '{}'.", e.getMessage(), e);
+			LOGGER.error(e.getMessage(),e);
+			System.exit(1);
+		}	
+	}
+	
+	private void initialize() {
 		ClientConfiguration conf = new ClientConfiguration();
 		conf.setMaxErrorRetry(3);
 		conf.setConnectionTimeout(15*1000);
@@ -45,31 +56,24 @@ public class S3 implements InitializingBean {
 		conf.setProtocol(Protocol.HTTPS);
 		conf.setMaxConnections(3 * ClientConfiguration.DEFAULT_MAX_CONNECTIONS);
 		conf.setUseTcpKeepAlive(true);
-		try {
-			LOGGER.info("connect with S3, access_key = {}, secret_access_key={}, region = {}.", aws_access_key_id, aws_secret_access_key, regionName);
-			BasicAWSCredentials credentials = new BasicAWSCredentials(aws_access_key_id, aws_secret_access_key);
-			Region region = Region.getRegion(Regions.fromName(regionName));
+		LOGGER.info("connect with S3, access_key = {}, secret_access_key={}, region = {}.", aws_access_key_id, aws_secret_access_key, regionName);
+		BasicAWSCredentials credentials = new BasicAWSCredentials(aws_access_key_id, aws_secret_access_key);
+		Region region = Region.getRegion(Regions.fromName(regionName));
 
-			s3 = new AmazonS3Client(credentials, conf);
-			s3.setRegion(region);
-			
-			// 查看都有哪些桶
-			List<Bucket> buckets = s3.listBuckets();
-			for (Bucket bucket : buckets) {
-				LOGGER.info("{}'s has bucket '{}'", s3.getRegion(), bucket.getName());
-			}
-		} catch(Exception ex) {
-			LOGGER.error("Fail connect with S3 for '{}'.", ex.getMessage(), ex);
-			System.exit(1);
+		s3 = new AmazonS3Client(credentials, conf);
+		s3.setRegion(region);
+		
+		// 查看都有哪些桶
+		List<Bucket> buckets = s3.listBuckets();
+		for (Bucket bucket : buckets) {
+			LOGGER.info("{}'s has bucket '{}'", s3.getRegion(), bucket.getName());
 		}
-
 	}
-	
+
 	@Bean()
 	public AmazonS3Template getS3Template(){
 		return new AmazonS3Template(s3);
 	}
-
 	
 	public void setAws_access_key_id(String aws_access_key_id) {
 		this.aws_access_key_id = aws_access_key_id;
