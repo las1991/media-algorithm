@@ -135,7 +135,7 @@ public class RecordProcessor implements IRecordProcessor {
 		long startTime = System.currentTimeMillis();
         boolean isSubmited = false;
         //如果上次提交的任务已执行完成，则提交新任务，否则等待1s
-		while(isShutdown){
+		while( ! isShutdown){
 			if((future == null) || future.isDone() || future.isCancelled()){
 				future = executorService.submit(new Runnable() {
 					@Override

@@ -23,13 +23,10 @@ public class ExecAction extends Action {
 
 		final String token = context.getToken();
 		final String model = context.getModel();
-		
-		LOGGER.debug("Token:{},ExecAction feed",context.getToken());
+
+		LOGGER.debug("Token:{},Feed model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
 		
 		ProcessorManager processor = context.getProcessorManager();
-
-		
-		LOGGER.debug("Token:{},model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
 		
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
 		if(StringUtils.isBlank(text)){
@@ -42,7 +39,7 @@ public class ExecAction extends Action {
 		} catch (Exception e) {
 			throw new FeedException("feed failed.token:["+token+"]", e);
 		}
-		LOGGER.debug("Token:{},model:{},OpenAction feed finisthed...", token, model);
+		LOGGER.debug("Token:{},Feed finished. model:{}", token, model);
 		
 	}
 	
@@ -58,6 +55,7 @@ public class ExecAction extends Action {
 		
 		switch(model){
 			case "motion":
+				LOGGER.info("Token:{},Get {}. zoneId:{},",token,model,zoneId);
 				MotionEvent event = new MotionEvent(token,model,context.getLastUtcDateTime(),jpgData,zoneId);
 				listener.post(event);
 				context.setLastMotionDate(context.getLastUtcDateTime());

@@ -11,14 +11,41 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 
+import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.amazonaws.ResponseMetadata;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.regions.Region;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.model.DeleteAlarmsRequest;
+import com.amazonaws.services.cloudwatch.model.DeleteAlarmsResult;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmHistoryRequest;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmHistoryResult;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmsForMetricRequest;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmsForMetricResult;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmsRequest;
+import com.amazonaws.services.cloudwatch.model.DescribeAlarmsResult;
+import com.amazonaws.services.cloudwatch.model.DisableAlarmActionsRequest;
+import com.amazonaws.services.cloudwatch.model.DisableAlarmActionsResult;
+import com.amazonaws.services.cloudwatch.model.EnableAlarmActionsRequest;
+import com.amazonaws.services.cloudwatch.model.EnableAlarmActionsResult;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
+import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
+import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
+import com.amazonaws.services.cloudwatch.model.ListMetricsResult;
+import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
+import com.amazonaws.services.cloudwatch.model.PutMetricAlarmResult;
+import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
+import com.amazonaws.services.cloudwatch.model.PutMetricDataResult;
+import com.amazonaws.services.cloudwatch.model.SetAlarmStateRequest;
+import com.amazonaws.services.cloudwatch.model.SetAlarmStateResult;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.Worker;
+import com.amazonaws.services.kinesis.metrics.interfaces.MetricsLevel;
 
 public abstract class AbsKinesisStreamProcessor implements ApplicationListener<ApplicationEvent>{
     private static final Logger LOGGER = LoggerFactory.getLogger(AbsKinesisStreamProcessor.class);
@@ -63,7 +90,8 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
                 .withRegionName(getRegion())
                 .withInitialPositionInStream(InitialPositionInStream.LATEST)
                 .withKinesisClientConfig(initConfig())
-                .withMaxRecords(1000);
+                .withMaxRecords(1000)
+                .withMetricsLevel(MetricsLevel.SUMMARY);
     }
     public void start() {
     	final Worker worker = new Worker.Builder()

@@ -40,8 +40,8 @@ public class MotionEventListener implements InitializingBean {
 	@Value("${aws_screenshot_bucket}")
 	private String bucketName;
 
-	@Autowired
-	private DynamodbTemplate dynamodbTemplate;
+//	@Autowired
+//	private DynamodbTemplate dynamodbTemplate;
 	@Autowired
 	private SQSTemplate sqsTemplate;
 	@Autowired
@@ -114,6 +114,7 @@ public class MotionEventListener implements InitializingBean {
 			throw new S3RuntimeException(e.getMessage(),e);
 		}
 	}
+	/*
 	private void saveDynamodb(Date utcDateTime,String token,String imageS3Path,String zoneId) throws DynamodbRuntimeException {
 		LOGGER.info("saveDynamodb: zoneId:{},token:{},imageS3Path:{} utcDateTime:{}",zoneId,token,imageS3Path,utcDateTime);
 		Item item = new Item()
@@ -127,7 +128,7 @@ public class MotionEventListener implements InitializingBean {
 			throw new DynamodbRuntimeException(e.getMessage(),e);
 		}
 	}
-	
+	*/
 	private void putSqs(Date utcDateTime,String token,String zoneId,String imageS3Path) throws SqsRuntimeException{
 		LOGGER.info("Token:{},putSqs: zoneId:{},imageS3Path:{} utcDate:{}",token,zoneId,imageS3Path,utcDateTime);
 		AlgorithmResult result = new AlgorithmResult();

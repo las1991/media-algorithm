@@ -19,7 +19,7 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Page;
 import com.amazonaws.services.dynamodbv2.document.Table;
 import com.amazonaws.services.dynamodbv2.model.ListTablesResult;
-@Component
+
 public class Dynamodb  implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(Dynamodb.class);
 	@Value("${AWS_DYNAMO_KEY}")

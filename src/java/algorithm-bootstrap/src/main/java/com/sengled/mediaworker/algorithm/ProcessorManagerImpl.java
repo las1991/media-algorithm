@@ -80,7 +80,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	private void actionHandle(String token,Map<String, Object> config, final byte[] nalData) {
-		if( !verifiyConfig(config)){
+		if( !verifiyConfig(token,config)){
 			LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
 			return;
 		}
@@ -144,8 +144,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		return jnaInterface.decode(token, nalData);
 	}
 	
-	private boolean verifiyConfig(Map<String, Object> config){
-		LOGGER.debug("verifiyConfig ...{}",config);
+	private boolean verifiyConfig(String token,Map<String, Object> config){
+		LOGGER.debug("Token:{},verifiyConfig ...{}",token,config);
 		boolean  verifiyResult = 
 				null != config &&
 				! config.isEmpty() &&
