@@ -1,11 +1,7 @@
 package com.sengled.mediaworker;
 
-import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
 
-import javax.management.RuntimeErrorException;
-
-import org.apache.commons.lang.math.RandomUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -31,7 +27,7 @@ public class RecordCounter implements InitializingBean{
     private AtomicLong  dataDelayedCount = new AtomicLong();
     
     private AtomicLong  s3FailureCount = new AtomicLong();
-    private AtomicLong  dynamodbFailureCount = new AtomicLong();
+    //private AtomicLong  dynamodbFailureCount = new AtomicLong();
     private AtomicLong  sqsFailureCount = new AtomicLong();
    
 	@Override
@@ -70,12 +66,6 @@ public class RecordCounter implements InitializingBean{
 	                return s3FailureCount.getAndSet(0);
 	            }
 	        });
-	        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "dynamodbFailureCount"), new Gauge<Long>(){
-	            @Override
-	            public Long getValue() {
-	                return dynamodbFailureCount.getAndSet(0);
-	            }
-	        });
 	        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "sqsFailureCount"), new Gauge<Long>(){
 	            @Override
 	            public Long getValue() {
@@ -97,10 +87,6 @@ public class RecordCounter implements InitializingBean{
 	
 	public long addAndGetSqsFailureCount(long delta) {
 		return sqsFailureCount.addAndGet(delta);
-	}
-	
-	public long addAndGetDynamodbFailureCount(long delta) {
-		return dynamodbFailureCount.addAndGet(delta);
 	}
 	
 	public long addAndGetS3FailureCount(long delta) {
