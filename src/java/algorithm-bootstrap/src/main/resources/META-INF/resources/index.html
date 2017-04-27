@@ -143,6 +143,24 @@ footer {
               <p class='col-lg-9 text-left ' id="dataDelayedCount-legend"></p>
             </div>
           </div><!--/row-->
+          
+          <div class="row">
+            <div class="col-4 col-sm-4 col-lg-4">
+              <h2>s3FailureCount</h2>
+              <p id="s3FailureCount"></p>
+              <p class='col-lg-4 text-left ' id="s3FailureCount-legend"></p>
+            </div>
+            <div class="col-4 col-sm-4 col-lg-4">
+              <h2>dynamodbFailureCount</h2>
+              <p id="dynamodbFailureCount"></p>
+              <p class='col-lg-9 text-left ' id="dynamodbFailureCount-legend"></p>
+            </div>
+            <div class="col-4 col-sm-4 col-lg-4">
+              <h2>sqsFailureCount</h2>
+              <p id="sqsFailureCount"></p>
+              <p class='col-lg-9 text-left ' id="sqsFailureCount-legend"></p>
+            </div>
+          </div><!--/row-->
 
         </div><!--/span-->
       </div><!--/row-->
@@ -285,6 +303,63 @@ footer {
    });
     
     
+    
+    d3.json('/graphics/gauge?name=algorithm.s3FailureCount&column=value', function(s3FailureCount){
+        data = new Array();
+        data.push(MG.convert.date(s3FailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
+        
+        MG.data_graphic({
+          title : "单位：计数",
+          description : "",
+          data : data,
+          width : mg_width ,
+          height : mg_height,
+          right :mg_right ,
+          left :mg_left,
+          target : document.getElementById('s3FailureCount'),
+          legend: ['s3FailureCount'],
+          legend_target: '#s3FailureCount-legend',
+          aggregate_rollover: true
+        });
+   });
+    
+    d3.json('/graphics/gauge?name=algorithm.dynamodbFailureCount&column=value', function(dynamodbFailureCount){
+        data = new Array();
+        data.push(MG.convert.date(dynamodbFailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
+        
+        MG.data_graphic({
+          title : "单位：计数",
+          description : "",
+          data : data,
+          width : mg_width ,
+          height : mg_height,
+          right :mg_right ,
+          left :mg_left,
+          target : document.getElementById('dynamodbFailureCount'),
+          legend: ['dynamodbFailureCount'],
+          legend_target: '#dynamodbFailureCount-legend',
+          aggregate_rollover: true
+        });
+   });
+    
+    d3.json('/graphics/gauge?name=algorithm.sqsFailureCount&column=value', function(sqsFailureCount){
+        data = new Array();
+        data.push(MG.convert.date(sqsFailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
+        
+        MG.data_graphic({
+          title : "单位：计数",
+          description : "",
+          data : data,
+          width : mg_width ,
+          height : mg_height,
+          right :mg_right ,
+          left :mg_left,
+          target : document.getElementById('sqsFailureCount'),
+          legend: ['sqsFailureCount'],
+          legend_target: '#sqsFailureCount-legend',
+          aggregate_rollover: true
+        });
+   });
     
 
      </script>

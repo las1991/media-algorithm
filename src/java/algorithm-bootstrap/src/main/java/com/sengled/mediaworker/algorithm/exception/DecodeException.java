@@ -1,8 +1,6 @@
 package com.sengled.mediaworker.algorithm.exception;
 
-import java.util.concurrent.ExecutionException;
-
-public class DecodeException extends ExecutionException{
+public class DecodeException extends Exception{
 
 	private static final long serialVersionUID = 6742011872353977183L;
 
