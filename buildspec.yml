@@ -7,6 +7,7 @@ phases:
   pre_build:
     commands:
       - echo "Make begin with [`date`], ok. "
+      - export LANG=en_US.utf8
       - yum -y install zlib-devel cmake
   build:
     commands:
