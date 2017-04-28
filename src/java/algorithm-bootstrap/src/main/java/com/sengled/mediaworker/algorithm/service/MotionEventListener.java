@@ -15,16 +15,13 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
-import com.amazonaws.services.dynamodbv2.document.Item;
 import com.google.common.eventbus.Subscribe;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
-import com.sengled.mediaworker.algorithm.exception.DynamodbRuntimeException;
 import com.sengled.mediaworker.algorithm.exception.S3RuntimeException;
 import com.sengled.mediaworker.algorithm.exception.SqsRuntimeException;
 import com.sengled.mediaworker.algorithm.service.dto.AlgorithmResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionInnerDto;
-import com.sengled.mediaworker.dynamodb.DynamodbTemplate;
 import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 

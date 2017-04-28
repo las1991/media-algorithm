@@ -1,4 +1,7 @@
 package com.sengled.mediaworker.kinesis;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -11,36 +14,11 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.ApplicationListener;
 import org.springframework.context.event.ContextClosedEvent;
 
-import com.amazonaws.AmazonWebServiceRequest;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.amazonaws.ResponseMetadata;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.regions.Region;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.model.DeleteAlarmsRequest;
-import com.amazonaws.services.cloudwatch.model.DeleteAlarmsResult;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmHistoryRequest;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmHistoryResult;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmsForMetricRequest;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmsForMetricResult;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmsRequest;
-import com.amazonaws.services.cloudwatch.model.DescribeAlarmsResult;
-import com.amazonaws.services.cloudwatch.model.DisableAlarmActionsRequest;
-import com.amazonaws.services.cloudwatch.model.DisableAlarmActionsResult;
-import com.amazonaws.services.cloudwatch.model.EnableAlarmActionsRequest;
-import com.amazonaws.services.cloudwatch.model.EnableAlarmActionsResult;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsRequest;
-import com.amazonaws.services.cloudwatch.model.GetMetricStatisticsResult;
-import com.amazonaws.services.cloudwatch.model.ListMetricsRequest;
-import com.amazonaws.services.cloudwatch.model.ListMetricsResult;
-import com.amazonaws.services.cloudwatch.model.PutMetricAlarmRequest;
-import com.amazonaws.services.cloudwatch.model.PutMetricAlarmResult;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataRequest;
-import com.amazonaws.services.cloudwatch.model.PutMetricDataResult;
-import com.amazonaws.services.cloudwatch.model.SetAlarmStateRequest;
-import com.amazonaws.services.cloudwatch.model.SetAlarmStateResult;
+import com.amazonaws.services.kinesis.clientlibrary.config.KinesisClientLibConfigurator;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
@@ -79,6 +57,20 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     }    
     
     public KinesisClientLibConfiguration createKclConfig(){
+    	
+    	
+    	
+		try {
+			KinesisClientLibConfigurator config = new KinesisClientLibConfigurator();
+	    	String propertiesFile = "";
+			Properties properties;
+			properties = loadProperties(Thread.currentThread().getContextClassLoader(), propertiesFile);
+			config.getConfiguration(properties);
+		} catch (IOException e) {
+			
+		}
+		
+    	
         BasicAWSCredentials credentials = getBasicAWSCredentials();
         StaticCredentialsProvider provider = new StaticCredentialsProvider(credentials);
         
@@ -120,6 +112,13 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
 				LOGGER.error(e.getMessage(),e);
 			}
             LOGGER.info("KinesisStream Worker shutdown finished.");
+        }
+    }
+    private static Properties loadProperties(ClassLoader classLoader, String propertiesFileName) throws IOException {
+        Properties properties = new Properties();
+        try (InputStream propertiesStream = classLoader.getResourceAsStream(propertiesFileName)) {
+            properties.load(propertiesStream);
+            return properties;
         }
     }
 }
