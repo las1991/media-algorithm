@@ -6,7 +6,6 @@ phases:
       - echo "Nothing to do in the install phase..."
   pre_build:
     commands:
-      export LANG=en_US.utf8
       - echo "Make begin with [`date`], ok. "
       - export LANG=en_US.utf8
       - yum -y install zlib-devel cmake
