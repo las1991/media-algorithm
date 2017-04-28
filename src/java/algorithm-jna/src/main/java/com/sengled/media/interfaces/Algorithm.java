@@ -7,8 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSON;
 
-import antlr.StringUtils;
-
 public class Algorithm {
 	private static final Logger LOGGER = LoggerFactory.getLogger(Algorithm.class);
 	
