@@ -1,7 +1,4 @@
 package com.sengled.mediaworker.kinesis;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -18,7 +15,6 @@ import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.internal.StaticCredentialsProvider;
-import com.amazonaws.services.kinesis.clientlibrary.config.KinesisClientLibConfigurator;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
@@ -57,20 +53,6 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     }    
     
     public KinesisClientLibConfiguration createKclConfig(){
-    	
-    	
-    	
-		try {
-			KinesisClientLibConfigurator config = new KinesisClientLibConfigurator();
-	    	String propertiesFile = "";
-			Properties properties;
-			properties = loadProperties(Thread.currentThread().getContextClassLoader(), propertiesFile);
-			config.getConfiguration(properties);
-		} catch (IOException e) {
-			
-		}
-		
-    	
         BasicAWSCredentials credentials = getBasicAWSCredentials();
         StaticCredentialsProvider provider = new StaticCredentialsProvider(credentials);
         
@@ -112,13 +94,6 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
 				LOGGER.error(e.getMessage(),e);
 			}
             LOGGER.info("KinesisStream Worker shutdown finished.");
-        }
-    }
-    private static Properties loadProperties(ClassLoader classLoader, String propertiesFileName) throws IOException {
-        Properties properties = new Properties();
-        try (InputStream propertiesStream = classLoader.getResourceAsStream(propertiesFileName)) {
-            properties.load(propertiesStream);
-            return properties;
         }
     }
 }
