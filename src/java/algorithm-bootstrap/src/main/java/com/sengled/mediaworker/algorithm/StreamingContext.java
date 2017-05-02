@@ -70,7 +70,6 @@ public class StreamingContext {
 		}
 		action.feed(this, yuvImage, listener);
 	}
- 
 
 	public Date getLastUtcDateTime() {
 		if(StringUtils.isBlank(utcDateTime)){
@@ -84,10 +83,24 @@ public class StreamingContext {
 		}
 		return null;
 	}
-	public boolean isSkipHandle(){
+	
+	public boolean isDataExpire(){
+		boolean expire = false;
+		//过期数据
+		Date lastUtcDate = getLastUtcDateTime();
+		if(lastUtcDate !=null && updateDate !=null){
+			long delayedTime = updateDate.getTime() - lastUtcDate.getTime();
+			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
+				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
+				expire = true;
+				recordCounter.addAndGetDataDelayedCount(1);
+			}
+		}
+		return expire;
+	}
+	public boolean motionIntervalCheck() throws Exception{
 		boolean isSkip = false;
 		//motion 检测间隔为15s
-		Date lastMotionDate = getLastMotionDate();
 		Date lastUtcDateTime = getLastUtcDateTime();
 		if(lastMotionDate !=null && lastUtcDateTime !=null){
 			long sinceLastMotion = (lastUtcDateTime.getTime() - lastMotionDate.getTime());
@@ -95,19 +108,11 @@ public class StreamingContext {
 				LOGGER.debug("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
 				isSkip = true;
 			}else{
-				setLastMotionDate(null);
+				lastMotionDate = null;
+				streamingContextManager.reload(this);
 			}
 		}
-		//过期数据
-		Date lastUtcDate = getLastUtcDateTime();
-		if(lastUtcDate !=null && updateDate !=null){
-			long delayedTime = updateDate.getTime() - lastUtcDate.getTime();
-			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
-				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
-				isSkip = true;
-				recordCounter.addAndGetDataDelayedCount(1);
-			}
-		}
+
 		return isSkip;
 	}
 	public String getToken() {
