@@ -104,13 +104,22 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				//更新时间
 				context.setUpdateDate(new Date());
 				
-				if(context.isSkipHandle()){
+				try {
+					if(context.isDataExpire()){
+						continue;
+					}
+					if(context.motionIntervalCheck()){
+						continue;
+					}
+				} catch (Exception e2) {
+					LOGGER.error("Token:{}  skip...",token);
+					LOGGER.error(e2.getMessage(),e2);
 					continue;
 				}
 				YUVImage yuvImage;
 				try {
 					yuvImage = decode(token, nalData);
-				} catch (DecodeException e1) {
+				} catch (Exception e1) {
 					LOGGER.error("Token:{} decode failed. skip...",token);
 					LOGGER.error(e1.getMessage(),e1);
 					continue;

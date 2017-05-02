@@ -10,6 +10,7 @@ import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.StreamingContext;
+import com.sengled.mediaworker.algorithm.StreamingContextManager;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.exception.FeedException;
@@ -40,6 +41,8 @@ public class ExecAction extends Action {
 			throw new FeedException("feed failed.token:["+token+"]", e);
 		}
 		LOGGER.debug("Token:{},Feed finished. model:{}", token, model);
+		//close model
+		//processor.close(context);
 		
 	}
 	
