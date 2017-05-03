@@ -109,6 +109,7 @@ public class StreamingContext {
 				isSkip = true;
 			}else{
 				lastMotionDate = null;
+				LOGGER.debug("Token:{},Since last time motion:{} msec > {} msec reload algorithmModel.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
 				streamingContextManager.reload(this);
 			}
 		}

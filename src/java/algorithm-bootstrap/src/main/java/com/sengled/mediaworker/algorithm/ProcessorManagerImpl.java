@@ -87,6 +87,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		for (String model : MODEL_LIST) {
 			if (config.containsKey(model)) {
 				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
+				LOGGER.info("Token:{},modelConfig:{}",token,modelConfig);
 				StreamingContext context;
 				try {
 					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, modelConfig);

@@ -66,21 +66,20 @@ public class StreamingContextManager implements InitializingBean{
 		StreamingContext context =  streamingContextMap.get(token + "_" + model);
 		if (context == null) {
 			context =  newAlgorithmContext(processor,token,model, modelConfig);
+		}else{
+			context.getAlgorithm().setParameters(modelConfig);
 		}
 		return context;
 	}
-	public StreamingContext reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
+	public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
 		String token = context.getToken();
 		String model = context.getModel();
 		Algorithm algorithm = context.getAlgorithm();
 		ProcessorManager processor = context.getProcessorManager();
 		
 		processor.close(context);
-		streamingContextMap.remove(token +"_"+model);
-		
-		StreamingContext newContext = findOrCreateStreamingContext(processor,token,model, algorithm.getParameters());
-		streamingContextMap.put(token +"_"+model, newContext);
-		return newContext;
+		String algorithmModelId = processor.newAlgorithmModel(token, model);
+		algorithm.setAlgorithmModelId(algorithmModelId);
 	}
 	
 	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
@@ -90,7 +89,9 @@ public class StreamingContextManager implements InitializingBean{
 	}
 	
 	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token, String model, Map<String, Object> newModelConfig) throws AlgorithmIntanceCreateException {
+		LOGGER.info("Token:{},model:{},newAlgorithmContext...",token,model);
 		String algorithmModelId = processor.newAlgorithmModel(token, model);
+		LOGGER.info("Token:{},model:{},algorithmModelId:{}",token,model,algorithmModelId);
 		Algorithm algorithm = new Algorithm(algorithmModelId, newModelConfig);
 		StreamingContext context =  new StreamingContext(token, model, algorithm, processor,recordCounter,this);
 		StreamingContext oldcontext = streamingContextMap.put(token +"_"+model, context);

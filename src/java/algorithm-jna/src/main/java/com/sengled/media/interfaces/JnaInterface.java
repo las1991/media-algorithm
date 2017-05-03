@@ -142,6 +142,7 @@ public class JnaInterface implements Function{
 		
 		Pointer algorithmModelPointer = pointerMap.get(algorithmModelId);
 		if( null ==  algorithmModelPointer){
+			LOGGER.info("jsonConfig:{},algorithmModelId:{}",jsonConfig,algorithmModelId);
 			throw new FeedException("Not fonud algorithmModelPointer from pointerMap");
 		}
 		
@@ -184,7 +185,7 @@ public class JnaInterface implements Function{
 		if(null == algorithmModelId || "".equals(algorithmModelId)){
 			throw new AlgorithmIntanceCloseException("parmas error.");
 		}
-		LOGGER.debug("algorithmModelId:{}",algorithmModelId);
+		LOGGER.debug("close algorithmModelId:{}",algorithmModelId);
 		
 		try {
 			Pointer pointer = pointerMap.remove(algorithmModelId);

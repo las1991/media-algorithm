@@ -48,7 +48,7 @@ public class SQSTemplate implements InitializingBean {
     @Value("${publisher_thread_count:3}")
     private Integer publisherThreadCount = 3; //发布消息线程数
     
-    @Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
+    @Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
 	private String queue;
 
     private ExecutorService executor = Executors.newFixedThreadPool(publisherThreadCount);
