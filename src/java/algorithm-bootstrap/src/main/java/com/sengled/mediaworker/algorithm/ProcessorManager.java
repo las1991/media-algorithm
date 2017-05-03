@@ -15,7 +15,7 @@ public interface ProcessorManager {
 	Future<?> submit(String token, Collection<byte[]> data);
 	void   setFeedListener(FeedListenerImpl feedListener);
 	String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException;
-	void   close(StreamingContext context)throws AlgorithmIntanceCloseException ;
+	void   close(String algorithmModelId)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;
 	byte[] encode(String token,byte[] yuvData,int width,int  height,int  dstWidth,int  dstHeight)throws EncodeException;
 	void shutdown();

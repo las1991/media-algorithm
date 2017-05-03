@@ -77,32 +77,23 @@ public class StreamingContextManager implements InitializingBean{
 		Algorithm algorithm = context.getAlgorithm();
 		ProcessorManager processor = context.getProcessorManager();
 		
-		processor.close(context);
+		processor.close(algorithm.getAlgorithmModelId());
 		String algorithmModelId = processor.newAlgorithmModel(token, model);
 		algorithm.setAlgorithmModelId(algorithmModelId);
 	}
 	
 	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
 		ProcessorManager processor = context.getProcessorManager();
-		processor.close(context);
+		Algorithm algorithm = context.getAlgorithm();
+		processor.close(algorithm.getAlgorithmModelId());
 		streamingContextMap.remove(context.getToken() + "_" + context.getModel());	
 	}
 	
 	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token, String model, Map<String, Object> newModelConfig) throws AlgorithmIntanceCreateException {
-		LOGGER.info("Token:{},model:{},newAlgorithmContext...",token,model);
 		String algorithmModelId = processor.newAlgorithmModel(token, model);
-		LOGGER.info("Token:{},model:{},algorithmModelId:{}",token,model,algorithmModelId);
 		Algorithm algorithm = new Algorithm(algorithmModelId, newModelConfig);
 		StreamingContext context =  new StreamingContext(token, model, algorithm, processor,recordCounter,this);
-		StreamingContext oldcontext = streamingContextMap.put(token +"_"+model, context);
-		if( null != oldcontext){
-			try {
-				processor.close(oldcontext);
-			} catch (AlgorithmIntanceCloseException e) {
-				LOGGER.error("Token:{},close failed.",token);
-				LOGGER.error(e.getMessage(),e);
-			}
-		}
+		streamingContextMap.put(token +"_"+model, context);
 		return context;
 	}
 	private void cleanExpiredContext() {
@@ -110,10 +101,10 @@ public class StreamingContextManager implements InitializingBean{
 		for ( Entry<String, StreamingContext> entry : streamingContextMap.entrySet()) {
 			StreamingContext context = entry.getValue();
 			long currentTime = System.currentTimeMillis();
-			Date  updateDate = context.getUpdateDate();
-			LOGGER.info("Token:{},currentTime{},updateDate:{}",entry.getKey(),new Date(currentTime),updateDate);
+			long  updateTimestamp = context.getContextUpdateTimestamp();
+			LOGGER.info("Token:{},currentTime{},updateDate:{}",entry.getKey(),new Date(currentTime),new Date(updateTimestamp));
 
-			if((currentTime - updateDate.getTime() ) >= CONTEXT_EXPIRE_TIME_MILLIS){
+			if((currentTime - updateTimestamp ) >= CONTEXT_EXPIRE_TIME_MILLIS){
 				LOGGER.info("Token:{} Context expired clean...",context.getToken());
 				try {
 					close(context);

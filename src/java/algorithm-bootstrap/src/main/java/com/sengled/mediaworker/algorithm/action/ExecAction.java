@@ -59,9 +59,9 @@ public class ExecAction extends Action {
 		switch(model){
 			case "motion":
 				LOGGER.info("Token:{},Get {}. zoneId:{},",token,model,zoneId);
-				MotionEvent event = new MotionEvent(token,model,context.getLastUtcDateTime(),jpgData,zoneId);
+				MotionEvent event = new MotionEvent(token,model,context.getUtcDateTime(),jpgData,zoneId);
 				listener.post(event);
-				context.setLastMotionDate(context.getLastUtcDateTime());
+				context.setLastMotionTimestamp(context.getUtcDateTime().getTime());
 				break;
 			case "object":
 				//FIXME

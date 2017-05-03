@@ -35,10 +35,17 @@ public class StreamingContext {
 	 * @see @RecordProcessor.MODEL_LIST
 	 */
 	private String model;
+	//接收kinesis数据中的utc时间
 	private String utcDateTime;
-	private Date lastMotionDate;
-	private Date lastTimeUpdateDate;
-	private Date updateDate;
+	//保存最后一次Motion的时间
+	private Long lastMotionTimestamp;
+	//上次 接收到数据的时间
+	private Long lastTimeContextUpdateTimestamp;
+	//接收到数据的时间
+	private Long contextUpdateTimestamp;
+	//创建上下文时间
+	private Long contextCreateTimestamp;
+	
 	private Algorithm algorithm;
 	private Action action;
 	private ProcessorManager processorManager;
@@ -48,6 +55,8 @@ public class StreamingContext {
 	public final Action openAction = new OpenAction();
 	public final Action execAction = new ExecAction();
 	public final Action closeAction = new CloseAction();
+	
+	
 	
 	StreamingContext(String token, String model,
 					Algorithm algorithm,
@@ -61,6 +70,8 @@ public class StreamingContext {
 		this.processorManager = processorManager;
 		this.streamingContextManager = streamingContextManager;
 		this.recordCounter = recordCounter;
+		this.contextCreateTimestamp = System.currentTimeMillis();
+		this.contextUpdateTimestamp = System.currentTimeMillis();
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
 	}
 
@@ -71,7 +82,7 @@ public class StreamingContext {
 		action.feed(this, yuvImage, listener);
 	}
 
-	public Date getLastUtcDateTime() {
+	public Date getUtcDateTime() {
 		if(StringUtils.isBlank(utcDateTime)){
 			return null;
 		}
@@ -87,11 +98,11 @@ public class StreamingContext {
 	public boolean isDataExpire(){
 		boolean expire = false;
 		//过期数据
-		Date lastUtcDate = getLastUtcDateTime();
-		if(lastUtcDate !=null && updateDate !=null){
-			long delayedTime = updateDate.getTime() - lastUtcDate.getTime();
+		Date utcDate = getUtcDateTime();
+		if(utcDate !=null){
+			long delayedTime = contextUpdateTimestamp - utcDate.getTime();
 			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
-				LOGGER.debug("Token:{},lastUtcDate:{},intervalTime:{} >= {} skip.",token,lastUtcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
+				LOGGER.info("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
 				expire = true;
 				recordCounter.addAndGetDataDelayedCount(1);
 			}
@@ -101,19 +112,20 @@ public class StreamingContext {
 	public boolean motionIntervalCheck() throws Exception{
 		boolean isSkip = false;
 		//motion 检测间隔为15s
-		Date lastUtcDateTime = getLastUtcDateTime();
-		if(lastMotionDate !=null && lastUtcDateTime !=null){
-			long sinceLastMotion = (lastUtcDateTime.getTime() - lastMotionDate.getTime());
+		Date utcDateTime = getUtcDateTime();
+		if(lastMotionTimestamp !=null && utcDateTime !=null){
+			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
+			
 			if(sinceLastMotion <= MOTION_INTERVAL_TIME_MSCE){
-				LOGGER.debug("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
+				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
 				isSkip = true;
 			}else{
-				lastMotionDate = null;
-				LOGGER.debug("Token:{},Since last time motion:{} msec > {} msec reload algorithmModel.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
+				lastMotionTimestamp = null;
+				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
+				//重新初始化算法模型
 				streamingContextManager.reload(this);
 			}
 		}
-
 		return isSkip;
 	}
 	public String getToken() {
@@ -135,15 +147,7 @@ public class StreamingContext {
 	public void setUtcDateTime(String utcDateTime) {
 		this.utcDateTime = utcDateTime;
 	}
-
-	public Date getLastMotionDate() {
-		return lastMotionDate;
-	}
-
-	public void setLastMotionDate(Date lastMotionDate) {
-		this.lastMotionDate = lastMotionDate;
-	}
-
+ 
 	public ProcessorManager getProcessorManager() {
 		return processorManager;
 	}
@@ -151,17 +155,37 @@ public class StreamingContext {
 	public StreamingContextManager getStreamingContextManager() {
 		return streamingContextManager;
 	}
-
-	public Date getUpdateDate() {
-		return updateDate;
+	
+	public long getContextCreateTimestamp() {
+		return contextCreateTimestamp;
 	}
 
-	public void setUpdateDate(Date updateDate) {
-		this.updateDate = updateDate;
+	public void setContextCreateTimestamp(long contextCreateTimestamp) {
+		this.contextCreateTimestamp = contextCreateTimestamp;
 	}
 
-	public void setLastTimeUpdateDate(Date lastTimeUpdateDate) {
-		this.lastTimeUpdateDate = lastTimeUpdateDate;
+	public Long getContextUpdateTimestamp() {
+		return contextUpdateTimestamp;
+	}
+
+	public void setContextUpdateTimestamp(Long contextUpdateTimestamp) {
+		this.contextUpdateTimestamp = contextUpdateTimestamp;
+	}
+
+	public Long getLastTimeContextUpdateTimestamp() {
+		return lastTimeContextUpdateTimestamp;
+	}
+
+	public void setLastTimeContextUpdateTimestamp(Long lastTimeContextUpdateTimestamp) {
+		this.lastTimeContextUpdateTimestamp = lastTimeContextUpdateTimestamp;
+	}
+
+	public Long getLastMotionTimestamp() {
+		return lastMotionTimestamp;
+	}
+
+	public void setLastMotionTimestamp(Long lastMotionTimestamp) {
+		this.lastMotionTimestamp = lastMotionTimestamp;
 	}
 
 	
