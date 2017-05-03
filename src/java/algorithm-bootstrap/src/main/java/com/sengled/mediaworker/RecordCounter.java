@@ -8,6 +8,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 
@@ -91,5 +92,14 @@ public class RecordCounter implements InitializingBean{
 	
 	public long addAndGetS3FailureCount(long delta) {
 		return s3FailureCount.addAndGet(delta);
+	}
+	public String getAllJsonData(){
+		JSONObject json = new JSONObject();
+		json.put("recordCount", recordCount.get());
+		json.put("receiveDelayedCount", receiveDelayedCount.get());
+		json.put("dataDelayedCount", dataDelayedCount.get());
+		json.put("s3FailureCount", s3FailureCount.get());
+		json.put("sqsFailureCount", sqsFailureCount.get());
+		return json.toJSONString();
 	}
 }

@@ -30,9 +30,7 @@ public class MotionEventListener implements InitializingBean {
 	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventListener.class);
 	private static final int THREAD_MAXCOUNT = 150;
 
-	@Value("${AWS_SERVICE_NAME_PREFIX}_${m_algorithm_results}")
-	public  String tableName;
-	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.dispatcher.result.queue}")
+	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
 	private String queue;
 	@Value("${aws_screenshot_bucket}")
 	private String bucketName;

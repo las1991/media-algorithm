@@ -15,7 +15,7 @@ public class OpenAction extends Action{
 	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener)throws Exception {
 		LOGGER.debug("Token:{},OpenAction feed ",context.getToken());
 		StreamingContextManager manager = context.getStreamingContextManager();
-		context = manager.reload(context);
+		manager.reload(context);
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
 	}
