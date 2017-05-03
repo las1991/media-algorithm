@@ -76,7 +76,11 @@ public class JNIFunction {
 		// logger 赋值
     	LOGGERS = new LeveledLogger[256];
     	for (int level = 0; level < LOGGERS.length; level++) {
-			if (level < LOGLEVEL_INFO) {
+    	    if (level == 1) { // fix: c 层的缺陷
+                LOGGERS[level] = infoLogger;
+    	    } else if (level == 2) {  // fix: c 层的缺陷
+    	        LOGGERS[level] = debugLogger;
+    	    } else if (level < LOGLEVEL_INFO) {
 				LOGGERS[level] = debugLogger;
 			} else if (level < LOGLEVEL_WARN) {
 				LOGGERS[level] = infoLogger;
