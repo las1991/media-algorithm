@@ -87,7 +87,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		for (String model : MODEL_LIST) {
 			if (config.containsKey(model)) {
 				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
-				LOGGER.info("Token:{},modelConfig:{}",token,modelConfig);
+				LOGGER.debug("Token:{},Received modelConfig:{}",token,modelConfig);
 				StreamingContext context;
 				try {
 					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, modelConfig);
@@ -98,12 +98,12 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				}
 				String utcDateTime = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");
-				//保存上次UTC时间
-				context.setLastTimeUpdateDate(context.getUpdateDate());
-				//更新本次UTC时间
+				//设置 上次接收到数据的时间
+				context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
+				//设置 本次接收到数据的时间
+				context.setContextUpdateTimestamp(System.currentTimeMillis());
+				//设置  数据中的UTC时间
 				context.setUtcDateTime(utcDateTime);
-				//更新时间
-				context.setUpdateDate(new Date());
 				
 				try {
 					if(context.isDataExpire()){
@@ -166,7 +166,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	public String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException{
-		return jnaInterface.newAlgorithmModel(model, token);
+		return jnaInterface.newAlgorithmModel(token,model);
 	}
 	@Override
 	public String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException {
@@ -178,9 +178,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		return jnaInterface.encode(token, width, height, dstWidth, dstHeight, yuvData);
 	}
 	@Override
-	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
-		Algorithm algorithm = context.getAlgorithm();
-		jnaInterface.close(algorithm.getAlgorithmModelId());
+	public void close(String algorithmModelId) throws AlgorithmIntanceCloseException {
+		jnaInterface.close(algorithmModelId);
 		
 	}
 	@Override

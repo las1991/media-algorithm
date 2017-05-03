@@ -33,26 +33,32 @@ public class JnaInterface implements Function{
 	private ConcurrentHashMap<String, Pointer> pointerMap = new ConcurrentHashMap<>();
 	
 	static{
-		LOGGER.info("init...");
-		String jnaHome = System.getProperty("jna.library.path");
-		LOGGER.info("jna.library.path={}", jnaHome);
-		
-		decoderLibrary = Nal_decoderLibrary.INSTANCE;
-		decoderLibrary.Init();
-		decoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
-		
-		algorithmLibrary = Sengled_algorithm_baseLibrary.INSTANCE;
-		algorithmLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
-		
-		encoderLibrary = Jpg_encoderLibrary.INSTANCE;
-		encoderLibrary.Init();
-		encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
-		LOGGER.info("init finished");
-		
+		try {
+			LOGGER.info("init...");
+			String jnaHome = System.getProperty("jna.library.path");
+			LOGGER.info("jna.library.path={}", jnaHome);
+			
+			decoderLibrary = Nal_decoderLibrary.INSTANCE;
+			decoderLibrary.Init();
+			decoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
+			
+			algorithmLibrary = Sengled_algorithm_baseLibrary.INSTANCE;
+			algorithmLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
+			
+			encoderLibrary = Jpg_encoderLibrary.INSTANCE;
+			encoderLibrary.Init();
+			encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
+			LOGGER.info("init finished");
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			LOGGER.error("JnaInterface init failed. System exit.");
+			System.exit(1);
+		}
 	}
 	@Override
 	public YUVImage decode(String token, byte[] nalData) throws DecodeException {
 		if(null == nalData || nalData.length == 0){
+			LOGGER.error("Token:{} decode params error.",token);
 			throw new IllegalArgumentException("decode params error.");
 		}
 		LOGGER.debug("decode token:{},nalData length:{}",token,nalData.length);
@@ -88,10 +94,11 @@ public class JnaInterface implements Function{
 	public byte[] encode(String token, int width, int height, int dstWidth, int dstHeight, byte[] yuvData) throws EncodeException{
 		int yuvDataLength = yuvData.length;
 		if( null == yuvData || 0 == yuvDataLength){
+			LOGGER.error("Token:{} encode params error.",token);
 			throw new EncodeException("encode params error.");
 		}
 		
-		LOGGER.debug("encode token:{},yuvData length:{}",token,yuvData.length);
+		LOGGER.debug("Token:{} encode ,yuvData length:{}",token,yuvData.length);
 		JPGFrame jpg_frame =  new JPGFrame();
 		Pointer pointer = new Memory(yuvDataLength);
 		pointer.write(0, yuvData, 0, yuvDataLength);
@@ -100,7 +107,7 @@ public class JnaInterface implements Function{
 		try {
 			int  code =  encoderLibrary.EncodeJPG(yuv_frame, dstWidth, dstHeight, token, jpg_frame);
 			if( 0 != code ){
-				LOGGER.error("encode failed. code:{} token:{}",code,token);
+				LOGGER.error("Token:{} encode failed. code:{}",token,code);
 				throw new Exception("return code error.");
 			}
 			return jpg_frame.data.getByteArray(0, jpg_frame.size);
@@ -111,7 +118,8 @@ public class JnaInterface implements Function{
 		}
 	}
 	@Override
-	public String  newAlgorithmModel(String model, String token) throws AlgorithmIntanceCreateException{
+	public String  newAlgorithmModel( String token,String model) throws AlgorithmIntanceCreateException{
+		LOGGER.debug("Token:{},model:{} newAlgorithmModel",token,model);
 		String algorithmModelId;
 		Pointer oldPointer = null;
 		try {
@@ -135,6 +143,7 @@ public class JnaInterface implements Function{
 
 	@Override
 	public String feed(String jsonConfig,String algorithmModelId, YUVImage yuvImage) throws FeedException{
+		LOGGER.debug("feed AlgorithmModelId:{},jsonConfig:{} ",algorithmModelId,jsonConfig);
 		if( null == jsonConfig  || null == yuvImage || null == algorithmModelId ){
 			LOGGER.error("jsonConfig:{},cObjectID:{},yuvImage:{}",jsonConfig,algorithmModelId,yuvImage);
 			throw new IllegalArgumentException("feed params exception.");
@@ -147,7 +156,6 @@ public class JnaInterface implements Function{
 		}
 		
 		algorithm_base_result result = new algorithm_base_result();
-		
 		
 		int length;
 		Pointer algorithm_params;
@@ -177,15 +185,14 @@ public class JnaInterface implements Function{
 		} catch (Exception e) {
 			throw new FeedException(e);
 		}
- 
 	}
 
 	@Override
 	public void close(String algorithmModelId) throws AlgorithmIntanceCloseException{
+		LOGGER.debug("close algorithmModelId:{}",algorithmModelId);
 		if(null == algorithmModelId || "".equals(algorithmModelId)){
 			throw new AlgorithmIntanceCloseException("parmas error.");
 		}
-		LOGGER.debug("close algorithmModelId:{}",algorithmModelId);
 		
 		try {
 			Pointer pointer = pointerMap.remove(algorithmModelId);
