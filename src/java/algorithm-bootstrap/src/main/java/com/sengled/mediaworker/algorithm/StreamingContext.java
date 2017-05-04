@@ -2,9 +2,9 @@ package com.sengled.mediaworker.algorithm;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -183,10 +183,33 @@ public class StreamingContext {
 	public Long getLastMotionTimestamp() {
 		return lastMotionTimestamp;
 	}
-
 	public void setLastMotionTimestamp(Long lastMotionTimestamp) {
 		this.lastMotionTimestamp = lastMotionTimestamp;
 	}
-
 	
+	public String getTimestampFormat(Long timestamp) {
+		if(null == timestamp){
+			return "";
+		}
+		try {
+			return DateFormatUtils.format(timestamp, "yyyy-MM-dd HH:mm:ss.SSS");
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+		}
+		return "";
+	}
+	
+	@Override
+	public String toString() {
+		StringBuffer sb = new StringBuffer();
+		sb.append("Token:" + token);
+		sb.append(" model:" + model);
+		sb.append(" utcDateTime" + utcDateTime);
+		sb.append(" lastMotionTimestamp:" + getTimestampFormat(lastMotionTimestamp));
+		sb.append(" lastTimeContextUpdateTimestamp:" + getTimestampFormat(lastTimeContextUpdateTimestamp));
+		sb.append(" contextUpdateTimestamp:" + getTimestampFormat(contextUpdateTimestamp));
+		sb.append(" contextCreateTimestamp:" + getTimestampFormat(contextCreateTimestamp));
+		sb.append(" algorithm:" + algorithm.toString());
+		return sb.toString();
+	}	
 }

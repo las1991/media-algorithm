@@ -13,7 +13,7 @@ public class OpenAction extends Action{
 
 	@Override
 	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener)throws Exception {
-		LOGGER.debug("Token:{},OpenAction feed ",context.getToken());
+		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getToken());
 		StreamingContextManager manager = context.getStreamingContextManager();
 		manager.reload(context);
 		context.setAction(context.execAction);

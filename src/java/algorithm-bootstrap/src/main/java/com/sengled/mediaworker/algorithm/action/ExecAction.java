@@ -41,9 +41,6 @@ public class ExecAction extends Action {
 			throw new FeedException("feed failed.token:["+token+"]", e);
 		}
 		LOGGER.debug("Token:{},Feed finished. model:{}", token, model);
-		//close model
-		//processor.close(context);
-		
 	}
 	
 	private void handleListenerEvent(String text,final StreamingContext context, final YUVImage yuvImage,final FeedListener listener) throws Exception{

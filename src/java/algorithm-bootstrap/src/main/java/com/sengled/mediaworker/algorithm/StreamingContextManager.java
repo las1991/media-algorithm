@@ -72,6 +72,9 @@ public class StreamingContextManager implements InitializingBean{
 		return context;
 	}
 	public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
+		if(LOGGER.isDebugEnabled()){
+			LOGGER.debug("StreamingContext reload.{}",context.toString());
+		}
 		String token = context.getToken();
 		String model = context.getModel();
 		Algorithm algorithm = context.getAlgorithm();
@@ -83,6 +86,9 @@ public class StreamingContextManager implements InitializingBean{
 	}
 	
 	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
+		if(LOGGER.isDebugEnabled()){
+			LOGGER.debug("StreamingContext close.{}",context.toString());
+		}
 		ProcessorManager processor = context.getProcessorManager();
 		Algorithm algorithm = context.getAlgorithm();
 		processor.close(algorithm.getAlgorithmModelId());
@@ -106,6 +112,9 @@ public class StreamingContextManager implements InitializingBean{
 
 			if((currentTime - updateTimestamp ) >= CONTEXT_EXPIRE_TIME_MILLIS){
 				LOGGER.info("Token:{} Context expired clean...",context.getToken());
+				if(LOGGER.isDebugEnabled()){
+					LOGGER.debug("cleanExpiredContext StreamingContext:{}",context.toString());
+				}
 				try {
 					close(context);
 				} catch (AlgorithmIntanceCloseException e) {
