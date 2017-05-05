@@ -15,7 +15,11 @@ public class OpenAction extends Action{
 	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener)throws Exception {
 		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getToken());
 		StreamingContextManager manager = context.getStreamingContextManager();
-		manager.reload(context);
+		Long contextCreateTimestamp = context.getContextCreateTimestamp();
+		Long contextUpdateTimestamp = context.getContextUpdateTimestamp();
+		if( ! contextCreateTimestamp.equals(contextUpdateTimestamp)){//非本次创建 的上下文，当接收到OPEN时，需要reload
+			manager.reload(context);	
+		}
 		context.setAction(context.execAction);
 		context.feed(yuvImage, listener);
 	}

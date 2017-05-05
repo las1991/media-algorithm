@@ -2,14 +2,12 @@ package com.sengled.mediaworker.algorithm;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.atomic.AtomicLong;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,8 +15,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.MetricRegistry;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.JnaInterface;
 import com.sengled.media.interfaces.YUVImage;
@@ -86,25 +82,22 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 		for (String model : MODEL_LIST) {
 			if (config.containsKey(model)) {
+				@SuppressWarnings("unchecked")
 				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
-				LOGGER.debug("Token:{},Received modelConfig:{}",token,modelConfig);
+				String utcDateTime = (String) config.get("utcDateTime");
+				String action = (String) config.get("action");
+				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,modelConfig);
+				
+				//获得上下文
 				StreamingContext context;
 				try {
-					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, modelConfig);
+					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, utcDateTime,modelConfig);
 				} catch (Exception e) {
 					LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
 					LOGGER.error("Token:{} model:{} skip.",token,model);
 					continue;
 				}
-				String utcDateTime = (String) config.get("utcDateTime");
-				String action = (String) config.get("action");
-				//设置 上次接收到数据的时间
-				context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
-				//设置 本次接收到数据的时间
-				context.setContextUpdateTimestamp(System.currentTimeMillis());
-				//设置  数据中的UTC时间
-				context.setUtcDateTime(utcDateTime);
-				
+				//过滤数据
 				try {
 					if(context.isDataExpire()){
 						continue;
@@ -117,6 +110,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					LOGGER.error(e2.getMessage(),e2);
 					continue;
 				}
+				//解码
 				YUVImage yuvImage;
 				try {
 					yuvImage = decode(token, nalData);
@@ -126,6 +120,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					continue;
 				}
 				
+				//处理
 				switch (action) {
 					case "open":
 						context.setAction(context.openAction);

@@ -59,6 +59,7 @@ public class StreamingContext {
 	
 	
 	StreamingContext(String token, String model,
+					String utcDateTime,
 					Algorithm algorithm,
 					ProcessorManager processorManager,
 					RecordCounter recordCounter,
@@ -67,11 +68,13 @@ public class StreamingContext {
 		this.token = token;
 		this.model = model;
 		this.algorithm = algorithm;
+		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
 		this.streamingContextManager = streamingContextManager;
 		this.recordCounter = recordCounter;
 		this.contextCreateTimestamp = System.currentTimeMillis();
-		this.contextUpdateTimestamp = System.currentTimeMillis();
+		this.contextUpdateTimestamp = contextCreateTimestamp;
+		this.lastMotionTimestamp = null;
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
 	}
 
