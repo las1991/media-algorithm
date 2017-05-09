@@ -15,7 +15,7 @@
 # limitations under the License.
 
 SENGLED_APP_HOME=$(cd `dirname $0`/..; pwd)
-ps ax | grep -i $SENGLED_APP_HOME | grep -i  media-algorithm-v3 | grep java | grep -v grep | awk '{print $1}' | xargs kill -SIGTERM
+ps ax | grep -i  media-algorithm-v3 | grep java | grep -v grep | awk '{print $1}' | xargs kill -SIGTERM
 
 echo -n "media-algorithm-v3 Stopping ."
 for i in {1..20}
