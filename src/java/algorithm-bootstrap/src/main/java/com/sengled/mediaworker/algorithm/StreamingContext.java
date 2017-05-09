@@ -25,10 +25,7 @@ import com.sengled.mediaworker.algorithm.action.OpenAction;
 public class StreamingContext {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
 
-	//Motion间隔时间
-	private static final long  MOTION_INTERVAL_TIME_MSCE = 15 * 1000;
-	//包最大延时
-	private static final long  MAX_DELAYED_TIME_MSCE = 10 * 1000;
+
 
 	private String token;
 	/**
@@ -78,11 +75,11 @@ public class StreamingContext {
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
 	}
 
-	public void feed(final YUVImage yuvImage, final FeedListener listener) throws Exception {
-		if (yuvImage == null || listener == null) {
+	public void feed(final  byte[] nalData, final FeedListener listener) throws Exception {
+		if (nalData == null || listener == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		action.feed(this, yuvImage, listener);
+		action.feed(this, nalData, listener);
 	}
 
 	public Date getUtcDateTime() {
@@ -98,33 +95,33 @@ public class StreamingContext {
 		return null;
 	}
 	
-	public boolean isDataExpire(){
+	public boolean isDataExpire(Long maxDelayedTimeMsce){
 		boolean expire = false;
 		//过期数据
 		Date utcDate = getUtcDateTime();
 		if(utcDate !=null){
 			long delayedTime = contextUpdateTimestamp - utcDate.getTime();
-			if( delayedTime >= MAX_DELAYED_TIME_MSCE){
-				LOGGER.info("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,MAX_DELAYED_TIME_MSCE);
+			if( delayedTime >= maxDelayedTimeMsce){
+				LOGGER.info("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,maxDelayedTimeMsce);
 				expire = true;
 				recordCounter.addAndGetDataDelayedCount(1);
 			}
 		}
 		return expire;
 	}
-	public boolean motionIntervalCheck() throws Exception{
+	public boolean motionIntervalCheck(Long motionIntervalTimeMsce) throws Exception{
 		boolean isSkip = false;
 		//motion 检测间隔为15s
 		Date utcDateTime = getUtcDateTime();
 		if(lastMotionTimestamp !=null && utcDateTime !=null){
 			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
 			
-			if(sinceLastMotion <= MOTION_INTERVAL_TIME_MSCE){
-				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
+			if(sinceLastMotion <= motionIntervalTimeMsce){
+				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,motionIntervalTimeMsce);
 				isSkip = true;
 			}else{
 				lastMotionTimestamp = null;
-				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,MOTION_INTERVAL_TIME_MSCE);
+				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,motionIntervalTimeMsce);
 				//重新初始化算法模型
 				streamingContextManager.reload(this);
 			}

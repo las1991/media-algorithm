@@ -12,11 +12,9 @@ public class CloseAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(CloseAction.class);
 
 	@Override
-	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener)throws Exception {
+	public void feed(StreamingContext context, final byte[] nalData, FeedListener listener)throws Exception {
 		LOGGER.debug("Token:{} CloseAction feed",context.getToken());
 		
-		context.setAction(context.execAction);
-		context.feed(yuvImage, listener);
 		StreamingContextManager manager = context.getStreamingContextManager();
 		manager.close(context);
 	}

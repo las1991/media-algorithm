@@ -8,6 +8,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextClosedEvent;
 
+import com.amazonaws.ClientConfiguration;
+import com.amazonaws.Protocol;
 import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.sengled.mediaworker.kinesis.AbsKinesisStreamProcessor;
@@ -73,4 +75,27 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
         	recordProcessorFactory.shutdown();
         }
     }
+
+    
+    @Value("${connectionTimeout}")
+    private int connectionTimeout;
+    
+    @Value("${clientExecutionTimeout}")
+    private int clientExecutionTimeout;
+    
+    @Value("${requestTimeout}")
+    private int requestTimeout;
+    
+    @Value("${socketTimeout}")
+    private int socketTimeout;
+    
+	@Override
+	public ClientConfiguration initConfig() {
+		ClientConfiguration config = super.initConfig();
+		return config
+        		.withConnectionTimeout(connectionTimeout)
+        		.withClientExecutionTimeout(clientExecutionTimeout)
+        		.withRequestTimeout(requestTimeout)
+        		.withSocketTimeout(socketTimeout);
+	}
 }

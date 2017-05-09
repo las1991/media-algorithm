@@ -37,7 +37,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     private ExecutorService executor = Executors.newSingleThreadExecutor();
     
     private Worker worker;
-    
+
     public  ClientConfiguration initConfig(){
     	return new ClientConfiguration()
         		.withConnectionTimeout(CONNECTION_TIMEOUT)
@@ -89,7 +89,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
             }
             executor.shutdown();
             try {
-				executor.awaitTermination(50, TimeUnit.SECONDS);
+				executor.awaitTermination(5, TimeUnit.SECONDS);
 			} catch (InterruptedException e) {
 				LOGGER.error(e.getMessage(),e);
 			}
