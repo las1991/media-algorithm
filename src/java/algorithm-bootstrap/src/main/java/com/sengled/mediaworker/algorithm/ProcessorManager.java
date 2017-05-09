@@ -7,6 +7,7 @@ import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
+import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
  
@@ -17,6 +18,7 @@ public interface ProcessorManager {
 	String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException;
 	void   close(String algorithmModelId)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;
+	YUVImage decode(final String token,final byte[] nalData) throws DecodeException;
 	byte[] encode(String token,byte[] yuvData,int width,int  height,int  dstWidth,int  dstHeight)throws EncodeException;
 	void shutdown();
 }

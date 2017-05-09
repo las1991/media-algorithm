@@ -20,14 +20,13 @@ public class ExecAction extends Action {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecAction.class);
 
 	@Override
-	public void feed(StreamingContext context, YUVImage yuvImage, FeedListener listener) throws Exception {
+	public void feed(StreamingContext context, final byte[] nalData, FeedListener listener) throws Exception {
 
 		final String token = context.getToken();
 		final String model = context.getModel();
-
-		LOGGER.debug("Token:{},Feed model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
-		
 		ProcessorManager processor = context.getProcessorManager();
+		YUVImage yuvImage = processor.decode(token, nalData);
+		LOGGER.debug("Token:{},Feed model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
 		
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
 		if(StringUtils.isBlank(text)){

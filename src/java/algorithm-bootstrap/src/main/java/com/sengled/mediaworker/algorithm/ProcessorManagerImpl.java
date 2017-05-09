@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.sengled.media.interfaces.Algorithm;
@@ -32,6 +33,13 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
 	private static final List<String> MODEL_LIST = Arrays.asList("motion");
+	
+	//Motion间隔时间
+    @Value("${motion.interval.time.msce:15000}")
+    private Long motionIntervalTimeMsce;
+	//包最大延时
+    @Value("${max.delayed.time.msce:10000}")
+    private Long maxDelayedTimeMsce;
 	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
@@ -99,10 +107,10 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				}
 				//过滤数据
 				try {
-					if(context.isDataExpire()){
+					if(context.isDataExpire(maxDelayedTimeMsce)){
 						continue;
 					}
-					if(context.motionIntervalCheck()){
+					if(context.motionIntervalCheck(motionIntervalTimeMsce)){
 						continue;
 					}
 				} catch (Exception e2) {
@@ -111,14 +119,14 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					continue;
 				}
 				//解码
-				YUVImage yuvImage;
-				try {
-					yuvImage = decode(token, nalData);
-				} catch (Exception e1) {
-					LOGGER.error("Token:{} decode failed. skip...",token);
-					LOGGER.error(e1.getMessage(),e1);
-					continue;
-				}
+//				YUVImage yuvImage;
+//				try {
+//					yuvImage = decode(token, nalData);
+//				} catch (Exception e1) {
+//					LOGGER.error("Token:{} decode failed. skip...",token);
+//					LOGGER.error(e1.getMessage(),e1);
+//					continue;
+//				}
 				
 				//处理
 				switch (action) {
@@ -136,7 +144,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 						continue;
 				}
 				try {
-					context.feed(yuvImage, feedListener);
+					context.feed(nalData, feedListener);
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(),e);
 					continue;
@@ -144,8 +152,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			}
 		}
 	}
-
-	private YUVImage decode(final String token,final byte[] nalData) throws DecodeException{
+	@Override
+	public YUVImage decode(final String token,final byte[] nalData) throws DecodeException{
 		return jnaInterface.decode(token, nalData);
 	}
 	
