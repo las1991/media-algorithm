@@ -21,6 +21,16 @@
             <destName>application.properties</destName>
             <outputDirectory>config</outputDirectory>
         </file>
+         <file>
+            <source>${project.basedir}/src/main/resources/config/kcl.properties</source>
+            <destName>kcl.properties</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
+         <file>
+            <source>${project.basedir}/src/main/resources/config/algorithm.properties</source>
+            <destName>algorithm.properties</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
     </files>
     <fileSets>
        <fileSet>
