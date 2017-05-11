@@ -16,10 +16,13 @@ import com.codahale.metrics.MetricRegistry;
 public class RecordCounter implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
 	
+	private final static String METRICS_NAME = "algorithm";
+	
     @Autowired
     private MetricRegistry metricRegistry;
-    
-	private final static String METRICS_NAME = "algorithm";
+    @Autowired
+    private ServicesMetrics servicesMetrics;
+	
 	//接收kinesis records统计数
 	private AtomicLong  recordCount = new AtomicLong();
 	//接收records 中behindLatest > MAX_BEHINDLASTEST_MILLIS 计数
@@ -75,22 +78,27 @@ public class RecordCounter implements InitializingBean{
 	        });
 	}
 	public long addAndGetRecordCount(long delta) {
+		servicesMetrics.incrementReceiveCount(delta);
 		return recordCount.addAndGet(delta);
 	}
 	
 	public long addAndGetReceiveDelayedCount(long delta) {
+		servicesMetrics.incrementReceiveDelayed(delta);
 		return receiveDelayedCount.addAndGet(delta);
 	}
 	
 	public long addAndGetDataDelayedCount(long delta) {
+		servicesMetrics.incrementDataDelayed(delta);
 		return dataDelayedCount.addAndGet(delta);
 	}
 	
 	public long addAndGetSqsFailureCount(long delta) {
+		servicesMetrics.incrementSqsFailure(delta);
 		return sqsFailureCount.addAndGet(delta);
 	}
 	
 	public long addAndGetS3FailureCount(long delta) {
+		servicesMetrics.incrementS3Failure(delta);
 		return s3FailureCount.addAndGet(delta);
 	}
 	public String getAllJsonData(){
