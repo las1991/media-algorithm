@@ -42,6 +42,5 @@ public class LastMinuteCount {
 			currentCount.set(0);
 			recordMinutes = currentMinutes;
 		}
-		
 	}
 }
