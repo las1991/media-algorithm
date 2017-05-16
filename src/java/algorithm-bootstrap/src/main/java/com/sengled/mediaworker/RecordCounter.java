@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
+import com.sengled.mediaworker.metrics.custom.ServicesMetrics;
 
 @Component
 public class RecordCounter implements InitializingBean{
@@ -78,36 +79,27 @@ public class RecordCounter implements InitializingBean{
 	        });
 	}
 	public long addAndGetRecordCount(long delta) {
-		servicesMetrics.incrementReceiveCount(delta);
+		servicesMetrics.mark(ServicesMetrics.RECEIVE, delta);
 		return recordCount.addAndGet(delta);
 	}
 	
 	public long addAndGetReceiveDelayedCount(long delta) {
-		servicesMetrics.incrementReceiveDelayed(delta);
+		servicesMetrics.mark(ServicesMetrics.RECEIVE_DELAYED, delta);
 		return receiveDelayedCount.addAndGet(delta);
 	}
 	
 	public long addAndGetDataDelayedCount(long delta) {
-		servicesMetrics.incrementDataDelayed(delta);
+		servicesMetrics.mark(ServicesMetrics.DATA_DELAYED, delta);
 		return dataDelayedCount.addAndGet(delta);
 	}
 	
 	public long addAndGetSqsFailureCount(long delta) {
-		servicesMetrics.incrementSqsFailure(delta);
+		servicesMetrics.mark(ServicesMetrics.SQS_FAILURE, delta);
 		return sqsFailureCount.addAndGet(delta);
 	}
 	
 	public long addAndGetS3FailureCount(long delta) {
-		servicesMetrics.incrementS3Failure(delta);
+		servicesMetrics.mark(ServicesMetrics.S3_FAILURE, delta);
 		return s3FailureCount.addAndGet(delta);
-	}
-	public String getAllJsonData(){
-		JSONObject json = new JSONObject();
-		json.put("recordCount", recordCount.get());
-		json.put("receiveDelayedCount", receiveDelayedCount.get());
-		json.put("dataDelayedCount", dataDelayedCount.get());
-		json.put("s3FailureCount", s3FailureCount.get());
-		json.put("sqsFailureCount", sqsFailureCount.get());
-		return json.toJSONString();
 	}
 }
