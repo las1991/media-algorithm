@@ -27,14 +27,19 @@ public class LastMinuteCount {
 		currentCount.addAndGet(num);
 	}
 	public long getPreMinuteCount(){
-		tick();
+		long currentMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
+		long age = currentMinutes - recordMinutes;
+		if(age > 0){
+			tick();
+		}
 		return lastMinuteCount.get();
 	}
 	private synchronized void tick(){
 		long currentMinutes = TimeUnit.MILLISECONDS.toMinutes(System.currentTimeMillis());
 		LOGGER.debug("recordMinutes:{},currentMinutes:{},",recordMinutes,currentMinutes);
-		if(currentMinutes > recordMinutes){
-			if((currentMinutes - recordMinutes) > 1){
+		long age = currentMinutes - recordMinutes;
+		if(age > 0){
+			if(age > 1){
 				lastMinuteCount.set(0);
 			}else{
 				lastMinuteCount.set(currentCount.get());	
