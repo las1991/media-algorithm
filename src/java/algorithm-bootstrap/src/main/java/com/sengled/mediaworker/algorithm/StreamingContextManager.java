@@ -22,7 +22,7 @@ import com.sengled.mediaworker.RecordCounter;
 public class StreamingContextManager implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
 	
-	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 60 * 1000;
+	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 10 * 1000;
 	
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
 	private Timer timer;

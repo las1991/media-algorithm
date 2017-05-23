@@ -53,7 +53,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		threadPool = Executors.newWorkStealingPool();		
 	}
 
-	public Future<?> submit(String token, Collection<byte[]> datas) {
+	public synchronized Future<?> submit(String token, Collection<byte[]> datas) {
 		return threadPool.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {

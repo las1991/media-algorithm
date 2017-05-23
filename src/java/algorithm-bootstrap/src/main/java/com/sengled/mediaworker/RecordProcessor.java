@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -58,7 +59,7 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 
 	//提交一批数据，并等待执行结果返回
-	private synchronized void submitTask(List<Record> records) {
+	private  void submitTask(List<Record> records) {
 		final Multimap<String, byte[]> dataMap = ArrayListMultimap.create();
 		long startTime = System.currentTimeMillis();
 		for (Record record : records) {
@@ -69,7 +70,7 @@ public class RecordProcessor implements IRecordProcessor {
 			}
 			byte[] data = new byte[remaining];
 			record.getData().get(data);
-			dataMap.put(record.getPartitionKey(), data);
+			dataMap.put(getToken(record.getPartitionKey()), data);
 		}
 		LOGGER.debug("Multimap dataMap size:{}",dataMap.size());
 		
@@ -110,6 +111,13 @@ public class RecordProcessor implements IRecordProcessor {
     	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
     	isShutdown = true;
     	executorService.shutdownNow();
+    }
+    private String getToken(String partitionKey){
+    	String token =  partitionKey.split(",")[0];
+    	if(StringUtils.isNotBlank(token)){
+    		return token;
+    	}
+    	return partitionKey;
     }
 
 	@Override
@@ -153,7 +161,7 @@ public class RecordProcessor implements IRecordProcessor {
 				isSubmited = true;
 				break;
 			}else{
-				LOGGER.info("Wait submit. Sleep . Had been waiting for {} sec",TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+				LOGGER.info("Wait submit. Sleep . Had been waiting for {} msec",(System.currentTimeMillis() - startTime));
 				try {
 					//Thread.sleep(1000);
 					future.get(1, TimeUnit.SECONDS);
