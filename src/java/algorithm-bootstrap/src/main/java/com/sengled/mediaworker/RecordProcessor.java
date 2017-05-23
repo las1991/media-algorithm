@@ -9,6 +9,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -69,7 +70,7 @@ public class RecordProcessor implements IRecordProcessor {
 			}
 			byte[] data = new byte[remaining];
 			record.getData().get(data);
-			dataMap.put(record.getPartitionKey(), data);
+			dataMap.put(getToken(record.getPartitionKey()), data);
 		}
 		LOGGER.debug("Multimap dataMap size:{}",dataMap.size());
 		
@@ -110,6 +111,13 @@ public class RecordProcessor implements IRecordProcessor {
     	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
     	isShutdown = true;
     	executorService.shutdownNow();
+    }
+    private String getToken(String partitionKey){
+    	String token =  partitionKey.split(",")[0];
+    	if(StringUtils.isNotBlank(token)){
+    		return token;
+    	}
+    	return partitionKey;
     }
 
 	@Override
