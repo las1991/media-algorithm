@@ -2,10 +2,12 @@ package com.sengled.mediaworker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,7 +46,7 @@ public class RecordProcessor implements IRecordProcessor {
     //max BehindLatest
     private static final long MAX_BEHINDLASTEST_MILLIS = 10000L;
     //max execute time
-    private static final long MAX_EXECUTE_MILLIS = 20000L;
+    private static final long MAX_EXECUTE_MILLIS = 2000L;
     private long nextCheckpointTimeInMillis;
     private boolean isShutdown;
     
@@ -78,7 +80,11 @@ public class RecordProcessor implements IRecordProcessor {
 		for (Future<?> task : batchTasks) {
 			try {
 				task.get(MAX_EXECUTE_MILLIS, TimeUnit.MILLISECONDS);
-			} catch (Exception e) {
+			} catch (InterruptedException e) {
+				LOGGER.error(e.getMessage(), e);
+			} catch (ExecutionException e) {
+				LOGGER.error(e.getCause().getMessage(), e.getCause());
+			} catch (TimeoutException e) {
 				LOGGER.error(e.getMessage(), e);
 			}
 		}
@@ -147,10 +153,11 @@ public class RecordProcessor implements IRecordProcessor {
 				isSubmited = true;
 				break;
 			}else{
-				LOGGER.info("Wait submit. Sleep 1 sec. Had been waiting for {} sec",TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
+				LOGGER.info("Wait submit. Sleep . Had been waiting for {} sec",TimeUnit.MILLISECONDS.toSeconds(System.currentTimeMillis() - startTime));
 				try {
-					Thread.sleep(1000);
-				} catch (InterruptedException e) {
+					//Thread.sleep(1000);
+					future.get(1, TimeUnit.SECONDS);
+				} catch (Exception e) {
 					LOGGER.error(e.getMessage(),e);
 				}
 			}
