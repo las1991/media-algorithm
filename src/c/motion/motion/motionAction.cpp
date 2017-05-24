@@ -58,11 +58,11 @@ void getBoundaryBySobel(Mat& src, Mat& dst)
 }
 
 //get foreground mask
-bool getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
+int getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 {
     if (index > 2 )
     {
-        return false;
+        return -1;
     }
 	
     if ( rv->isModelUpdate )
@@ -70,15 +70,20 @@ bool getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 		
 		rv->model[index] = (vibeModel_Sequential_t*)libvibeModel_Sequential_New();
 		libvibeModel_Sequential_AllocInit_8u_C1R(rv->model[index], srcImg.data, srcImg.cols, srcImg.rows);
+        if(srcImg.data == NULL || srcImg.cols <= 0 || srcImg.rows <= 0 )
+        {
+            rv->plog->log_print(SLS_LOG_ERROR,"fatal error  width=%d,height=%d\n",srcImg.cols,srcImg.rows);
+            return -1;
+        }
 		srcImg.copyTo(rv->bg_frame[index]);
 	    
-		return false;
+		return 0;
     }
     
 	libvibeModel_Sequential_Segmentation_8u_C1R(rv->model[index], srcImg.data, fg_mask.data);
 	libvibeModel_Sequential_Update_8u_C1R(rv->model[index], srcImg.data, fg_mask.data);    
    
-    return true;
+    return 1;
 }
 
 //get contours from foreground mask
@@ -235,15 +240,14 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 		vector< vector<Point> > contours;
 		vector<int> zoneArray;
 		int zoneid = -1;
+        bool bg_update = false; 
         for (it = motion_zones.begin(); it != motion_zones.end(); ++it)
         {
             Rect roiRect = it->second;
-			if ( roiRect.x == 0 && roiRect.y==0 && roiRect.width==0 && roiRect.height==0 )
+			if ( roiRect.width<=0 || roiRect.height<=0 )
 			{
-				roiRect.x=0;
-				roiRect.y=0;
-				roiRect.width=100;
-				roiRect.height=100;
+                rv->plog->log_print(SLS_LOG_ERROR,"%s--zone paramers error!!!",rv->token);
+                continue;
 			}
             Rect rect = Rect(gradframe.cols * roiRect.x / 100,
                              gradframe.rows * roiRect.y / 100,
@@ -262,12 +266,20 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 			}
 
             Mat fg_mask( roiImg.rows,roiImg.cols,CV_8U );
-            
-            if (!getForegroundMask(rv, roiImg, fg_mask, distance(motion_zones.begin(), it)))
+
+            int ret = getForegroundMask(rv, roiImg, fg_mask, distance(motion_zones.begin(), it));
+            if (ret == -1)
             {
-				rv->plog->log_print(SLS_LOG_DEBUG,"%s--roi create background",rv->token );
+				rv->plog->log_print(SLS_LOG_ERROR,"%s--fatal error",rv->token );
                 continue;
             }
+            else if(ret == 0)
+            {
+				rv->plog->log_print(SLS_LOG_DEBUG,"%s--roi create background",rv->token );
+                bg_update=true;
+                continue;                
+            }
+            
 			contours.clear();
 			getValidContours( roiImg,fg_mask, contours, (int)(roiImg.cols * roiImg.rows / setting_params.sensitivity),
 		    	rv,distance(motion_zones.begin(), it) );
@@ -277,7 +289,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 				zoneArray.push_back(it->first);
 			}			
 		}
-        if ( rv->isModelUpdate )
+        if ( rv->isModelUpdate && bg_update)
         {
 			rv->isModelUpdate=false;
         }
@@ -302,7 +314,9 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 		Mat fg_mask( gradframe.rows,gradframe.cols,CV_8U );
         
         //create model and get foreground mask
-        if( !getForegroundMask(rv, gradframe, fg_mask, 0) )
+        int ret = getForegroundMask(rv, gradframe, fg_mask, 0);
+
+        if( ret == 0 )
 		{
 			rv->plog->log_print(SLS_LOG_DEBUG,"%s-- create background",rv->token );
 			if ( rv->isModelUpdate )
@@ -310,9 +324,14 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 				rv->isModelUpdate = false;
 			}
 			reportMotionEvent(rv, false, 0 ,result );
-			rv->plog->log_print(SLS_LOG_DEBUG,"%s no Zone-----This frame has not motion-----",rv->token);
 			return;
 		}
+        else if(ret == -1)
+        {
+			rv->plog->log_print(SLS_LOG_ERROR,"%s-- fatal error",rv->token );
+			reportMotionEvent(rv, false, 0 ,result );
+            return;
+        }
         // get all valid contours
         vector< vector<Point> > contours;
         getValidContours(gradframe,fg_mask, contours, (int)(gradframe.cols * gradframe.rows / setting_params.sensitivity),rv,0);
