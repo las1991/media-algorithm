@@ -47,7 +47,7 @@ public class RecordProcessor implements IRecordProcessor {
     //max BehindLatest
     private static final long MAX_BEHINDLASTEST_MILLIS = 10000L;
     //max execute time
-    private static final long MAX_EXECUTE_MILLIS = 2000L;
+    private static final long MAX_EXECUTE_MILLIS = 20000L;
     private long nextCheckpointTimeInMillis;
     private boolean isShutdown;
     
