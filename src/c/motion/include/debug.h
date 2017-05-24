@@ -59,7 +59,7 @@ public:
 		string str_time(get_time());
 
       	char sztmp[1024] = {0};
-        char log_output[1024]={0};
+        char log_output[1024*2]={0};
 
 		sprintf( sztmp,"%s",(open_flag+str_time+" "+str_format).c_str());
         vsprintf(log_output,sztmp,ap);
