@@ -27,13 +27,13 @@ public class ExecAction extends Action {
 		ProcessorManager processor = context.getProcessorManager();
 		YUVImage yuvImage = processor.decode(token, nalData);
 		LOGGER.debug("Token:{},Feed model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParameters(),yuvImage.getYUVData().length);
-		
+		long startTime = System.currentTimeMillis();
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
+		LOGGER.debug("Token:{},Feed cost:{} msec ",token,(System.currentTimeMillis() - startTime));
 		if(StringUtils.isBlank(text)){
 			LOGGER.debug("Token:{},Feed result NORESULT. ",token);
 			return;
 		}
-
 		try {
 			handleListenerEvent(text.trim(),context, yuvImage, listener);
 		} catch (Exception e) {
