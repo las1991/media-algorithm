@@ -51,7 +51,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	public void afterPropertiesSet() throws Exception {
 		try {
 			jnaInterface = new JnaInterface();
-			threadPool = Executors.newWorkStealingPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 2));
+			threadPool = Executors.newWorkStealingPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 1));
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
 			System.exit(1);
