@@ -49,8 +49,13 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
-		jnaInterface = new JnaInterface();
-		threadPool = Executors.newWorkStealingPool();		
+		try {
+			jnaInterface = new JnaInterface();
+			threadPool = Executors.newWorkStealingPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 2));
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			System.exit(1);
+		}		
 	}
 
 	public synchronized Future<?> submit(String token, Collection<byte[]> datas) {

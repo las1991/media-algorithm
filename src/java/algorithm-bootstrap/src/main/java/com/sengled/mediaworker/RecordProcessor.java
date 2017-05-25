@@ -163,11 +163,15 @@ public class RecordProcessor implements IRecordProcessor {
 			}else{
 				LOGGER.info("Wait submit. Sleep . Had been waiting for {} msec",(System.currentTimeMillis() - startTime));
 				try {
-					//Thread.sleep(1000);
 					future.get(1, TimeUnit.SECONDS);
-				} catch (Exception e) {
+				} catch (InterruptedException e) {
 					LOGGER.error(e.getMessage(),e);
-				}
+ 				} catch (ExecutionException e) {
+ 					LOGGER.error(e.getMessage(),e);
+ 				} catch (TimeoutException e) {
+ 					LOGGER.warn("Wait submit sleep 1 sce");
+ 				}
+ 
 			}
 		}
  
