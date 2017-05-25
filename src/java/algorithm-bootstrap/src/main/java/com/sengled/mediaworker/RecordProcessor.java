@@ -47,7 +47,7 @@ public class RecordProcessor implements IRecordProcessor {
     //max BehindLatest
     private static final long MAX_BEHINDLASTEST_MILLIS = 10000L;
     //max execute time
-    private static final long MAX_EXECUTE_MILLIS = 2000L;
+    private static final long MAX_EXECUTE_MILLIS = 20000L;
     private long nextCheckpointTimeInMillis;
     private boolean isShutdown;
     
@@ -163,11 +163,15 @@ public class RecordProcessor implements IRecordProcessor {
 			}else{
 				LOGGER.info("Wait submit. Sleep . Had been waiting for {} msec",(System.currentTimeMillis() - startTime));
 				try {
-					//Thread.sleep(1000);
 					future.get(1, TimeUnit.SECONDS);
-				} catch (Exception e) {
+				} catch (InterruptedException e) {
 					LOGGER.error(e.getMessage(),e);
-				}
+ 				} catch (ExecutionException e) {
+ 					LOGGER.error(e.getMessage(),e);
+ 				} catch (TimeoutException e) {
+ 					LOGGER.warn("Wait submit sleep 1 sce");
+ 				}
+ 
 			}
 		}
  
