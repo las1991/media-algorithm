@@ -19,10 +19,15 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.ResponseBody;
+import org.springframework.web.bind.annotation.RestController;
 
+import com.alibaba.fastjson.JSONArray;
+import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.net.HttpHeaders;
+import com.sengled.mediaworker.algorithm.StreamingContextManager;
 import com.sengled.mediaworker.metrics.osmonitor.OSMonitor;
 
 /**
@@ -36,6 +41,9 @@ public class MetricsGraphicsController implements InitializingBean, MetricsGraph
 
 	@Autowired
 	private MetricRegistry metricRegistry;
+	@Autowired
+	private StreamingContextManager streamingContextManager;
+	
 	private final ConcurrentHashMap<String, List<Graphics>> graphicsList = new ConcurrentHashMap<String, List<Graphics>>();
 	
 	@Override
@@ -139,5 +147,13 @@ public class MetricsGraphicsController implements InitializingBean, MetricsGraph
 		}
 
 		return ResponseEntity.notFound().build();
+	}
+	
+	
+	@RequestMapping(value="/tokens/list",method=RequestMethod.GET)
+	@ResponseBody
+	public List<String>  tokensList() throws IOException {
+		List<String> tokens = streamingContextManager.getToken();
+		return tokens;
 	}
 }

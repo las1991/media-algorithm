@@ -43,6 +43,7 @@ public class StreamingContext {
 	//创建上下文时间
 	private Long contextCreateTimestamp;
 	
+	private boolean isReport = true;
 	private Algorithm algorithm;
 	private Action action;
 	private ProcessorManager processorManager;
@@ -109,24 +110,41 @@ public class StreamingContext {
 		}
 		return expire;
 	}
-	public boolean motionIntervalCheck(Long motionIntervalTimeMsce) throws Exception{
-		boolean isSkip = false;
-		//motion 检测间隔为15s
+//	public boolean motionIntervalCheck(Long motionIntervalTimeMsce) throws Exception{
+//		boolean isSkip = false;
+//		//motion 检测间隔为15s
+//		Date utcDateTime = getUtcDateTime();
+//		if(lastMotionTimestamp !=null && utcDateTime !=null){
+//			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
+//			
+//			if(sinceLastMotion <= motionIntervalTimeMsce){
+//				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,motionIntervalTimeMsce);
+//				isSkip = true;
+//			}else{
+//				lastMotionTimestamp = null;
+//				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,motionIntervalTimeMsce);
+//				//重新初始化算法模型
+//				//streamingContextManager.reload(this);
+//			}
+//		}
+//		return isSkip;
+//	}
+	public void reportCheck(Long motionIntervalTimeMsce){
 		Date utcDateTime = getUtcDateTime();
 		if(lastMotionTimestamp !=null && utcDateTime !=null){
 			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
 			
 			if(sinceLastMotion <= motionIntervalTimeMsce){
-				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,motionIntervalTimeMsce);
-				isSkip = true;
+				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec isReport=false.",token,sinceLastMotion,motionIntervalTimeMsce);
+				isReport = false;
 			}else{
 				lastMotionTimestamp = null;
-				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,motionIntervalTimeMsce);
+				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",token,sinceLastMotion,motionIntervalTimeMsce);
+				isReport = true;
 				//重新初始化算法模型
-				streamingContextManager.reload(this);
+				//streamingContextManager.reload(this);
 			}
 		}
-		return isSkip;
 	}
 	public String getToken() {
 		return token;
@@ -199,6 +217,9 @@ public class StreamingContext {
 		return "";
 	}
 	
+	public boolean isReport(){
+		return isReport;
+	}
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
