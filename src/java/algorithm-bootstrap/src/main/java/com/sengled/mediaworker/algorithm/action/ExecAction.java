@@ -34,11 +34,16 @@ public class ExecAction extends Action {
 			LOGGER.debug("Token:{},Feed result NORESULT. ",token);
 			return;
 		}
-		try {
-			handleListenerEvent(text.trim(),context, yuvImage, listener);
-		} catch (Exception e) {
-			throw new FeedException("feed failed.token:["+token+"]", e);
+		if(context.isReport()){
+			try {
+				handleListenerEvent(text.trim(),context, yuvImage, listener);
+			} catch (Exception e) {
+				throw new FeedException("feed failed.token:["+token+"]", e);
+			}
+		}else{
+			LOGGER.debug("Token:{} get Motion.But isReport is false.",token);
 		}
+		
 		LOGGER.debug("Token:{},Feed finished. model:{}", token, model);
 	}
 	

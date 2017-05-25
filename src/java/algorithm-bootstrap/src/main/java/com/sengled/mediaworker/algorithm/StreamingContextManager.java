@@ -1,11 +1,16 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
+import java.util.Enumeration;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +27,7 @@ import com.sengled.mediaworker.RecordCounter;
 public class StreamingContextManager implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContextManager.class);
 	
-	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 60 * 1000;
+	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 10 * 60 * 1000;
 	
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
 	private Timer timer;
@@ -129,5 +134,13 @@ public class StreamingContextManager implements InitializingBean{
 				}
 			}
 		}
+	}
+	public List<String> getToken(){
+		Enumeration<String> keys = streamingContextMap.keys();
+		List<String> tokens = new ArrayList<>();
+		while(keys.hasMoreElements()){
+			tokens.add(keys.nextElement());
+		}
+		return tokens;
 	}
 }

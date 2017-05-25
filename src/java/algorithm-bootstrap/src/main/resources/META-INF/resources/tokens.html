@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<title>Sengled algorithm Server (Java)</title>
+
+<!-- Bootstrap core CSS -->
+<link href="//cdn.bootcss.com/bootstrap/3.3.6/css/bootstrap.min.css"
+	rel="stylesheet">
+<link href="//cdn.bootcss.com/jquery-mobile/1.4.5/jquery.mobile.css"
+	rel="stylesheet">
+
+<link rel="stylesheet"
+	href="http://wixel.github.io/jquery-popdown/css/jquery.popdown.css">
+
+<!-- Just for debugging purposes. Don't actually copy this line! -->
+<!--[if lt IE 9]>
+    <script src="../../assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+<!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+<!--[if lt IE 9]>
+    <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+    <script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+
+<style type="text/css">
+/*
+      * Style tweaks
+      * --------------------------------------------------
+      */
+      
+html,body {
+  overflow-x: hidden; /* Prevent scroll on narrow devices */
+}
+body {
+  padding-top: 70px;
+}
+footer {
+  padding: 30px 0;
+}
+
+
+iframe {
+	border: none;
+}
+
+.popdown-content .tips {
+	float: left;
+	padding-left: 40px;
+}
+</style>
+</head>
+
+<body>
+	<div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+		<div class="container">
+			<div class="navbar-header">
+				<button type="button" class="navbar-toggle" data-toggle="collapse"
+					data-target=".navbar-collapse">
+					<span class="sr-only">Toggle navigation</span> <span
+						class="icon-bar"></span> <span class="icon-bar"></span> <span
+						class="icon-bar"></span>
+				</button>
+				<a class="navbar-brand" href="/">Sengled algorithm v3 Server <font style="font-size: xx-small;">(Java)</font></a>
+					
+					
+			</div>
+			<div class="collapse navbar-collapse">
+				<ul class="nav navbar-nav">
+					<li><a href="/index.html">Home</a></li>
+					<li class="active"><a href="/tokens.html">Tokens</a></li>
+				</ul>
+			</div>
+			<!-- /.nav-collapse -->
+		</div>
+		<!-- /.container -->
+	</div>
+	<!-- /.navbar -->
+
+	<div class="container">
+		<div class="fixed-table-toolbar">
+
+			<div class="pull-right search">
+				
+			</div>
+		</div>
+		<div style="padding-bottom: 0px;" class="fixed-table-container">
+			<div style="display: none;" class="fixed-table-header">
+				<table></table>
+			</div>
+			<div class="fixed-table-body">
+				<table class="table table-hover" id="m" data-search="true"
+					data-show-toggle="true" data-show-columns="true"
+					data-mobile-responsive="true">
+					<thead>
+						<tr>
+							<th style="" data-field="0" tabindex="0">
+								<div class="th-inner ">Token</div>
+								<div class="fht-cell"></div>
+							</th>
+						</tr>
+					</thead>
+					<tbody>
+
+					</tbody>
+				</table>
+			</div>
+			<div style="display: none;" class="fixed-table-footer">
+				<table>
+					<tbody>
+						<tr></tr>
+					</tbody>
+				</table>
+			</div>
+			<div style="display: none;" class="fixed-table-pagination"></div>
+		</div>
+
+		<hr>
+
+		<footer>
+			<p>&copy; Sengled 2016</p>
+		</footer>
+
+	</div>
+	<!--/.container-->
+
+
+	<!-- Bootstrap core JavaScript
+================================================== -->
+	<!-- Placed at the end of the document so the pages load faster -->
+	<script src="//cdn.bootcss.com/jquery/3.1.0/jquery.min.js"></script>
+	<script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+	
+
+
+	<!-- metrics graphics -->
+	<script src="//cdn.bootcss.com/d3/3.5.17/d3.min.js"></script>
+	<script type="text/javascript">
+	
+	 d3.json('/tokens/list', function(data) {
+	      if (!data || data.length == 0) {
+	        $("#m tbody").append(
+	            '<tr data-index="0"><td colspan="5">暂无数据</td></tr>');
+	      } else {
+	        $.each(data, function(i, val) {
+	          console.log(data);
+	          
+	          $("#m tbody").append(
+	              '<tr data-index="' + i + '">' 
+	                  + '<td style="" >' + val + '</td>'   
+	                  +'</tr>');
+	        });
+	      }
+
+	 });
+	</script>
+
+</body>
+</html>
