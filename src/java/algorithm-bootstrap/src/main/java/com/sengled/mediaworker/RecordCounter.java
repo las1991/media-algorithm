@@ -10,7 +10,11 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
+import com.codahale.metrics.Reservoir;
+import com.codahale.metrics.SlidingWindowReservoir;
+import com.codahale.metrics.Snapshot;
 import com.sengled.mediaworker.metrics.custom.ServicesMetrics;
 
 @Component
@@ -18,6 +22,7 @@ public class RecordCounter implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
 	
 	private final static String METRICS_NAME = "algorithm";
+	private final static int HISTOGRAM_MAX_STORE = 2000;
 	
     @Autowired
     private MetricRegistry metricRegistry;
@@ -32,9 +37,13 @@ public class RecordCounter implements InitializingBean{
     private AtomicLong  dataDelayedCount = new AtomicLong();
     
     private AtomicLong  s3FailureCount = new AtomicLong();
+    private AtomicLong  s3SuccessfulCount = new AtomicLong();
     //private AtomicLong  dynamodbFailureCount = new AtomicLong();
     private AtomicLong  sqsFailureCount = new AtomicLong();
+    private AtomicLong  sqsSuccessfulCount = new AtomicLong();
    
+    private Histogram singleDataProcessCostHistogram;
+    private Histogram waitProcessCostHistogram;
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		LOGGER.info("Initializing...");
@@ -77,6 +86,21 @@ public class RecordCounter implements InitializingBean{
 	                return sqsFailureCount.getAndSet(0);
 	            }
 	        });
+	        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "s3SuccessfulCount"), new Gauge<Long>(){
+	            @Override
+	            public Long getValue() {
+	                return s3SuccessfulCount.getAndSet(0);
+	            }
+	        });
+	        metricRegistry.register( MetricRegistry.name(METRICS_NAME, "sqsSuccessfulCount"), new Gauge<Long>(){
+	            @Override
+	            public Long getValue() {
+	                return sqsSuccessfulCount.getAndSet(0);
+	            }
+	        });
+	        
+	        singleDataProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "processCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        waitProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "waitProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	}
 	public long addAndGetRecordCount(long delta) {
 		servicesMetrics.mark(ServicesMetrics.RECEIVE, delta);
@@ -101,5 +125,19 @@ public class RecordCounter implements InitializingBean{
 	public long addAndGetS3FailureCount(long delta) {
 		servicesMetrics.mark(ServicesMetrics.S3_FAILURE, delta);
 		return s3FailureCount.addAndGet(delta);
+	}
+	
+	public long addAndGetSqsSuccessfulCount(long delta) {
+		return sqsSuccessfulCount.addAndGet(delta);
+	}
+	
+	public long addAndGetS3SuccessfulCount(long delta) {
+		return s3SuccessfulCount.addAndGet(delta);
+	}
+	public void updateSingleDataProcessCost(long value){
+		singleDataProcessCostHistogram.update(value);
+	}
+	public void updateWaitProcessCost(long value){
+		waitProcessCostHistogram.update(value);
 	}
 }

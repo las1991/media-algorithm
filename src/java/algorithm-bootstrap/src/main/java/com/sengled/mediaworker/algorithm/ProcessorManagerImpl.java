@@ -24,6 +24,7 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
+import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
@@ -46,6 +47,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private FeedListener feedListener;
 	@Autowired
     private StreamingContextManager streamingContextManager;
+	@Autowired
+	private RecordCounter recordCounter;
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -58,11 +61,11 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}		
 	}
 
-	public synchronized Future<?> submit(String token, Collection<byte[]> datas) {
+	public synchronized Future<?> submit(long receiveTime,String token, Collection<byte[]> datas) {
 		return threadPool.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
-				handleDatas(token, datas);
+				handleDatas(receiveTime,token, datas);
 				return null;
 			}
 		});
@@ -72,9 +75,16 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		this.feedListener = feedListener;
 	}
 	
-	private  void handleDatas(final String token,final Collection<byte[]> datas){
-		LOGGER.debug("Token:{},handleDatas begin. datas size:{}",token,datas.size());
+	private  void handleDatas(final long receiveTime,final String token,final Collection<byte[]> datas){
+		
+		LOGGER.debug("Token:{},handleDatas begin. datas size:{} ",token,datas.size());
+		
 		for (byte[] data : datas) {
+			long handleStartTime = System.currentTimeMillis();
+			long waitProcessCost = handleStartTime - receiveTime;
+			recordCounter.updateWaitProcessCost(waitProcessCost);
+			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
+			
 			final Frame frame;
 			try {
 				frame = KinesisFrameDecoder.decode(data);
@@ -85,6 +95,9 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				continue;
 			}
 			actionHandle(token, frame.getConfigs(), frame.getNalData());
+			long processCost = System.currentTimeMillis() -  handleStartTime;
+			recordCounter.updateSingleDataProcessCost(processCost);
+			LOGGER.debug("Token:{} process cost:{}",token,processCost);
 		}
 	}
 	
