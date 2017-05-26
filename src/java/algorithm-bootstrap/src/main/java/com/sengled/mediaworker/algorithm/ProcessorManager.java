@@ -13,7 +13,7 @@ import com.sengled.media.interfaces.exceptions.FeedException;
  
 
 public interface ProcessorManager {	
-	Future<?> submit(String token, Collection<byte[]> data);
+	Future<?> submit(long receiveTime,String token, Collection<byte[]> data);
 	void   setFeedListener(FeedListenerImpl feedListener);
 	String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException;
 	void   close(String algorithmModelId)throws AlgorithmIntanceCloseException ;

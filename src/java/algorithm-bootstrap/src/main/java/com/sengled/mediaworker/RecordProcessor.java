@@ -59,7 +59,7 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 
 	//提交一批数据，并等待执行结果返回
-	private  void submitTask(List<Record> records) {
+	private  void submitTask(List<Record> records,long receiveTime) {
 		final Multimap<String, byte[]> dataMap = ArrayListMultimap.create();
 		long startTime = System.currentTimeMillis();
 		for (Record record : records) {
@@ -76,7 +76,7 @@ public class RecordProcessor implements IRecordProcessor {
 		
 		List<Future<?>> batchTasks = new ArrayList<>(dataMap.size());	
 		for (final String token : dataMap.keySet()) {
-			batchTasks.add(processorManager.submit(token, dataMap.get(token)));
+			batchTasks.add(processorManager.submit(receiveTime,token, dataMap.get(token)));
 		}
 		for (Future<?> task : batchTasks) {
 			try {
@@ -134,7 +134,7 @@ public class RecordProcessor implements IRecordProcessor {
 		List<Record> records = processRecordsInput.getRecords();
 		IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
 		Long behindLatest = processRecordsInput.getMillisBehindLatest();
-		
+		long receiveTime = System.currentTimeMillis();
 		LOGGER.info("Received records size:{}",records.size());
 		LOGGER.info("BehindLatest:{}",behindLatest);
 		
@@ -148,13 +148,13 @@ public class RecordProcessor implements IRecordProcessor {
 		
 		long startTime = System.currentTimeMillis();
         boolean isSubmited = false;
-        //如果上次提交的任务已执行完成，则提交新任务，否则等待1s
+        //如果上次提交的任务已执行完成，则提交新任务，否则等待
 		while( ! isShutdown){
 			if((future == null) || future.isDone() || future.isCancelled()){
 				future = executorService.submit(new Runnable() {
 					@Override
 					public void run() {
-						submitTask(records);
+						submitTask(records,receiveTime);
 					}
 				});
 				LOGGER.debug("Submited records size:{}",records.size());
