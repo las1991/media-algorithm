@@ -128,11 +128,15 @@ footer {
             </div>
           </div><!--/row-->
           
+          
+
+          
+          
           <div class="row">
             <div class="col-4 col-sm-4 col-lg-4">
               <h2>recordCount</h2>
               <p id="recordCount"></p>
-              <p class='col-lg-4 text-left ' id="recordCount-legend"></p>
+              <p class='col-lg-9 text-left ' id="recordCount-legend"></p>
             </div>
             <div class="col-4 col-sm-4 col-lg-4">
               <h2>receiveDelayedCount</h2>
@@ -147,15 +151,28 @@ footer {
           </div><!--/row-->
           
           <div class="row">
+            <div class="col-6 col-sm-4 col-lg-4">
+              <h2>处理时间</h2>
+              <p id="processCost"></p>
+              <p class='col-lg-9 text-left ' id="processCost-legend"></p>
+            </div>
+            <div class="col-6 col-sm-4 col-lg-4">
+              <h2>等待处理时间</h2>
+              <p id="waitProcessCost"></p>
+              <p class='col-lg-9 text-left ' id="waitProcessCost-legend"></p>
+            </div>
+          </div><!--/row-->
+          
+          <div class="row">
             <div class="col-4 col-sm-4 col-lg-4">
-              <h2>s3FailureCount</h2>
-              <p id="s3FailureCount"></p>
-              <p class='col-lg-4 text-left ' id="s3FailureCount-legend"></p>
+              <h2>s3Count</h2>
+              <p id="s3Count"></p>
+              <p class='col-lg-9 text-left ' id="s3Count-legend"></p>
             </div>
             <div class="col-4 col-sm-4 col-lg-4">
-              <h2>sqsFailureCount</h2>
-              <p id="sqsFailureCount"></p>
-              <p class='col-lg-9 text-left ' id="sqsFailureCount-legend"></p>
+              <h2>sqsCount</h2>
+              <p id="sqsCount"></p>
+              <p class='col-lg-9 text-left ' id="sqsCount-legend"></p>
             </div>
           </div><!--/row-->
 
@@ -240,14 +257,72 @@ footer {
       });      
     });
      
-
-      
+    //count, min, max, mean, stddev, median, p75, p95, p98, p99, p999
+    //处理时间
+    d3.json('/graphics/histogram?name=algorithm.processCost&column=max', function(max){
+        d3.json('/graphics/histogram?name=algorithm.processCost&column=mean', function(mean){
+        	d3.json('/graphics/histogram?name=algorithm.processCost&column=p75', function(p75){
+        		d3.json('/graphics/histogram?name=algorithm.processCost&column=p99', function(p99){
+        	
+		           data = new Array();
+		           data.push(MG.convert.date(max, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(mean, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(p75, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(p99, 'date', '%Y-%m-%d %H:%M:%S'));
+	           
+		           MG.data_graphic({
+		             title : "单位：毫秒",
+		             description : "",
+		             data : data,
+		             width : mg_width ,
+		             height : mg_height,
+		             right :mg_right ,
+		             left :mg_left,
+		             target : document.getElementById('processCost'),
+		             legend: ['max', 'mean','p75','p99'],
+		             legend_target: '#processCost-legend',
+		             aggregate_rollover: true
+	    	       	});
+	        	});      
+      		});
+    	});   
+    }); 
+    //等待处理时间
+    d3.json('/graphics/histogram?name=algorithm.waitProcessCost&column=max', function(max){
+        d3.json('/graphics/histogram?name=algorithm.waitProcessCost&column=mean', function(mean){
+        	d3.json('/graphics/histogram?name=algorithm.waitProcessCost&column=p75', function(p75){
+        		d3.json('/graphics/histogram?name=algorithm.waitProcessCost&column=p99', function(p99){
+        	
+		           data = new Array();
+		           data.push(MG.convert.date(max, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(mean, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(p75, 'date', '%Y-%m-%d %H:%M:%S'));
+		           data.push(MG.convert.date(p99, 'date', '%Y-%m-%d %H:%M:%S'));
+	           
+		           MG.data_graphic({
+		             title : "单位：毫秒",
+		             description : "",
+		             data : data,
+		             width : mg_width ,
+		             height : mg_height,
+		             right :mg_right ,
+		             left :mg_left,
+		             target : document.getElementById('waitProcessCost'),
+		             legend: ['max', 'mean','p75','p99'],
+		             legend_target: '#waitProcessCost-legend',
+		             aggregate_rollover: true
+	    	       	});
+	        	});      
+      		});
+    	});   
+    }); 
+    
     d3.json('/graphics/gauge?name=algorithm.recordCount&column=value', function(recordCount){
            data = new Array();
            data.push(MG.convert.date(recordCount, 'date', '%Y-%m-%d %H:%M:%S'));
            
            MG.data_graphic({
-             title : "单位：计数",
+             title : "单位：个",
              description : "",
              data : data,
              width : mg_width ,
@@ -266,7 +341,7 @@ footer {
         data.push(MG.convert.date(dataDelayedCount, 'date', '%Y-%m-%d %H:%M:%S'));
         
         MG.data_graphic({
-          title : "单位：计数",
+          title : "单位：个",
           description : "",
           data : data,
           width : mg_width ,
@@ -285,7 +360,7 @@ footer {
         data.push(MG.convert.date(receiveDelayedCount, 'date', '%Y-%m-%d %H:%M:%S'));
         
         MG.data_graphic({
-          title : "单位：计数",
+          title : "单位：个",
           description : "",
           data : data,
           width : mg_width ,
@@ -302,45 +377,53 @@ footer {
     
     
     d3.json('/graphics/gauge?name=algorithm.s3FailureCount&column=value', function(s3FailureCount){
-        data = new Array();
-        data.push(MG.convert.date(s3FailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
-        
-        MG.data_graphic({
-          title : "单位：计数",
-          description : "",
-          data : data,
-          width : mg_width ,
-          height : mg_height,
-          right :mg_right ,
-          left :mg_left,
-          target : document.getElementById('s3FailureCount'),
-          legend: ['s3FailureCount'],
-          legend_target: '#s3FailureCount-legend',
-          aggregate_rollover: true
-        });
-   });
+        d3.json('/graphics/gauge?name=algorithm.s3SuccessfulCount&column=value', function(s3SuccessfulCount){
+           data = new Array();
+           data.push(MG.convert.date(s3FailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
+           data.push(MG.convert.date(s3SuccessfulCount, 'date', '%Y-%m-%d %H:%M:%S'));
+           
+           MG.data_graphic({
+             title : "单位：个",
+             description : "",
+             data : data,
+             width : mg_width ,
+             height : mg_height,
+             right :mg_right ,
+             left :mg_left,
+             target : document.getElementById('s3Count'),
+             legend: ['s3Failure', 's3Successful'],
+             legend_target: '#s3Count-legend',
+             aggregate_rollover: true
+           });
+        });      
+      });
     
-    
-    d3.json('/graphics/gauge?name=algorithm.sqsFailureCount&column=value', function(sqsFailureCount){
-        data = new Array();
-        data.push(MG.convert.date(sqsFailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
-        
-        MG.data_graphic({
-          title : "单位：计数",
-          description : "",
-          data : data,
-          width : mg_width ,
-          height : mg_height,
-          right :mg_right ,
-          left :mg_left,
-          target : document.getElementById('sqsFailureCount'),
-          legend: ['sqsFailureCount'],
-          legend_target: '#sqsFailureCount-legend',
-          aggregate_rollover: true
-        });
-   });
     
 
+    d3.json('/graphics/gauge?name=algorithm.sqsFailureCount&column=value', function(sqsFailureCount){
+        d3.json('/graphics/gauge?name=algorithm.sqsSuccessfulCount&column=value', function(sqsSuccessfulCount){
+           data = new Array();
+           data.push(MG.convert.date(sqsFailureCount, 'date', '%Y-%m-%d %H:%M:%S'));
+           data.push(MG.convert.date(sqsSuccessfulCount, 'date', '%Y-%m-%d %H:%M:%S'));
+           
+           MG.data_graphic({
+             title : "单位：个",
+             description : "",
+             data : data,
+             width : mg_width ,
+             height : mg_height,
+             right :mg_right ,
+             left :mg_left,
+             target : document.getElementById('sqsCount'),
+             legend: ['sqsFailure', 'sqsSuccessful'],
+             legend_target: '#sqsCount-legend',
+             aggregate_rollover: true
+           });
+        });      
+      });
+    
+    
+    
      </script>
   </body>
 </html>

@@ -84,8 +84,10 @@ public class MotionEventListener implements InitializingBean {
 		Exception ex = null;
 		try {
 			saveS3(imageS3Path, jpgData);
+			recordCounter.addAndGetS3SuccessfulCount(1);
 			//saveDynamodb(utcDateTime, token, imageS3Path, zoneId);
 			putSqs(utcDateTime, token, zoneId,imageS3Path);
+			recordCounter.addAndGetSqsSuccessfulCount(1);
 		} catch (S3RuntimeException e) {
 			ex = e;
 			recordCounter.addAndGetS3FailureCount(1);
