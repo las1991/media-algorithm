@@ -40,6 +40,7 @@ import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
  */
 public class RecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
+	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 	private String kinesisShardId;
 	private RecordCounter recordCounter;
 	private ProcessorManager processorManager;
@@ -63,13 +64,13 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 
 	//提交一批数据，并等待执行结果返回
-	private  void submitTask(final Multimap<String, Frame> dataMap,long receiveTime) {
+	private  void submitTask(final Multimap<String, Frame> token2MultipleFrames,long receiveTime) {
 		long startTime = System.currentTimeMillis();
-		LOGGER.debug("Multimap dataMap size:{}",dataMap.size());
+		LOGGER.debug("Multimap token2MultipleFrames size:{}",token2MultipleFrames.size());
 		
-		List<Future<?>> batchTasks = new ArrayList<>(dataMap.size());	
-		for (final String token : dataMap.keySet()) {
-			batchTasks.add(processorManager.submit(receiveTime,token, dataMap.get(token)));
+		List<Future<?>> batchTasks = new ArrayList<>(token2MultipleFrames.size());	
+		for (final String token : token2MultipleFrames.keySet()) {
+			batchTasks.add(processorManager.submit(receiveTime,token, token2MultipleFrames.get(token)));
 		}
 		for (Future<?> task : batchTasks) {
 			try {
@@ -118,10 +119,12 @@ public class RecordProcessor implements IRecordProcessor {
 			final Frame frame;
 			try {
 				frame = KinesisFrameDecoder.decode(data);
+				
 				String utcDateTime = (String) frame.getConfigs().get("utcDateTime");
-				Date utcDate = DateUtils.parseDate(utcDateTime, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
-				recordCounter.updateReceiveDelay(currentTime  - utcDate.getTime());
-				LOGGER.debug("Token:{},Frame Config:{}",token,frame.getConfigs());
+				Date utcDate = DateUtils.parseDate(utcDateTime, UTC_DATE_FORMAT);
+				long delay = currentTime  - utcDate.getTime();
+				recordCounter.updateReceiveDelay(delay);
+				LOGGER.debug("Token:{},unpacking finished.Frame utcDelay:{} Config:{}",delay,token,frame.getConfigs());
 			} catch (Exception e) {
 				LOGGER.error("Token:{},KinesisFrameDecoder falied.",token);
 				LOGGER.error(e.getMessage(),e);

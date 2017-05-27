@@ -41,9 +41,11 @@ public class RecordCounter implements InitializingBean{
     //private AtomicLong  dynamodbFailureCount = new AtomicLong();
     private AtomicLong  sqsFailureCount = new AtomicLong();
     private AtomicLong  sqsSuccessfulCount = new AtomicLong();
-   
+    //单数据处理时间
     private Histogram singleDataProcessCostHistogram;
+    //单数据等待被处理的时间
     private Histogram waitProcessCostHistogram;
+    //数据中的utc时间与当前时间差值 
     private Histogram receiveDelayHistogram;
 	@Override
 	public void afterPropertiesSet() throws Exception {

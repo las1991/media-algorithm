@@ -24,8 +24,7 @@ import com.sengled.mediaworker.algorithm.action.OpenAction;
  */
 public class StreamingContext {
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
-
-
+	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 
 	private String token;
 	/**
@@ -88,7 +87,7 @@ public class StreamingContext {
 			return null;
 		}
 		try {
-			return DateUtils.parseDate(utcDateTime, new String[] { "yyyy-MM-dd HH:mm:ss.SSS" });
+			return DateUtils.parseDate(utcDateTime, UTC_DATE_FORMAT);
 		} catch (ParseException e) {
 			LOGGER.error("Token:{},parseDate failed.",token);
 			LOGGER.error(e.getMessage(), e);
