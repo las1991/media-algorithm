@@ -61,7 +61,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}		
 	}
 
-	public synchronized Future<?> submit(long receiveTime,String token, Collection<byte[]> datas) {
+	public synchronized Future<?> submit(long receiveTime,String token, Collection<Frame> datas) {
 		return threadPool.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
@@ -75,26 +75,18 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		this.feedListener = feedListener;
 	}
 	
-	private  void handleDatas(final long receiveTime,final String token,final Collection<byte[]> datas){
+	private  void handleDatas(final long receiveTime,final String token,final Collection<Frame> datas){
 		
 		LOGGER.debug("Token:{},handleDatas begin. datas size:{} ",token,datas.size());
 		
-		for (byte[] data : datas) {
+		for (Frame frame : datas) {
 			long handleStartTime = System.currentTimeMillis();
 			long waitProcessCost = handleStartTime - receiveTime;
 			recordCounter.updateWaitProcessCost(waitProcessCost);
 			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
 			
-			final Frame frame;
-			try {
-				frame = KinesisFrameDecoder.decode(data);
-				LOGGER.debug("Token:{},Frame Config:{}",token,frame.getConfigs());
-			} catch (FrameDecodeException e) {
-				LOGGER.error("Token:{},KinesisFrameDecoder falied.",token);
-				LOGGER.error(e.getMessage(),e);
-				continue;
-			}
 			actionHandle(token, frame.getConfigs(), frame.getNalData());
+			
 			long processCost = System.currentTimeMillis() -  handleStartTime;
 			recordCounter.updateSingleDataProcessCost(processCost);
 			LOGGER.debug("Token:{} process cost:{}",token,processCost);

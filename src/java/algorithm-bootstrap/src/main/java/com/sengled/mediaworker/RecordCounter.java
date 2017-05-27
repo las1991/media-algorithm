@@ -44,6 +44,7 @@ public class RecordCounter implements InitializingBean{
    
     private Histogram singleDataProcessCostHistogram;
     private Histogram waitProcessCostHistogram;
+    private Histogram receiveDelayHistogram;
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		LOGGER.info("Initializing...");
@@ -101,6 +102,8 @@ public class RecordCounter implements InitializingBean{
 	        
 	        singleDataProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "processCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	        waitProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "waitProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        receiveDelayHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "receiveDelay"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        
 	}
 	public long addAndGetRecordCount(long delta) {
 		servicesMetrics.mark(ServicesMetrics.RECEIVE, delta);
@@ -139,5 +142,8 @@ public class RecordCounter implements InitializingBean{
 	}
 	public void updateWaitProcessCost(long value){
 		waitProcessCostHistogram.update(value);
+	}
+	public void updateReceiveDelay(long value){
+		receiveDelayHistogram.update(value);
 	}
 }
