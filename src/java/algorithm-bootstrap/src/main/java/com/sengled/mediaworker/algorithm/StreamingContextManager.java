@@ -52,19 +52,14 @@ public class StreamingContextManager implements InitializingBean{
 		timer.schedule(new TimerTask() {
 			@Override
 			public void run() {
-				LOGGER.info("streamingContextMap size:{}",streamingContextMap.size());
-			}
-		}, 10000, 60 * 1000);
-		timer.schedule(new TimerTask() {
-			@Override
-			public void run() {
 				try {
+					LOGGER.info("streamingContextMap size:{}",streamingContextMap.size());
 					cleanExpiredContext();
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(),e);
 				}
 			}
-		}, 60000, CONTEXT_EXPIRE_TIME_MILLIS);
+		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,String utcDateTime,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{

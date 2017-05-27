@@ -81,6 +81,7 @@ public class JnaInterface implements Function{
 				LOGGER.error("decode failed. yuvData empty. code:{} token:{}",code,token);
 				throw new Exception("yuvData empty.");
 			}
+			LOGGER.debug("Token:{},decode finished. width:{},height:{}",token,yuv_frame.width,yuv_frame.height);
 			return new  YUVImage(yuv_frame.width,yuv_frame.height,yuvData);
 		}catch(Exception e){
 			throw new DecodeException("DecodeException "+e.getMessage());

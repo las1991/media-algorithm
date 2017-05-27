@@ -1,6 +1,7 @@
 package com.sengled.mediaworker;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
@@ -10,6 +11,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,6 +28,8 @@ import com.amazonaws.services.kinesis.model.Record;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 
 /**
  * kinesis stream record 处理器
@@ -36,6 +40,7 @@ import com.sengled.mediaworker.algorithm.ProcessorManager;
  */
 public class RecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
+	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 	private String kinesisShardId;
 	private RecordCounter recordCounter;
 	private ProcessorManager processorManager;
@@ -45,7 +50,7 @@ public class RecordProcessor implements IRecordProcessor {
     // Checkpointing interval
     private static final long CHECKPOINT_INTERVAL_MILLIS = 1 * 60 * 1000; // 1 minute
     //max BehindLatest
-    private static final long MAX_BEHINDLASTEST_MILLIS = 10 * 1000; // 10 sec
+    private static final long MAX_BEHINDLASTEST_MILLIS = 20 * 1000; // 20 sec
     //max execute time
     private static final long MAX_EXECUTE_MILLIS = 20 * 1000;//20 sec
     private long nextCheckpointTimeInMillis;
@@ -59,24 +64,13 @@ public class RecordProcessor implements IRecordProcessor {
 	}
 
 	//提交一批数据，并等待执行结果返回
-	private  void submitTask(List<Record> records,long receiveTime) {
-		final Multimap<String, byte[]> dataMap = ArrayListMultimap.create();
+	private  void submitTask(final Multimap<String, Frame> token2MultipleFrames,long receiveTime) {
 		long startTime = System.currentTimeMillis();
-		for (Record record : records) {
-	    	int remaining =  record.getData().remaining();
-			if ( remaining <= 0) {
-				LOGGER.warn("record data size is null. skip...");
-				continue;
-			}
-			byte[] data = new byte[remaining];
-			record.getData().get(data);
-			dataMap.put(getToken(record.getPartitionKey()), data);
-		}
-		LOGGER.debug("Multimap dataMap size:{}",dataMap.size());
+		LOGGER.debug("Multimap token2MultipleFrames size:{}",token2MultipleFrames.size());
 		
-		List<Future<?>> batchTasks = new ArrayList<>(dataMap.size());	
-		for (final String token : dataMap.keySet()) {
-			batchTasks.add(processorManager.submit(receiveTime,token, dataMap.get(token)));
+		List<Future<?>> batchTasks = new ArrayList<>(token2MultipleFrames.size());	
+		for (final String token : token2MultipleFrames.keySet()) {
+			batchTasks.add(processorManager.submit(receiveTime,token, token2MultipleFrames.get(token)));
 		}
 		for (Future<?> task : batchTasks) {
 			try {
@@ -89,7 +83,7 @@ public class RecordProcessor implements IRecordProcessor {
 				LOGGER.error(e.getMessage(), e);
 			}
 		}
-		LOGGER.info("Process Records size:{} finished. Cost:{} ms",records.size(),(System.currentTimeMillis() - startTime));
+		LOGGER.info("Process Records  finished. Cost:{} ms",(System.currentTimeMillis() - startTime));
 	}
 
     private void checkpoint(IRecordProcessorCheckpointer checkpointer) {
@@ -107,11 +101,39 @@ public class RecordProcessor implements IRecordProcessor {
         	LOGGER.error("Cannot save checkpoint to the DynamoDB table used by the Amazon Kinesis Client Library.", e);
         }
     }
-    private void shutdownNow(){
-    	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
-    	isShutdown = true;
-    	executorService.shutdownNow();
-    }
+
+	private Multimap<String, Frame> unpacking(List<Record> records) {
+		final Multimap<String, Frame> dataMap = ArrayListMultimap.create();
+		long currentTime = System.currentTimeMillis();
+		for (Record record : records) {
+			String token = getToken(record.getPartitionKey());
+	    	int remaining =  record.getData().remaining();
+			if ( remaining <= 0) {
+				LOGGER.warn("record data size is null. skip...");
+				continue;
+			}
+			byte[] data = new byte[remaining];
+			record.getData().get(data);
+			
+			
+			final Frame frame;
+			try {
+				frame = KinesisFrameDecoder.decode(data);
+				
+				String utcDateTime = (String) frame.getConfigs().get("utcDateTime");
+				Date utcDate = DateUtils.parseDate(utcDateTime, UTC_DATE_FORMAT);
+				long delay = currentTime  - utcDate.getTime();
+				recordCounter.updateReceiveDelay(delay);
+				LOGGER.debug("Token:{},unpacking finished.Frame utcDelay:{} Config:{}",delay,token,frame.getConfigs());
+			} catch (Exception e) {
+				LOGGER.error("Token:{},KinesisFrameDecoder falied.",token);
+				LOGGER.error(e.getMessage(),e);
+				continue;
+			}
+			dataMap.put(getToken(record.getPartitionKey()), frame);
+		}
+		return dataMap;
+	}
     private String getToken(String partitionKey){
     	String token =  partitionKey.split(",")[0];
     	if(StringUtils.isNotBlank(token)){
@@ -135,9 +157,9 @@ public class RecordProcessor implements IRecordProcessor {
 		IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
 		Long behindLatest = processRecordsInput.getMillisBehindLatest();
 		long receiveTime = System.currentTimeMillis();
+		
 		LOGGER.info("Received records size:{}",records.size());
 		LOGGER.info("BehindLatest:{}",behindLatest);
-		
 		recordCounter.addAndGetRecordCount(records.size());
 		
 		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
@@ -148,13 +170,15 @@ public class RecordProcessor implements IRecordProcessor {
 		
 		long startTime = System.currentTimeMillis();
         boolean isSubmited = false;
+		final Multimap<String, Frame> dataMap = unpacking(records);
+		
         //如果上次提交的任务已执行完成，则提交新任务，否则等待
 		while( ! isShutdown){
 			if((future == null) || future.isDone() || future.isCancelled()){
 				future = executorService.submit(new Runnable() {
 					@Override
 					public void run() {
-						submitTask(records,receiveTime);
+						submitTask(dataMap,receiveTime);
 					}
 				});
 				LOGGER.debug("Submited records size:{}",records.size());
@@ -184,6 +208,11 @@ public class RecordProcessor implements IRecordProcessor {
 		}
 	}
 
+    private void threadShutdownNow(){
+    	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
+    	isShutdown = true;
+    	executorService.shutdownNow();
+    }
 	@Override
 	public void shutdown(ShutdownInput shutdownInput) {
 		IRecordProcessorCheckpointer checkpointer = shutdownInput.getCheckpointer();
@@ -193,6 +222,6 @@ public class RecordProcessor implements IRecordProcessor {
 			LOGGER.info("Shard:{} state SHARD_END. shutdown RecordProcessor",kinesisShardId);
 			checkpoint(checkpointer);
 		}
-		shutdownNow();
+		threadShutdownNow();
 	}
 }

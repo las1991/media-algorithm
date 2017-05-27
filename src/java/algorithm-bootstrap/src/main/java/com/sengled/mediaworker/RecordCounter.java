@@ -41,9 +41,12 @@ public class RecordCounter implements InitializingBean{
     //private AtomicLong  dynamodbFailureCount = new AtomicLong();
     private AtomicLong  sqsFailureCount = new AtomicLong();
     private AtomicLong  sqsSuccessfulCount = new AtomicLong();
-   
+    //单数据处理时间
     private Histogram singleDataProcessCostHistogram;
+    //单数据等待被处理的时间
     private Histogram waitProcessCostHistogram;
+    //数据中的utc时间与当前时间差值 
+    private Histogram receiveDelayHistogram;
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		LOGGER.info("Initializing...");
@@ -101,6 +104,8 @@ public class RecordCounter implements InitializingBean{
 	        
 	        singleDataProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "processCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	        waitProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "waitProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        receiveDelayHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "receiveDelay"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        
 	}
 	public long addAndGetRecordCount(long delta) {
 		servicesMetrics.mark(ServicesMetrics.RECEIVE, delta);
@@ -139,5 +144,8 @@ public class RecordCounter implements InitializingBean{
 	}
 	public void updateWaitProcessCost(long value){
 		waitProcessCostHistogram.update(value);
+	}
+	public void updateReceiveDelay(long value){
+		receiveDelayHistogram.update(value);
 	}
 }
