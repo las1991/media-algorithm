@@ -244,10 +244,14 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
         for (it = motion_zones.begin(); it != motion_zones.end(); ++it)
         {
             Rect roiRect = it->second;
-			if ( roiRect.width<=0 || roiRect.height<=0 )
+			if ( roiRect.width<=0 || roiRect.height<=0 || 
+                    roiRect.x+roiRect.width > 100 || roiRect.y+roiRect.height > 100 )
 			{
                 rv->plog->log_print(SLS_LOG_ERROR,"%s--zone paramers error!!!",rv->token);
-                continue;
+                roiRect.x=0;
+                roiRect.y=0;
+                roiRect.width=100;
+                roiRect.height=100;
 			}
             Rect rect = Rect(gradframe.cols * roiRect.x / 100,
                              gradframe.rows * roiRect.y / 100,
