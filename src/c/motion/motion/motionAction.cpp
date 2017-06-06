@@ -60,26 +60,25 @@ void getBoundaryBySobel(Mat& src, Mat& dst)
 //get foreground mask
 int getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 {
-    if (index > 2 )
+    if( index > 2 || srcImg.data == NULL || srcImg.cols <= 0 || srcImg.rows <= 0 )
     {
+        rv->plog->log_print(SLS_LOG_ERROR,"fatal error  width=%d,height=%d\n",srcImg.cols,srcImg.rows);
         return -1;
     }
 	
     if ( rv->isModelUpdate )
     {
-		
 		rv->model[index] = (vibeModel_Sequential_t*)libvibeModel_Sequential_New();
 		libvibeModel_Sequential_AllocInit_8u_C1R(rv->model[index], srcImg.data, srcImg.cols, srcImg.rows);
-        if(srcImg.data == NULL || srcImg.cols <= 0 || srcImg.rows <= 0 )
-        {
-            rv->plog->log_print(SLS_LOG_ERROR,"fatal error  width=%d,height=%d\n",srcImg.cols,srcImg.rows);
-            return -1;
-        }
 		srcImg.copyTo(rv->bg_frame[index]);
-	    
 		return 0;
     }
-    
+
+    if( rv->model[index] == NULL || fg_mask.data == NULL) 
+    {
+        rv->plog->log_print(SLS_LOG_ERROR,"fatal error model is null");
+        return -1;
+    }
 	libvibeModel_Sequential_Segmentation_8u_C1R(rv->model[index], srcImg.data, fg_mask.data);
 	libvibeModel_Sequential_Update_8u_C1R(rv->model[index], srcImg.data, fg_mask.data);    
    
@@ -244,15 +243,19 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
         for (it = motion_zones.begin(); it != motion_zones.end(); ++it)
         {
             Rect roiRect = it->second;
-			if ( roiRect.width<=0 || roiRect.height<=0 || 
-                    roiRect.x+roiRect.width > 100 || roiRect.y+roiRect.height > 100 )
+			if ( roiRect.width<=0 || roiRect.height<=0 )
 			{
                 rv->plog->log_print(SLS_LOG_ERROR,"%s--zone paramers error!!!",rv->token);
-                roiRect.x=0;
-                roiRect.y=0;
-                roiRect.width=100;
-                roiRect.height=100;
+                continue;
 			}
+            if(roiRect.x+roiRect.width > 100)
+            {
+                roiRect.width = 100-roiRect.x;
+            }
+            if(roiRect.y+roiRect.height > 100)
+            {
+                roiRect.height = 100-roiRect.y;
+            }
             Rect rect = Rect(gradframe.cols * roiRect.x / 100,
                              gradframe.rows * roiRect.y / 100,
                              gradframe.cols * roiRect.width / 100,
