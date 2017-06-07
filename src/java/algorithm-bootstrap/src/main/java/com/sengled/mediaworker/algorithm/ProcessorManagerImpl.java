@@ -25,9 +25,7 @@ import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.mediaworker.RecordCounter;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
-import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
@@ -99,7 +97,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			return;
 		}
 		for (String model : MODEL_LIST) {
-			if (config.containsKey(model)) {
+			if (config.get(model) != null) {
 				@SuppressWarnings("unchecked")
 				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
 				String utcDateTime = (String) config.get("utcDateTime");
@@ -227,5 +225,4 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			this.yuvImage = yuvImage;
 		}
 	}
-
 }
