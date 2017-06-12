@@ -48,8 +48,9 @@ void GetPos(char *str,int pos[4])
     pos[p] = atoi(tmp);
 }
 
-void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
+int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
 {
+    int error_code=0;
     char *json_message = (char*)algorithm_param;
     rv->plog->log_print(SLS_LOG_DEBUG,"params=%s",json_message);
     cJSON *pjson = NULL;
@@ -59,12 +60,14 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         if( pjson == NULL )
         {
             rv->plog->log_print(SLS_LOG_ERROR,"parse json error");
+            error_code = -1;
             break;
         }
         cJSON *psensi = cJSON_GetObjectItem(pjson,"sensitivity");
-        if( psensi == NULL )
+        if( psensi == NULL || psensi->valueint <= 0 )
         {
             rv->plog->log_print(SLS_LOG_ERROR,"parse json sensitivity error");
+            error_code = -1;
             break;
         }
         rv->plog->log_print(SLS_LOG_DEBUG,"sensitivity=%d\n",psensi->valueint);
@@ -74,12 +77,14 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         if(pparam_array == NULL || cJSON_Array != pparam_array->type)
         {
             rv->plog->log_print(SLS_LOG_ERROR,"parse json dataList error");
+            error_code = -1;
             break;
         } 
         int size = cJSON_GetArraySize(pparam_array);
         if(size > 3 )
         {
             rv->plog->log_print(SLS_LOG_ERROR,"params number overflow");
+            error_code = -1;
             break;
         }
         rv->pAlgoParams->motion_params.zone_count = size;
@@ -88,11 +93,16 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         for( int i = 0; i < size; i++ )
         {
             cJSON *item = cJSON_GetArrayItem(pparam_array,i);
-            if( item==NULL ) break;
+            if( item==NULL ) 
+            {
+                error_code = -1;
+                break;
+            }
             cJSON *subitem = item->child;
             if(subitem == NULL || subitem->next == NULL )
             {
                 rv->plog->log_print(SLS_LOG_ERROR,"parse dataList element error");
+                error_code = -1;
                 break;
             }
             rv->plog->log_print(SLS_LOG_DEBUG,"%s:%d\n",subitem->string,subitem->valueint);
@@ -104,13 +114,7 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
             int z_pos[4]={0},count=0;
             GetPos(str,z_pos);
             rv->plog->log_print(SLS_LOG_DEBUG,"%d:%d:%d:%d\n",z_pos[0],z_pos[1],z_pos[2],z_pos[3]);
-            /*while( token != NULL && count < 4)
-            {
-                int p = atoi(token);
-                z_pos[count++]=p;
-                rv->plog->log_print(SLS_LOG_DEBUG,"pos=%d\n",p);
-                token = strtok(NULL,",");
-            }*/
+
             rv->pAlgoParams->motion_params.zone_pos[i].x = z_pos[0];
             rv->pAlgoParams->motion_params.zone_pos[i].y = z_pos[1];
             rv->pAlgoParams->motion_params.zone_pos[i].width = z_pos[2];
@@ -118,6 +122,7 @@ void CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         }
     }while(0);
     cJSON_Delete(pjson);
+    return error_code;
      
 }
 
@@ -162,7 +167,11 @@ void DispatchAlgorithm( rvResource *rv,void *frame,int frame_width,int frame_hei
         CopyAlgorithmParams(rv,algorithm_param);
     }*/
 
-    CopyAlgorithmParams(rv,algorithm_param);
+    if( CopyAlgorithmParams(rv,algorithm_param) == -1 )
+    {
+        rv->plog->log_print(SLS_LOG_ERROR,"params error,return !!!!!");
+        return;
+    }
     LocalPrint(rv);
 	mMotionAction(rv,result);
 }
