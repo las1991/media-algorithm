@@ -25,9 +25,7 @@ import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.mediaworker.RecordCounter;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
-import com.sengled.mediaworker.algorithm.exception.FrameDecodeException;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
@@ -44,7 +42,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
-	private FeedListener feedListener;
+	@Autowired
+	private FeedListener[] feedListeners;
 	@Autowired
     private StreamingContextManager streamingContextManager;
 	@Autowired
@@ -69,10 +68,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				return null;
 			}
 		});
-	}
-	@Override
-	public void setFeedListener(FeedListenerImpl feedListener) {
-		this.feedListener = feedListener;
 	}
 	
 	private  void handleDatas(final long receiveTime,final String token,final Collection<Frame> datas){
@@ -99,17 +94,18 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			return;
 		}
 		for (String model : MODEL_LIST) {
-			if (config.containsKey(model)) {
+			if (config.get(model) != null) {
 				@SuppressWarnings("unchecked")
-				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
+				//Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
 				String utcDateTime = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");
-				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,modelConfig);
+				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
 				
 				//获得上下文
 				StreamingContext context;
 				try {
-					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, utcDateTime,modelConfig);
+					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, utcDateTime,config);
+					context.setNalData(nalData);
 				} catch (Exception e) {
 					LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
 					LOGGER.error("Token:{} model:{} skip.",token,model);
@@ -117,9 +113,9 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				}
 				//过滤数据
 				try {
-					if(context.isDataExpire(maxDelayedTimeMsce)){
-						continue;
-					}
+//					if(context.isDataExpire(maxDelayedTimeMsce)){
+//						continue;
+//					}
 					context.reportCheck(motionIntervalTimeMsce);
 //					if(context.motionIntervalCheck(motionIntervalTimeMsce)){
 //						continue;
@@ -128,17 +124,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 					LOGGER.error("Token:{}  skip...",token);
 					LOGGER.error(e2.getMessage(),e2);
 					continue;
-				}
-				//解码
-//				YUVImage yuvImage;
-//				try {
-//					yuvImage = decode(token, nalData);
-//				} catch (Exception e1) {
-//					LOGGER.error("Token:{} decode failed. skip...",token);
-//					LOGGER.error(e1.getMessage(),e1);
-//					continue;
-//				}
-				
+				}				
 				//处理
 				switch (action) {
 					case "open":
@@ -155,7 +141,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 						continue;
 				}
 				try {
-					context.feed(nalData, feedListener);
+					context.feed(feedListeners);
 				} catch (Exception e) {
 					LOGGER.error(e.getMessage(),e);
 					continue;
@@ -227,5 +213,4 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			this.yuvImage = yuvImage;
 		}
 	}
-
 }

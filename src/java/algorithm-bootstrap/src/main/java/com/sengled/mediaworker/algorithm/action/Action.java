@@ -7,5 +7,5 @@ public abstract class Action {
 	public static final String NULL_ALGORITHM_MODEL = "NULL_ALGORITHM_MODEL";
 	public static final String NORESULT = "NORESULT";
 	
-	public abstract void  feed(StreamingContext context,final byte[] nalData,final FeedListener listener)throws Exception;
+	public abstract void  feed(StreamingContext context,final FeedListener[] listener)throws Exception;
 }

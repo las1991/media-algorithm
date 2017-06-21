@@ -34,6 +34,7 @@ public class JnaInterface implements Function{
 	
 	static{
 		try {
+			/*
 			LOGGER.info("init...");
 			String jnaHome = System.getProperty("jna.library.path");
 			LOGGER.info("jna.library.path={}", jnaHome);
@@ -48,6 +49,7 @@ public class JnaInterface implements Function{
 			encoderLibrary = Jpg_encoderLibrary.INSTANCE;
 			encoderLibrary.Init();
 			encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
+			*/
 			LOGGER.info("init finished");
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
@@ -101,7 +103,7 @@ public class JnaInterface implements Function{
 		
 		LOGGER.debug("Token:{} encode ,yuvData length:{}",token,yuvData.length);
 		JPGFrame jpg_frame =  new JPGFrame();
-		Pointer pointer = new Memory(yuvDataLength);
+		DisposeableMemory pointer = new DisposeableMemory(yuvDataLength);
 		pointer.write(0, yuvData, 0, yuvDataLength);
 		com.sengled.media.jna.jpg_encoder.YUVFrame yuv_frame =  new com.sengled.media.jna.jpg_encoder.YUVFrame(width,height,pointer,yuvDataLength);
 		
@@ -116,6 +118,7 @@ public class JnaInterface implements Function{
 			throw new EncodeException("DecodeException "+e.getMessage());
 		}finally{
 			encoderLibrary.Destroy(jpg_frame);
+			pointer.dispose();
 		}
 	}
 	@Override
@@ -129,15 +132,17 @@ public class JnaInterface implements Function{
 			oldPointer = pointerMap.put(algorithmModelId, pointer);
 		} catch (Exception e) {
 			throw new AlgorithmIntanceCreateException(e);
+		}finally{
+			try {
+				if(null != oldPointer){
+					algorithmLibrary.delete_instance(oldPointer);
+				}
+			} catch (Exception e) {
+				LOGGER.warn("delete oldPointer error.",e);
+			}
 		}
 		
-		try {
-			if(null != oldPointer){
-				algorithmLibrary.delete_instance(oldPointer);
-			}
-		} catch (Exception e) {
-			LOGGER.warn("delete oldPointer error.",e);
-		}
+		
 
 		return algorithmModelId;
 	}
@@ -159,10 +164,10 @@ public class JnaInterface implements Function{
 		algorithm_base_result result = new algorithm_base_result();
 		
 		int length;
-		Pointer algorithm_params;
+		DisposeableMemory algorithm_params;
 		try {
 			length = jsonConfig.getBytes("utf-8").length;
-			algorithm_params = new Memory(length);
+			algorithm_params = new DisposeableMemory(length);
 			algorithm_params.write(0, jsonConfig.getBytes("utf-8"), 0, length);
 		} catch (UnsupportedEncodingException e1) {
 			throw new  FeedException(e1);
@@ -173,11 +178,11 @@ public class JnaInterface implements Function{
 		if(0 == yuvDataLength){
 			throw new FeedException("yuvDataLength is empay");
 		}
-		Pointer yuvDataPointer = new Memory(yuvDataLength);
-		yuvDataPointer.write(0, yuvData, 0, yuvDataLength);
 		
-		LOGGER.debug("yuvDataPointer data length:{}",yuvDataPointer.getByteArray(0, yuvDataLength).length);
+		DisposeableMemory yuvDataPointer = new DisposeableMemory(yuvDataLength);
 		try {
+			yuvDataPointer.write(0, yuvData, 0, yuvDataLength);
+			LOGGER.debug("yuvDataPointer data length:{}",yuvDataPointer.getByteArray(0, yuvDataLength).length);
 			algorithmLibrary.feed(algorithmModelPointer, yuvDataPointer, yuvImage.getWidth(), yuvImage.getHeight(), algorithm_params, result);
 			if(result.bresult != 0 ){
 				return  new String(result.result,0,(10 * 1024),"utf-8");
@@ -185,12 +190,18 @@ public class JnaInterface implements Function{
 			return "";
 		} catch (Exception e) {
 			throw new FeedException(e);
+		}finally{
+			yuvDataPointer.dispose();
+			algorithm_params.dispose();
 		}
 	}
 
 	@Override
 	public void close(String algorithmModelId) throws AlgorithmIntanceCloseException{
 		LOGGER.debug("close algorithmModelId:{}",algorithmModelId);
+		
+		LOGGER.debug("pointerMap size:{}",pointerMap.size());
+		
 		if(null == algorithmModelId || "".equals(algorithmModelId)){
 			throw new AlgorithmIntanceCloseException("parmas error.");
 		}

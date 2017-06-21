@@ -11,7 +11,7 @@ public class CloseAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(CloseAction.class);
 
 	@Override
-	public void feed(StreamingContext context, final byte[] nalData, FeedListener listener)throws Exception {
+	public void feed(StreamingContext context, FeedListener[] listener)throws Exception {
 		LOGGER.debug("Token:{} CloseAction feed",context.getToken());
 		
 		StreamingContextManager manager = context.getStreamingContextManager();
