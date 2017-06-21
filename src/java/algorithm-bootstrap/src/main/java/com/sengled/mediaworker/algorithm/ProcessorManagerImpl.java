@@ -95,7 +95,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 		for (String model : MODEL_LIST) {
 			if (config.get(model) != null) {
-				@SuppressWarnings("unchecked")
 				//Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
 				String utcDateTime = (String) config.get("utcDateTime");
 				String action = (String) config.get("action");

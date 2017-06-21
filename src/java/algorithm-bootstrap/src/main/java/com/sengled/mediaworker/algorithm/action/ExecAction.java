@@ -28,7 +28,7 @@ public class ExecAction extends Action {
 		
 		long startTime = System.currentTimeMillis();
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
-		LOGGER.debug("Token:{},Feed cost:{} msec ",token,(System.currentTimeMillis() - startTime));
+		LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),text.trim());
 		
 		if(StringUtils.isBlank(text.trim())){
 			LOGGER.debug("Token:{},Feed result NORESULT. ",token);

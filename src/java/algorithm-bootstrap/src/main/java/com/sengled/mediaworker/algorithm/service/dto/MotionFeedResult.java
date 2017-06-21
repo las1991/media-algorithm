@@ -15,6 +15,12 @@ public class MotionFeedResult {
 		
 		@JSONField(name = "boxs")
 		public List<List<Integer>> boxs;
+
+		@Override
+		public String toString() {
+			return "ZoneInfo [zone_id=" + zone_id + ", boxs=" + boxs + "]";
+		}
+		
 	}
 	
 	public boolean verify(){

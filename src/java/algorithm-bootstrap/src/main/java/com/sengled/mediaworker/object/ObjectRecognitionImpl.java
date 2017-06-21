@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.object;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -16,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
+import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
+import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.httpclient.HttpResponseResult;
 import com.sengled.mediaworker.httpclient.IHttpClient;
@@ -48,17 +51,17 @@ public class ObjectRecognitionImpl implements InitializingBean,ObjectRecognition
 			System.exit(1);
 		}		
 	}
-	public void sumbit(final String token,final byte[] nal,final Map<String,Object> objectConfig){
+	public void sumbit(final String token,final byte[] nal,final Map<String,Object> objectConfig,MotionFeedResult motionFeedResult){
 		threadPool.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
-				handle(token,nal,objectConfig);
+				handle(token,nal,objectConfig,motionFeedResult);
 				return null;
 			}
 		});
 	}
 
-	private void handle(String token,byte[] nal,Map<String,Object> objectConfig) {
+	private void handle(String token,byte[] nal,Map<String,Object> objectConfig,MotionFeedResult motionFeedResult) {
 		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token);
 		if(objectContext.isSkip()){
 			return;
@@ -81,17 +84,23 @@ public class ObjectRecognitionImpl implements InitializingBean,ObjectRecognition
 		LOGGER.info("recognition object JSON result:{},javaBean Result{}",jsonObj.toJSONString(),objectResult.toString());
 		
 		
-		ObjectEvent objectEvent = new ObjectEvent();
-		
 		//处理物体识别事件
 		//TODO 分析结果，找出在zone中的结果，提交sqs s3
-		matchZone(token,objectResult);
+		matchZone(token,objectConfig,objectResult,motionFeedResult);
 		
 		
 		
 	}
-	private void matchZone(String token,ObjectRecognitionResult orr){
+	private void matchZone(String token,Map<String,Object> objectConfig ,ObjectRecognitionResult orr,MotionFeedResult motionFeedResult){
+		LOGGER.info("Token:{},objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}",token,objectConfig,orr,motionFeedResult);
 		
+		List<ZoneInfo> list = motionFeedResult.motion;
+		for(ZoneInfo zi : list){
+			List<List<Integer>> boxs = zi.boxs;
+			for(List<Integer> box : boxs){
+				LOGGER.info("box:{},{},{},{}",box.get(0),box.get(1),box.get(2),box.get(3));
+			}
+		}
 	}
 }
 
