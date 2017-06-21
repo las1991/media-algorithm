@@ -11,7 +11,7 @@ public class OpenAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenAction.class);
 
 	@Override
-	public void feed(StreamingContext context, final byte[] nalData, FeedListener listener)throws Exception {
+	public void feed(StreamingContext context, FeedListener[] listeners)throws Exception {
 		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getToken());
 		
 		StreamingContextManager manager = context.getStreamingContextManager();
@@ -21,6 +21,6 @@ public class OpenAction extends Action{
 			manager.reload(context);	
 		}
 		context.setAction(context.execAction);
-		context.feed(nalData, listener);
+		context.feed(listeners);
 	}
 }

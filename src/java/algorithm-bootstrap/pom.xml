@@ -188,11 +188,14 @@
 				<directory>${basedir}/src/main/resources</directory>
 				<includes>
 					<include>**/*.html</include>
+					<include>**/*.properties</include>
 				</includes>
+				<!-- 
 				<excludes>
 					<exclude>**/*.properties</exclude>
 					<exclude>**/*.xml</exclude>
 				</excludes>
+				 -->
 			</resource>
 		</resources>
 		<plugins>

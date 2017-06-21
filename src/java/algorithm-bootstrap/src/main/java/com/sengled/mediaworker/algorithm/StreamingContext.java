@@ -2,6 +2,7 @@ package com.sengled.mediaworker.algorithm;
 
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -16,20 +17,18 @@ import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
+import com.sengled.mediaworker.context.Context;
 
 /**
  * 
  * @author liwei
  *
  */
-public class StreamingContext {
+public class StreamingContext extends Context{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
 	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 
 	private String token;
-	/**
-	 * @see @RecordProcessor.MODEL_LIST
-	 */
 	private String model;
 	//接收kinesis数据中的utc时间
 	private String utcDateTime;
@@ -41,7 +40,10 @@ public class StreamingContext {
 	private Long contextUpdateTimestamp;
 	//创建上下文时间
 	private Long contextCreateTimestamp;
-	
+	//配置
+	private Map<String, Object> config;
+	private byte[] nalData;
+	private YUVImage yuvImage;
 	private boolean isReport = true;
 	private Algorithm algorithm;
 	private Action action;
@@ -75,11 +77,11 @@ public class StreamingContext {
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
 	}
 
-	public void feed(final  byte[] nalData, final FeedListener listener) throws Exception {
-		if (nalData == null || listener == null) {
+	public void feed(final FeedListener[] listeners) throws Exception {
+		if (nalData == null || listeners == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		action.feed(this, nalData, listener);
+		action.feed(this, listeners);
 	}
 
 	public Date getUtcDateTime() {
@@ -219,6 +221,31 @@ public class StreamingContext {
 	public boolean isReport(){
 		return isReport;
 	}
+	
+	public Map<String, Object> getConfig() {
+		return config;
+	}
+
+	public void setConfig(Map<String, Object> config) {
+		this.config = config;
+	}
+
+	public byte[] getNalData() {
+		return nalData;
+	}
+
+	public void setNalData(byte[] nalData) {
+		this.nalData = nalData;
+	}
+
+	public YUVImage getYuvImage() {
+		return yuvImage;
+	}
+
+	public void setYuvImage(YUVImage yuvImage) {
+		this.yuvImage = yuvImage;
+	}
+
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();

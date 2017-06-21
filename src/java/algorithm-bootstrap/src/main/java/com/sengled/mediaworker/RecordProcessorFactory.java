@@ -7,7 +7,8 @@ import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
-import com.sengled.mediaworker.algorithm.FeedListenerImpl;
+import com.sengled.mediaworker.algorithm.FeedListener;
+import com.sengled.mediaworker.algorithm.MotionFeedListenerImpl;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 
 /**
@@ -21,7 +22,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessorFactory.class);
 
     @Autowired
-    FeedListenerImpl feedListener;
+    FeedListener[] feedListener;
     @Autowired
     private ProcessorManager processorManager;
     @Autowired
@@ -30,7 +31,7 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
 	@Override
 	public void afterPropertiesSet() throws Exception {
     	LOGGER.info("RecordProcessorFactory afterPropertiesSet...");
-		processorManager.setFeedListener(feedListener);
+		//processorManager.setFeedListener(feedListener);
 	}
 	
     /**

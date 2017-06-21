@@ -62,8 +62,9 @@ public class StreamingContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,String utcDateTime,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
+	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,String utcDateTime,Map<String, Object> config) throws AlgorithmIntanceCreateException{
 		StreamingContext context =  streamingContextMap.get(token + "_" + model);
+		Map<String, Object> modelConfig = (Map<String, Object> )config.get(model);
 		if (context == null) {
 			context =  newAlgorithmContext(processor,token,model,utcDateTime, modelConfig);
 		}else{
@@ -76,6 +77,7 @@ public class StreamingContextManager implements InitializingBean{
 			//设置 本次接收到数据的时间
 			context.setContextUpdateTimestamp(System.currentTimeMillis());
 		}
+		context.setConfig(config);
 		return context;
 	}
 	public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{

@@ -153,18 +153,19 @@ public class RecordProcessor implements IRecordProcessor {
 
 	@Override
 	public void processRecords(ProcessRecordsInput processRecordsInput) {
+		
 		List<Record> records = processRecordsInput.getRecords();
 		IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
 		Long behindLatest = processRecordsInput.getMillisBehindLatest();
 		long receiveTime = System.currentTimeMillis();
 		
-		LOGGER.info("Received records size:{}",records.size());
-		LOGGER.info("BehindLatest:{}",behindLatest);
+		LOGGER.info("kinesisShardId:{},Received records size:{}",kinesisShardId,records.size());
+		LOGGER.info("kinesisShardId:{},BehindLatest:{}",kinesisShardId,behindLatest);
 		recordCounter.addAndGetRecordCount(records.size());
 		
 		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
 			recordCounter.addAndGetReceiveDelayedCount(records.size());
-			LOGGER.warn("BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",behindLatest,MAX_BEHINDLASTEST_MILLIS);
+			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
 			return;
 		}
 		

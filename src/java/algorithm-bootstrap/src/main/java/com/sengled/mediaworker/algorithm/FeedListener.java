@@ -1,9 +1,7 @@
 package com.sengled.mediaworker.algorithm;
 
-import com.sengled.mediaworker.algorithm.event.MotionEvent;
-import com.sengled.mediaworker.algorithm.event.ObjectEvent;
+import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
 public interface FeedListener {
-	void post(MotionEvent event);
-	void post(ObjectEvent event);
+	void feedResultHandle(StreamingContext context,MotionFeedResult motionFeedResult);
 }
