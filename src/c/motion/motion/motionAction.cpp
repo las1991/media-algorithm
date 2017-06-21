@@ -18,15 +18,44 @@ using namespace cv;
 //--------------------------------------------------------------------------------
 
 //report motion event
-void reportMotionEvent(rvResource* rv, bool is_motion, int zone_id,algorithm_result *res_describe)
+void reportMotionEvent(rvResource* rv, bool is_motion, map< int,vector<Rect> > &detect_results,algorithm_result *res_describe)
 {
 	cJSON* root = cJSON_CreateObject();
-    //cJSON_AddItemToObject(root, "stream_id", cJSON_CreateString(rv->token));
-    //cJSON_AddItemToObject(root, "event_type", cJSON_CreateString(SLS_EVENT_TYPE_MOTION));
+    cJSON* motion_array = cJSON_CreateArray();
+	
     if(is_motion)
     {
-        cJSON_AddItemToObject(root, "zone_id", cJSON_CreateNumber(zone_id));
+        map< int,vector<Rect> >::iterator it;
+		cJSON* zone_array;
+		cJSON* external_array;
+		cJSON* sub_object;
+		int zone_id;
+		vector<Rect> rects;
+		Rect rect;
+		for( it = detect_results.begin(); it != detect_results.end(); it++ )
+		{
+			zone_id = it->first;
+			sub_object = cJSON_CreateObject();
+			cJSON_AddItemToObject(sub_object,"zone_id",cJSON_CreateNumber(zone_id));
+
+			external_array = cJSON_CreateArray();
+			rects = it->second;
+			int rsize = rects.size();
+			for( int i=0; i < rsize; i++ )
+			{
+				zone_array = cJSON_CreateArray();
+				rect = rects[i];
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.x));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.y));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.width));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.height));
+				cJSON_AddItemToArray(external_array,zone_array);
+			}
+			cJSON_AddItemToObject(sub_object,"boxs",external_array);
+			cJSON_AddItemToArray(motion_array,sub_object);
+		}		
     }
+	cJSON_AddItemToObject(root,"motion",motion_array);
     
     char* json_info = cJSON_Print(root);
     strncpy(res_describe->result,json_info,strlen(json_info));
@@ -86,7 +115,7 @@ int getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 }
 
 //get contours from foreground mask
-void getValidContours( Mat &grad_img,Mat& fg_mask, vector<vector<Point> >& contours, int limit,rvResource* rv, int index )
+void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int limit,rvResource* rv, int index )
 {
 	if ( fg_mask.empty() || index < 0 || index > 2 )
 	{
@@ -140,13 +169,16 @@ void getValidContours( Mat &grad_img,Mat& fg_mask, vector<vector<Point> >& conto
 		vector< vector<Point> > tmpContours;
 		findContours(result, tmpContours, subHierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
 		int tmpsize = tmpContours.size();
+		Rect tmprect;
 		for (size_t i = 0; i < tmpsize; i++)
 		{
 			if ( fabs(contourArea(Mat(tmpContours[i]))) < limit ) //问题
 			{
 				continue;
 			}
-			contours.push_back(tmpContours[i]); 
+			//contours.push_back(tmpContours[i]); 
+			tmprect = boundingRect(tmpContours[i]);
+			rectangles.push_back(tmprect);
 		}	
 	}	
     //save current image
@@ -218,11 +250,9 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 		getEdge(grayimg, gradframe);
 	}
     
-    //filter picture
-	//Mat gradframe;
-	//getEdge(rv->srcFrame, gradframe);
-    //if zone update we will free the background model
-    
+    vector<Rect> rectangles;
+    vector<int> zoneArray;
+	map< int,vector<Rect> > detect_results;   
     if ( zone_count > 0 )
     {
         //准备一个队列来放置需要上报的zone_id
@@ -237,7 +267,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
         //按照zone的坐标 将原图切开
         map<int, Rect>::iterator it;
 		vector< vector<Point> > contours;
-		vector<int> zoneArray;
+		
 		int zoneid = -1;
         bool bg_update = false; 
         for (it = motion_zones.begin(); it != motion_zones.end(); ++it)
@@ -287,27 +317,28 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
                 continue;                
             }
             
-			contours.clear();
-			getValidContours( roiImg,fg_mask, contours, (int)(roiImg.cols * roiImg.rows / setting_params.sensitivity),
+			rectangles.clear();
+			getValidContours( roiImg,fg_mask, rectangles, (int)(roiImg.cols * roiImg.rows / setting_params.sensitivity),
 		    	rv,distance(motion_zones.begin(), it) );
 			
-			if( contours.size() > 0 )
+			if( rectangles.size() > 0 )
 			{
-				zoneArray.push_back(it->first);
+				//zoneArray.push_back(it->first);
+				detect_results[it->first] = rectangles;
 			}			
 		}
         if ( rv->isModelUpdate && bg_update)
         {
 			rv->isModelUpdate=false;
         }
-		if (zoneArray.size() > 0)
+		if (detect_results.size() > 0)
 		{
 			//new version modify
-			reportMotionEvent(rv, true, zoneArray[0],result);				
+			reportMotionEvent(rv, true, detect_results,result);				
 		}
 		else
 		{
-			reportMotionEvent(rv, false,0,result);				
+			reportMotionEvent(rv, false,detect_results,result);				
 			rv->plog->log_print(SLS_LOG_DEBUG,"%s -----This frame has not motion-----",rv->token);
 		}
 		
@@ -330,28 +361,29 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 			{
 				rv->isModelUpdate = false;
 			}
-			reportMotionEvent(rv, false, 0 ,result );
+			reportMotionEvent(rv, false, detect_results ,result );
 			return;
 		}
         else if(ret == -1)
         {
 			rv->plog->log_print(SLS_LOG_ERROR,"%s-- fatal error",rv->token );
-			reportMotionEvent(rv, false, 0 ,result );
+			reportMotionEvent(rv, false, detect_results ,result );
             return;
         }
         // get all valid contours
         vector< vector<Point> > contours;
-        getValidContours(gradframe,fg_mask, contours, (int)(gradframe.cols * gradframe.rows / setting_params.sensitivity),rv,0);
+        getValidContours(gradframe,fg_mask, rectangles, (int)(gradframe.cols * gradframe.rows / setting_params.sensitivity),rv,0);
        // rv->plog->log_print( "contour size=%d\n",contours.size() );
         //do report
-        if (contours.size() > 0)
+        if (rectangles.size() > 0)
         {
 			rv->plog->log_print( SLS_LOG_DEBUG,"This picture has motion");
-			reportMotionEvent(rv, true, -1,result );
+			detect_results[-1]=rectangles;
+			reportMotionEvent(rv, true, detect_results,result );
         }
 		else
 		{
-			reportMotionEvent(rv, false, 0 ,result );
+			reportMotionEvent(rv, false, detect_results ,result );
 			rv->plog->log_print(SLS_LOG_DEBUG,"%s no Zone-----This frame has not motion-----",rv->token);
 		}
        
