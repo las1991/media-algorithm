@@ -44,11 +44,15 @@ void reportMotionEvent(rvResource* rv, bool is_motion, map< int,vector<Rect> > &
 			for( int i=0; i < rsize; i++ )
 			{
 				zone_array = cJSON_CreateArray();
-				rect = rects[i];
-				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.x));
-				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.y));
-				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.width));
-				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(rect.height));
+                rect = rects[i];
+				int x = (rect.x/MINMUM_FRAME_WIDTH)*100;
+                int y = (rect.y/MINMUM_FRAME_HEIGHT)*100;
+                int dx = ((rect.x+rect.height)/MINMUM_FRAME_WIDTH)*100;
+                int dy = ((rect.y+rect.width)/MINMUM_FRAME_HEIGHT)*100;
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(x));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(y));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(dx));
+				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(dy));
 				cJSON_AddItemToArray(external_array,zone_array);
 			}
 			cJSON_AddItemToObject(sub_object,"boxs",external_array);
@@ -115,7 +119,8 @@ int getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 }
 
 //get contours from foreground mask
-void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int limit,rvResource* rv, int index )
+void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int limit,rvResource* rv, 
+        int index, Rect &zone_rect )
 {
 	if ( fg_mask.empty() || index < 0 || index > 2 )
 	{
@@ -177,6 +182,12 @@ void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int
 				continue;
 			}
 			//contours.push_back(tmpContours[i]); 
+            int index_size = tmpContours[i].size();
+            for( int j = 0; j < index_size; j++ )
+            {
+                tmpContours[i][j].x += zone_rect.x;
+                tmpContours[i][j].y += zone_rect.y;
+            }
 			tmprect = boundingRect(tmpContours[i]);
 			rectangles.push_back(tmprect);
 		}	
@@ -319,7 +330,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
             
 			rectangles.clear();
 			getValidContours( roiImg,fg_mask, rectangles, (int)(roiImg.cols * roiImg.rows / setting_params.sensitivity),
-		    	rv,distance(motion_zones.begin(), it) );
+		    	rv,distance(motion_zones.begin(), it) ,rect);
 			
 			if( rectangles.size() > 0 )
 			{
@@ -372,7 +383,9 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
         }
         // get all valid contours
         vector< vector<Point> > contours;
-        getValidContours(gradframe,fg_mask, rectangles, (int)(gradframe.cols * gradframe.rows / setting_params.sensitivity),rv,0);
+        Rect zone_rect(0,0,100,100);
+        getValidContours(gradframe,fg_mask, rectangles, 
+                (int)(gradframe.cols * gradframe.rows / setting_params.sensitivity),rv,0,zone_rect);
        // rv->plog->log_print( "contour size=%d\n",contours.size() );
         //do report
         if (rectangles.size() > 0)
