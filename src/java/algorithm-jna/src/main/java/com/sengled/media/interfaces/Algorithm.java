@@ -1,32 +1,22 @@
 package com.sengled.media.interfaces;
 
-import java.util.Map;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import com.alibaba.fastjson.JSON;
-
 public class Algorithm {
 	private String algorithmModelId;
-	private Map<String,Object> parameters;
+	private String parameters;
 	
-	public Algorithm(String algorithmModelId,Map<String,Object> parameters){
+	public Algorithm(String algorithmModelId,String jsonString){
 		this.algorithmModelId = algorithmModelId;
-		this.parameters = parameters;
+		this.parameters = jsonString;
 	}
 	@SuppressWarnings("unused")
 	private Algorithm(){}
 	
-	public void setParameters(Map<String,Object> parameters){
-		this.parameters = parameters;
+	public void setParameters(String jsonString){
+		this.parameters = jsonString;
 	}
 
-	public Map<String,Object>  getParameters(){
-		return parameters;
-	}
 	public String getParametersJson(){
-		return JSON.toJSONString(parameters);
+		return parameters;
 	}
 	public String getAlgorithmModelId() {
 		return algorithmModelId;

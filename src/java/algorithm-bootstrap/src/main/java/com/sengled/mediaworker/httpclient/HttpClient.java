@@ -8,7 +8,6 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.conn.ConnectionKeepAliveStrategy;
 import org.apache.http.entity.ContentType;
-import org.apache.http.entity.FileEntity;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
@@ -28,9 +27,9 @@ public class HttpClient implements IHttpClient {
 	public HttpClient(HttpClientConfig config){
 		cm = new PoolingHttpClientConnectionManager();
 		requestConfig = RequestConfig.custom()
-				 .setConnectionRequestTimeout(3000)//从连接池获取连接超时
+				 .setConnectionRequestTimeout(1000)//从连接池获取连接超时
 				 .setSocketTimeout(config.getSocketTimeout())//数据传输超时
-				 .setConnectTimeout(3000)//建立连接超时
+				 .setConnectTimeout(1000)//建立连接超时
 				 .build();
 		cm.setMaxTotal(config.getHttpPoolNum());//连接池SIZE
 		cm.setDefaultMaxPerRoute(config.getMaxPerRoute()); //连接每个远程主机数据的SIZE 

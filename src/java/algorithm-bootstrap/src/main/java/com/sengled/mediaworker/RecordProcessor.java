@@ -120,11 +120,11 @@ public class RecordProcessor implements IRecordProcessor {
 			try {
 				frame = KinesisFrameDecoder.decode(data);
 				
-				String utcDateTime = (String) frame.getConfigs().get("utcDateTime");
+				String utcDateTime = frame.getConfig().getUtcDateTime();
 				Date utcDate = DateUtils.parseDate(utcDateTime, UTC_DATE_FORMAT);
 				long delay = currentTime  - utcDate.getTime();
 				recordCounter.updateReceiveDelay(delay);
-				LOGGER.debug("Token:{},unpacking finished.Frame utcDelay:{} Config:{}",delay,token,frame.getConfigs());
+				LOGGER.debug("Token:{},unpacking finished.Frame utcDelay:{} Config:{}",token,delay,frame.getConfig());
 			} catch (Exception e) {
 				LOGGER.error("Token:{},KinesisFrameDecoder falied.",token);
 				LOGGER.error(e.getMessage(),e);
@@ -163,11 +163,11 @@ public class RecordProcessor implements IRecordProcessor {
 		LOGGER.info("kinesisShardId:{},BehindLatest:{}",kinesisShardId,behindLatest);
 		recordCounter.addAndGetRecordCount(records.size());
 		
-		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
-			recordCounter.addAndGetReceiveDelayedCount(records.size());
-			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
-			return;
-		}
+//		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
+//			recordCounter.addAndGetReceiveDelayedCount(records.size());
+//			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
+//			return;
+//		}
 		
 		long startTime = System.currentTimeMillis();
         boolean isSubmited = false;

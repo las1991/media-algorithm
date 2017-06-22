@@ -17,6 +17,8 @@ import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
 import com.sengled.mediaworker.context.Context;
 
 /**
@@ -41,7 +43,7 @@ public class StreamingContext extends Context{
 	//创建上下文时间
 	private Long contextCreateTimestamp;
 	//配置
-	private Map<String, Object> config;
+	private FrameConfig config;
 	private byte[] nalData;
 	private YUVImage yuvImage;
 	private boolean isReport = true;
@@ -222,11 +224,11 @@ public class StreamingContext extends Context{
 		return isReport;
 	}
 	
-	public Map<String, Object> getConfig() {
+	public FrameConfig getConfig() {
 		return config;
 	}
 
-	public void setConfig(Map<String, Object> config) {
+	public void setConfig(FrameConfig config) {
 		this.config = config;
 	}
 

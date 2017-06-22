@@ -26,6 +26,7 @@ import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
@@ -80,7 +81,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			recordCounter.updateWaitProcessCost(waitProcessCost);
 			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
 			
-			actionHandle(token, frame.getConfigs(), frame.getNalData());
+			actionHandle(token, frame.getConfig(), frame.getNalData());
 			
 			long processCost = System.currentTimeMillis() -  handleStartTime;
 			recordCounter.updateSingleDataProcessCost(processCost);
@@ -88,16 +89,13 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 	}
 	
-	private void actionHandle(String token,Map<String, Object> config, final byte[] nalData) {
-		if( !verifiyConfig(token,config)){
-			LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
-			return;
-		}
+	private void actionHandle(String token,FrameConfig config, final byte[] nalData) {
+		
 		for (String model : MODEL_LIST) {
-			if (config.get(model) != null) {
+			if (config.getMotionConfig() != null) {
 				//Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
-				String utcDateTime = (String) config.get("utcDateTime");
-				String action = (String) config.get("action");
+				String utcDateTime = config.getUtcDateTime();
+				String action = config.getAction();
 				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
 				
 				//获得上下文
@@ -151,17 +149,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	@Override
 	public YUVImage decode(final String token,final byte[] nalData) throws DecodeException{
 		return jnaInterface.decode(token, nalData);
-	}
-	
-	private boolean verifiyConfig(String token,Map<String, Object> config){
-		LOGGER.debug("Token:{},verifiyConfig ...{}",token,config);
-		boolean  verifiyResult = 
-				null != config &&
-				! config.isEmpty() &&
-				config.containsKey("utcDateTime") &&
-				config.containsKey("action");
-		
-		return verifiyResult;
 	}
 	
 	public String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException{

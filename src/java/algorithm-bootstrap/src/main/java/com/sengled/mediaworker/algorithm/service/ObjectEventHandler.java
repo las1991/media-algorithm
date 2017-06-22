@@ -12,15 +12,14 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.Subscribe;
-import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 
 @Component
-public class ObjectEventListener implements InitializingBean {
-	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectEventListener.class);
+public class ObjectEventHandler implements InitializingBean {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectEventHandler.class);
 	private static final int THREAD_MAXCOUNT = 150;
 
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
@@ -59,13 +58,7 @@ public class ObjectEventListener implements InitializingBean {
 	}
 
 	private void handle(ObjectEvent event) {
-		LOGGER.info("Handle ObjectEvent");
-		/*根据
-		*	1.识别结果：图片中所有的物体及位置
-		*	2.Motion结果：zone中移动的坐标
-		*结果：zone 中在移动的物体名
-		*
-		*/
+		LOGGER.info("Handle ObjectEvent {}",event);
 		//encode
 		//pushSqs
 		//pushS3

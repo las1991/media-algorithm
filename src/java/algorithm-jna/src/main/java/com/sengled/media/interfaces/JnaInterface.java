@@ -34,7 +34,7 @@ public class JnaInterface implements Function{
 	
 	static{
 		try {
-			/*
+			
 			LOGGER.info("init...");
 			String jnaHome = System.getProperty("jna.library.path");
 			LOGGER.info("jna.library.path={}", jnaHome);
@@ -49,7 +49,7 @@ public class JnaInterface implements Function{
 			encoderLibrary = Jpg_encoderLibrary.INSTANCE;
 			encoderLibrary.Init();
 			encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
-			*/
+			
 			LOGGER.info("init finished");
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);

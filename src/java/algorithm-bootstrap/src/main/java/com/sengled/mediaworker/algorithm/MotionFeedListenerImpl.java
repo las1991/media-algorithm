@@ -18,7 +18,6 @@ import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 
 
 /**
- * Feed结果监听器
  * @author media-liwei
  *
  */
