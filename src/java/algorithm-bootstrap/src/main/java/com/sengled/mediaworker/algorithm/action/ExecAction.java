@@ -6,9 +6,9 @@ import org.slf4j.LoggerFactory;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.mediaworker.algorithm.FeedListener;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
-import com.sengled.mediaworker.algorithm.StreamingContext;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
 public class ExecAction extends Action {

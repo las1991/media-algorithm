@@ -20,14 +20,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.web.bind.annotation.RestController;
 
-import com.alibaba.fastjson.JSONArray;
-import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.MetricRegistry;
 import com.google.common.net.HttpHeaders;
-import com.sengled.mediaworker.algorithm.StreamingContextManager;
+import com.sengled.mediaworker.algorithm.context.StreamingContextManager;
 import com.sengled.mediaworker.metrics.osmonitor.OSMonitor;
 
 /**

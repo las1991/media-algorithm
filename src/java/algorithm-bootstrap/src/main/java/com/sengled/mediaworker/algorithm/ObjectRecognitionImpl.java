@@ -1,20 +1,6 @@
-package com.sengled.mediaworker.object;
+package com.sengled.mediaworker.algorithm;
 
-import java.awt.image.BufferedImage;
-import java.awt.image.RenderedImage;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Executors;
-
-import javax.imageio.ImageIO;
-import javax.imageio.stream.FileImageOutputStream;
-import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
@@ -28,15 +14,12 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.media.interfaces.exceptions.EncodeException;
-import com.sengled.mediaworker.algorithm.ProcessorManager;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Data;
+import com.sengled.mediaworker.algorithm.context.ObjectContext;
+import com.sengled.mediaworker.algorithm.context.ObjectContextManager;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.ObjectEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
-import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
 import com.sengled.mediaworker.httpclient.HttpResponseResult;
 import com.sengled.mediaworker.httpclient.IHttpClient;
 
@@ -47,9 +30,9 @@ import com.sengled.mediaworker.httpclient.IHttpClient;
  */
 @Component
 public class ObjectRecognitionImpl implements InitializingBean,ObjectRecognition{
-		
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectRecognitionImpl.class);
-	private final static int EVENT_BUS_THREAD_COUNT = 100;
+	
+	private final static int EVENT_BUS_THREAD_COUNT = 50;
 	
 	@Autowired
 	ObjectContextManager objectContextManager;
@@ -60,7 +43,7 @@ public class ObjectRecognitionImpl implements InitializingBean,ObjectRecognition
 	@Autowired
 	ProcessorManager  processorManager;
 	@Autowired(required=false)
-	DrawZoneObjectMotionFrame drawZoneObjectMotionFrame;
+	RectangleUtils drawZoneObjectMotionFrame;
 	
 	@Value("${object.recognition.url}")
 	private String objectRecognitionUrl;
@@ -104,20 +87,16 @@ public class ObjectRecognitionImpl implements InitializingBean,ObjectRecognition
 		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(jsonObj, ObjectRecognitionResult.class);
 		LOGGER.info("recognition object JSON result:{},javaBean Result{}",jsonObj.toJSONString(),objectResult.toString());
 		
-		//处理物体识别事件
-		//TODO 分析结果，找出在zone中的结果，提交sqs s3
-
-		matchZone(token,yuvImage,objectConfig,objectResult,motionFeedResult);
+		return matchZone(token,yuvImage,objectConfig,objectResult,motionFeedResult);
 		
-		String matchResult = "{'zone_id':54,'type':['persion','car'],'zone_id':12,'type':['persion','dog']}";
-		
-		return matchResult;
 	}
-	private void matchZone(String token,YUVImage yuvImage,ObjectConfig objectConfig ,ObjectRecognitionResult objectRecognitionResult,MotionFeedResult motionFeedResult){
+	private String matchZone(String token,YUVImage yuvImage,ObjectConfig objectConfig ,ObjectRecognitionResult objectRecognitionResult,MotionFeedResult motionFeedResult){
 		LOGGER.info("Token:{},objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}",token,JSONObject.toJSON(objectConfig),JSONObject.toJSON(objectRecognitionResult),JSONObject.toJSON(motionFeedResult));
 		if(LOGGER.isDebugEnabled()){
 			drawZoneObjectMotionFrame.draw(token, yuvImage, objectConfig, objectRecognitionResult, motionFeedResult);	
 		}
+		String matchResult = "{'zone_id':54,'type':['persion','car'],'zone_id':12,'type':['persion','dog']}";
+		return matchResult;
 	}
 }
 

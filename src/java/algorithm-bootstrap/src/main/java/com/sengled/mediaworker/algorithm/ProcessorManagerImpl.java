@@ -25,8 +25,11 @@ import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.context.StreamingContextManager;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{

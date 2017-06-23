@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.algorithm;
+package com.sengled.mediaworker.algorithm.feedlistener;
 
 import java.util.concurrent.Executors;
 
@@ -11,6 +11,8 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
+import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.service.MotionEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;

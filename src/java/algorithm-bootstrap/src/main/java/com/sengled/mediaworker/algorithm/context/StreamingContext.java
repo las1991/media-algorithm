@@ -1,8 +1,7 @@
-package com.sengled.mediaworker.algorithm;
+package com.sengled.mediaworker.algorithm.context;
 
 import java.text.ParseException;
 import java.util.Date;
-import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
@@ -13,12 +12,13 @@ import org.slf4j.LoggerFactory;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 import com.sengled.mediaworker.context.Context;
 
 /**

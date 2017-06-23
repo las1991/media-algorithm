@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.object;
+package com.sengled.mediaworker.algorithm;
 
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;

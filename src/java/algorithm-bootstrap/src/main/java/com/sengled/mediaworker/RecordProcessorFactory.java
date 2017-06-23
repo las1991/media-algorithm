@@ -7,9 +7,8 @@ import org.springframework.stereotype.Component;
 
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessor;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
-import com.sengled.mediaworker.algorithm.FeedListener;
-import com.sengled.mediaworker.algorithm.MotionFeedListenerImpl;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
 /**
  * kinesis stream record 处理器工厂类

@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.object;
+package com.sengled.mediaworker.algorithm.context;
 
 /**
  * 物体识别上下文

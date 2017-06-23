@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.algorithm;
+package com.sengled.mediaworker.algorithm.feedlistener;
 
 import java.util.concurrent.Executors;
 
@@ -11,11 +11,12 @@ import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
+import com.sengled.mediaworker.algorithm.ObjectRecognition;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.service.ObjectEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
-import com.sengled.mediaworker.object.ObjectRecognition;
 
 
 /**
