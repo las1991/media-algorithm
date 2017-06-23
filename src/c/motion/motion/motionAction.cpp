@@ -45,10 +45,10 @@ void reportMotionEvent(rvResource* rv, bool is_motion, map< int,vector<Rect> > &
 			{
 				zone_array = cJSON_CreateArray();
                 rect = rects[i];
-				int x = (rect.x/MINMUM_FRAME_WIDTH)*100;
-                int y = (rect.y/MINMUM_FRAME_HEIGHT)*100;
-                int dx = ((rect.x+rect.height)/MINMUM_FRAME_WIDTH)*100;
-                int dy = ((rect.y+rect.width)/MINMUM_FRAME_HEIGHT)*100;
+				int x = rect.x*100/MINMUM_FRAME_WIDTH;
+                int y = rect.y*100/MINMUM_FRAME_HEIGHT;
+                int dx = (rect.x+rect.height)*100/MINMUM_FRAME_WIDTH;
+                int dy = (rect.y+rect.width)*100/MINMUM_FRAME_HEIGHT;
 				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(x));
 				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(y));
 				cJSON_AddItemToArray(zone_array,cJSON_CreateNumber(dx));
