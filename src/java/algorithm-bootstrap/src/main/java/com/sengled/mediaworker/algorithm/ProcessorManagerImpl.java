@@ -113,13 +113,11 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 				}
 				//过滤数据
 				try {
+//TODO 上测试前恢复	
 //					if(context.isDataExpire(maxDelayedTimeMsce)){
 //						continue;
 //					}
 					context.reportCheck(motionIntervalTimeMsce);
-//					if(context.motionIntervalCheck(motionIntervalTimeMsce)){
-//						continue;
-//					}
 				} catch (Exception e2) {
 					LOGGER.error("Token:{}  skip...",token);
 					LOGGER.error(e2.getMessage(),e2);

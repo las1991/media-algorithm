@@ -3,18 +3,23 @@ package com.sengled.mediaworker.algorithm.event;
 public class ObjectEvent {
 
 	private String token;
-	private String model;
-	public ObjectEvent(String token, String model) {
+	private String result;
+	private byte[] jpgData;
+
+	
+	
+	public ObjectEvent(String token, String result, byte[] jpgData) {
 		super();
 		this.token = token;
-		this.model = model;
+		this.result = result;
+		this.jpgData = jpgData;
 	}
+
+
+
 	@Override
 	public String toString() {
-		return "ObjectEvent [token=" + token + ", model=" + model + "]";
+		return "ObjectEvent [token=" + token + ", result=" + result + "]";
 	}
-	
-	
-	
 	
 }

@@ -1,33 +1,29 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
 
-@Component
-public class RectangleUtils {
-	private static final Logger LOGGER = LoggerFactory.getLogger(RectangleUtils.class);
-	
-	@Autowired
-	ProcessorManager processorManager;
+
+public class ImageUtils {
+	private static final Logger LOGGER = LoggerFactory.getLogger(ImageUtils.class);
 
 	/**
 	 * 百分比转换像素
@@ -106,18 +102,17 @@ public class RectangleUtils {
 	 * @param objectRecognitionResult
 	 * @param motionFeedResult
 	 */
-	public void draw(String token,YUVImage yuvImage,ObjectConfig objectConfig ,ObjectRecognitionResult objectRecognitionResult,MotionFeedResult motionFeedResult){
+	public  static void  draw(ProcessorManager processorManager,String token,YUVImage yuvImage,ObjectConfig objectConfig ,ObjectRecognitionResult objectRecognitionResult,MotionFeedResult motionFeedResult,List<Object> finalObjectsResult){
 		try {
-			//posList objectConfig
-			List<String> posList = new ArrayList<>();
+			List<String> objectConfigPos = new ArrayList<String>(); 
 			for(int i=0;i<objectConfig.getDataList().size();i++){
 				String pos = objectConfig.getDataList().get(i).getPos();
 				String posStr = convert2spotLocation(pos);
 				String resultPos = convert(yuvImage.getWidth(), yuvImage.getHeight(), posStr);
-				posList.add(resultPos);
+				objectConfigPos.add(resultPos);
 			}
-			//posList2  objectRecognitionResult
-			List<String> posList2 = new ArrayList<>();
+			
+			List<String> objectRecognitionResultPos = new ArrayList<String>(); 
 			for(Object obj : objectRecognitionResult.objects){
 				List<String> strList = new ArrayList<>(obj.bbox_pct.size());
 				for(Integer i : obj.bbox_pct){
@@ -125,30 +120,68 @@ public class RectangleUtils {
 				}
 				String[] strings = new String[strList.size()];
 				strList.toArray(strings);
-				posList2.add(convert(yuvImage.getWidth(), yuvImage.getHeight(),String.join(",", strings)));
+				objectRecognitionResultPos.add(convert(yuvImage.getWidth(), yuvImage.getHeight(),String.join(",", strings)));
 			}
 			
-			//posList3 MotionFeedResult
-			List<String> posList3 = new ArrayList<>();
+			List<String> motionFeedResultPos = new ArrayList<>();
 			for ( ZoneInfo zi : motionFeedResult.motion) {
 				for( List<Integer> z : zi.boxs){
 					String[] pos = {z.get(0)+"",z.get(1)+"",z.get(2)+"",z.get(3)+""};
 					String posStr = convert(yuvImage.getWidth(), yuvImage.getHeight(), String.join(",", pos));
-					posList3.add(posStr);
+					motionFeedResultPos.add(posStr);
 				}
+			}
+			List<String> finalObjectRecognitionResultPos = new ArrayList<>();
+			for ( Object obj : finalObjectsResult) {
+				List<String> strList = new ArrayList<>(obj.bbox_pct.size());
+				for(Integer i : obj.bbox_pct){
+					strList.add(String.valueOf(i));
+				}
+				String[] strings = new String[strList.size()];
+				strList.toArray(strings);
+				finalObjectRecognitionResultPos.add(convert(yuvImage.getWidth(), yuvImage.getHeight(),String.join(",", strings)));
+				
 			}
 			
 			byte[] jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-			String filename = "/root/save/"+token+".jpg";
-			File imageName = new File(filename);
-			ImageOutputStream ios = ImageIO.createImageOutputStream(imageName);
-			ios.write(jpgData);
-			String newfile = "/root/save/"+token+System.currentTimeMillis() + ".jpg";
-			String[] cmdarray = {"/usr/bin/python","/root/pang/draw.py",JSONObject.toJSONString(posList),JSONObject.toJSONString(posList2),JSONObject.toJSONString(posList3),filename,newfile};
-			System.out.println((Arrays.asList(cmdarray)));
-			Runtime.getRuntime().exec(cmdarray);
+			BufferedImage img = ImageIO.read(new ByteArrayInputStream(jpgData));
+			BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+			r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
+			Graphics g = r.getGraphics();
+			drawRect(g, objectConfigPos, Color.GREEN,"ZoneInfo",30,30);
+			drawRect(g, objectRecognitionResultPos, Color.RED,"Object",30,40);
+			drawRect(g, motionFeedResultPos, Color.yellow,"Motion",30,50);
+			drawRect(g, finalObjectRecognitionResultPos, Color.blue,"Result",30,60);
+			ImageIO.write(r, "jpg", new File("/root/save/"+token+System.currentTimeMillis()+".jpg"));
 		} catch (Exception e) {
-			e.printStackTrace();
+			LOGGER.error(e.getMessage(),e);
 		}
 }
+	private static void drawRect(Graphics g,List<String> boxs,Color color,String word,int wx,int wy){
+		for (String pos : boxs) {
+			String[] p = pos.split(",");
+			int x = Integer.valueOf(p[0]);
+			int y = Integer.valueOf(p[1]);
+			int xx = Integer.valueOf(p[2]);
+			int yy = Integer.valueOf(p[3]);
+			g.setColor(color);
+			g.drawRect(x, y, xx-x, yy-y);
+			g.drawString(word, wx, wy);
+		}
+	}
+	public static void main(String[] args) throws IOException {
+		BufferedImage img = ImageIO.read(new File("D://test/1.jpg"));
+		
+		 BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+         r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
+         
+         r.getGraphics().drawString("hello world", 20, 20);
+         
+         Graphics g = r.getGraphics();
+         g.setColor(Color.RED);
+         g.drawRect(0, 0, 100, 100);
+         
+         
+         ImageIO.write(r, "jpg", new File("D://test/1.chenxh.jpg"));
+	}
 }

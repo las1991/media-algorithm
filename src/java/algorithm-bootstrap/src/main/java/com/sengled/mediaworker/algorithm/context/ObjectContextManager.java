@@ -31,17 +31,17 @@ public class ObjectContextManager implements InitializingBean{
 		objectContextMap = new ConcurrentHashMap<>();
 	}
 	
-	public ObjectContext findOrCreateStreamingContext(String token){
+	public ObjectContext findOrCreateStreamingContext(StreamingContext streamingContext){
+		String token = streamingContext.getToken();
 		ObjectContext context =  objectContextMap.get(token);
 		if (context == null) {
-			context =  new ObjectContext(token);
+			context =  new ObjectContext(streamingContext);
 		}else{
-			//设置  数据中的UTC时间
+			context.setUtcDateTime(context.getUtcDateTime());
 			//设置算法参数
 			//设置 上次接收到数据的时间
 			//设置 本次接收到数据的时间
 		}
 		return context;
 	}
-
 }

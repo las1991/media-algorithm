@@ -28,7 +28,6 @@ import com.sengled.mediaworker.context.Context;
  */
 public class StreamingContext extends Context{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
-	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 
 	private String token;
 	private String model;
@@ -113,25 +112,6 @@ public class StreamingContext extends Context{
 		}
 		return expire;
 	}
-//	public boolean motionIntervalCheck(Long motionIntervalTimeMsce) throws Exception{
-//		boolean isSkip = false;
-//		//motion 检测间隔为15s
-//		Date utcDateTime = getUtcDateTime();
-//		if(lastMotionTimestamp !=null && utcDateTime !=null){
-//			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
-//			
-//			if(sinceLastMotion <= motionIntervalTimeMsce){
-//				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,motionIntervalTimeMsce);
-//				isSkip = true;
-//			}else{
-//				lastMotionTimestamp = null;
-//				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,motionIntervalTimeMsce);
-//				//重新初始化算法模型
-//				//streamingContextManager.reload(this);
-//			}
-//		}
-//		return isSkip;
-//	}
 	public void reportCheck(Long motionIntervalTimeMsce){
 		Date utcDateTime = getUtcDateTime();
 		if(lastMotionTimestamp !=null && utcDateTime !=null){
@@ -144,8 +124,6 @@ public class StreamingContext extends Context{
 				lastMotionTimestamp = null;
 				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",token,sinceLastMotion,motionIntervalTimeMsce);
 				isReport = true;
-				//重新初始化算法模型
-				//streamingContextManager.reload(this);
 			}
 		}
 	}

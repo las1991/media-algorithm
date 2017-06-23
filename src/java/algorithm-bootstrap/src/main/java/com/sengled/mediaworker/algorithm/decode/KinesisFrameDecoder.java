@@ -111,7 +111,7 @@ public class KinesisFrameDecoder {
 					+ ", objectConfig=" + objectConfig + "]";
 		}
 		public boolean verifiyConfig(){
-			//TODO
+			//TODO 校验接收到的配置是否完整
 			//LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
 			return true;
 		}
