@@ -23,10 +23,10 @@ public class ObjectRecognitionResult {
 		
 		@JSONField(name = "score")
 		public double score;
-		
+
 		@Override
 		public String toString() {
-			return "Object [bbox_pct=" + bbox_pct + ", type=" + type + "]";
+			return "Object [bbox_pct=" + bbox_pct + ", type=" + type + ", score=" + score + "]";
 		}
 	}
 

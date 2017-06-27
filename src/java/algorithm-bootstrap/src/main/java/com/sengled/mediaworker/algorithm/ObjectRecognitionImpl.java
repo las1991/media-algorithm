@@ -2,9 +2,11 @@ package com.sengled.mediaworker.algorithm;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -209,7 +211,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 			Collection<Object> objectList = objectZoneidToBoxSet.getValue();
 			Collection<List<Integer>> motionList = motionZoneidToBox.get(zoneid);
-
+			Set<Object> hasObjSet = new HashSet<>();
 			for (List<Integer> motionBox : motionList) {
 				for (Object object : objectList) {
 					List<Integer> objectBox = object.bbox_pct;
@@ -217,8 +219,11 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 					float  areaPercentObject= ImageUtils.areaPercent(objectBox, area);
 					float areaPercentMotion = ImageUtils.areaPercent(motionBox, area);
 					if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
-						LOGGER.info("step2Filter zoneid:{} object:{}", zoneid, object.type);
-						result.put(zoneid,  object);
+						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.type);
+						if( ! hasObjSet.contains(object)){
+							result.put(zoneid,  object);
+							hasObjSet.add(object);
+						}
 					}
 				}
 			}
@@ -237,6 +242,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		for (Object object : objectRecognitionResult.objects) {
 			String objectType = object.type;
 			List<Integer> objectBox = object.bbox_pct;
+			
 			// zone
 			List<Data> dataList = objectConfig.getDataList();// zone 配置
 			for (Data data : dataList) {
@@ -247,10 +253,10 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				int area = ImageUtils.area(objectBox, zoneBox);
 				float objectBoxPct = ImageUtils.areaPercent(objectBox, area);
 				float zoneBoxpercent = ImageUtils.areaPercent(zoneBox, area);
-				LOGGER.info("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
+				LOGGER.debug("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
 				if (objectBoxPct >= percent && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
 					finalObjectsResult.put(data.getId(), object);
-					LOGGER.info("step1Filter zoneid:{} object:{}", data.getId(), object);
+					LOGGER.debug("step1Filter zoneid:{} object:{}", data.getId(), object);
 				}
 			}
 		}
