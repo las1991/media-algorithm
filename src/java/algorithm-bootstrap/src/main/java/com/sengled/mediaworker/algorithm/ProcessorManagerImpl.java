@@ -114,9 +114,9 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			//过滤数据
 			try {
 				//TODO 上测试前恢复	
-				//if(context.isDataExpire(maxDelayedTimeMsce)){
-				//		continue;
-				//}
+				if(context.isDataExpire(maxDelayedTimeMsce)){
+						return;
+				}
 				context.reportCheck(motionIntervalTimeMsce);
 			} catch (Exception e2) {
 				LOGGER.error("Token:{}  skip...",token);
