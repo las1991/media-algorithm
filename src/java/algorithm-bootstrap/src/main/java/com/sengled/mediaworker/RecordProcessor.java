@@ -162,12 +162,12 @@ public class RecordProcessor implements IRecordProcessor {
 		LOGGER.info("kinesisShardId:{},Received records size:{}",kinesisShardId,records.size());
 		LOGGER.info("kinesisShardId:{},BehindLatest:{}",kinesisShardId,behindLatest);
 		recordCounter.addAndGetRecordCount(records.size());
-//TODO 上测试前恢复		
-//		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
-//			recordCounter.addAndGetReceiveDelayedCount(records.size());
-//			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
-//			return;
-//		}
+		//TODO 上测试前恢复		
+		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
+			recordCounter.addAndGetReceiveDelayedCount(records.size());
+			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
+			return;
+		}
 		
 		long startTime = System.currentTimeMillis();
         boolean isSubmited = false;
