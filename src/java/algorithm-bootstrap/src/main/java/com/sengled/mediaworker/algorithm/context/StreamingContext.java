@@ -1,4 +1,4 @@
-package com.sengled.mediaworker.algorithm;
+package com.sengled.mediaworker.algorithm.context;
 
 import java.text.ParseException;
 import java.util.Date;
@@ -12,25 +12,23 @@ import org.slf4j.LoggerFactory;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
 /**
  * 
  * @author liwei
  *
  */
-public class StreamingContext {
+public class StreamingContext extends Context{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
-	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
 
 	private String token;
-	/**
-	 * @see @RecordProcessor.MODEL_LIST
-	 */
-	private String model;
 	//接收kinesis数据中的utc时间
 	private String utcDateTime;
 	//保存最后一次Motion的时间
@@ -41,7 +39,10 @@ public class StreamingContext {
 	private Long contextUpdateTimestamp;
 	//创建上下文时间
 	private Long contextCreateTimestamp;
-	
+	//配置
+	private FrameConfig config;
+	private byte[] nalData;
+	private YUVImage yuvImage;
 	private boolean isReport = true;
 	private Algorithm algorithm;
 	private Action action;
@@ -53,9 +54,7 @@ public class StreamingContext {
 	public final Action execAction = new ExecAction();
 	public final Action closeAction = new CloseAction();
 	
-	
-	
-	StreamingContext(String token, String model,
+	StreamingContext(String token, 
 					String utcDateTime,
 					Algorithm algorithm,
 					ProcessorManager processorManager,
@@ -63,7 +62,6 @@ public class StreamingContext {
 					StreamingContextManager streamingContextManager
 					) {
 		this.token = token;
-		this.model = model;
 		this.algorithm = algorithm;
 		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
@@ -72,14 +70,14 @@ public class StreamingContext {
 		this.contextCreateTimestamp = System.currentTimeMillis();
 		this.contextUpdateTimestamp = contextCreateTimestamp;
 		this.lastMotionTimestamp = null;
-		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
+		LOGGER.info("Token:{},Model:{},Create StreamingContext", token);
 	}
 
-	public void feed(final  byte[] nalData, final FeedListener listener) throws Exception {
-		if (nalData == null || listener == null) {
+	public void feed(final FeedListener[] listeners) throws Exception {
+		if (nalData == null || listeners == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		action.feed(this, nalData, listener);
+		action.feed(this, listeners);
 	}
 
 	public Date getUtcDateTime() {
@@ -109,25 +107,6 @@ public class StreamingContext {
 		}
 		return expire;
 	}
-//	public boolean motionIntervalCheck(Long motionIntervalTimeMsce) throws Exception{
-//		boolean isSkip = false;
-//		//motion 检测间隔为15s
-//		Date utcDateTime = getUtcDateTime();
-//		if(lastMotionTimestamp !=null && utcDateTime !=null){
-//			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
-//			
-//			if(sinceLastMotion <= motionIntervalTimeMsce){
-//				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec skip.",token,sinceLastMotion,motionIntervalTimeMsce);
-//				isSkip = true;
-//			}else{
-//				lastMotionTimestamp = null;
-//				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .Reload algorithmModel.",token,sinceLastMotion,motionIntervalTimeMsce);
-//				//重新初始化算法模型
-//				//streamingContextManager.reload(this);
-//			}
-//		}
-//		return isSkip;
-//	}
 	public void reportCheck(Long motionIntervalTimeMsce){
 		Date utcDateTime = getUtcDateTime();
 		if(lastMotionTimestamp !=null && utcDateTime !=null){
@@ -140,8 +119,6 @@ public class StreamingContext {
 				lastMotionTimestamp = null;
 				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",token,sinceLastMotion,motionIntervalTimeMsce);
 				isReport = true;
-				//重新初始化算法模型
-				//streamingContextManager.reload(this);
 			}
 		}
 	}
@@ -155,10 +132,6 @@ public class StreamingContext {
 
 	public void setAction(Action action) {
 		this.action = action;
-	}
-
-	public String getModel() {
-		return this.model;
 	}
 
 	public void setUtcDateTime(String utcDateTime) {
@@ -219,11 +192,35 @@ public class StreamingContext {
 	public boolean isReport(){
 		return isReport;
 	}
+	
+	public FrameConfig getConfig() {
+		return config;
+	}
+
+	public void setConfig(FrameConfig config) {
+		this.config = config;
+	}
+
+	public byte[] getNalData() {
+		return nalData;
+	}
+
+	public void setNalData(byte[] nalData) {
+		this.nalData = nalData;
+	}
+
+	public YUVImage getYuvImage() {
+		return yuvImage;
+	}
+
+	public void setYuvImage(YUVImage yuvImage) {
+		this.yuvImage = yuvImage;
+	}
+
 	@Override
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Token:" + token);
-		sb.append(" model:" + model);
 		sb.append(" utcDateTime" + utcDateTime);
 		sb.append(" lastMotionTimestamp:" + getTimestampFormat(lastMotionTimestamp));
 		sb.append(" lastTimeContextUpdateTimestamp:" + getTimestampFormat(lastTimeContextUpdateTimestamp));

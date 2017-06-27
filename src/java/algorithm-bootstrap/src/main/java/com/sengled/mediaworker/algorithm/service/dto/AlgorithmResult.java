@@ -34,6 +34,8 @@ public class AlgorithmResult {
     private List<ObjectRecognitionInnerDto> dataList;
 
 
+    
+    
     public String getStreamId() {
         return streamId;
     }

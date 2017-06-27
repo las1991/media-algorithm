@@ -1,16 +1,13 @@
-package com.sengled.mediaworker.algorithm;
+package com.sengled.mediaworker.algorithm.context;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentHashMap.KeySetView;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -18,10 +15,14 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
 
 @Component
 public class StreamingContextManager implements InitializingBean{
@@ -62,20 +63,22 @@ public class StreamingContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token, String model,String utcDateTime,Map<String, Object> modelConfig) throws AlgorithmIntanceCreateException{
-		StreamingContext context =  streamingContextMap.get(token + "_" + model);
+	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token,String utcDateTime,FrameConfig config) throws AlgorithmIntanceCreateException{
+		StreamingContext context =  streamingContextMap.get(token);
+		MotionConfig modelConfig = config.getBaseConfig();
 		if (context == null) {
-			context =  newAlgorithmContext(processor,token,model,utcDateTime, modelConfig);
+			context =  newAlgorithmContext(processor,token,utcDateTime, modelConfig);
 		}else{
 			//设置  数据中的UTC时间
 			context.setUtcDateTime(utcDateTime);
 			//设置算法参数
-			context.getAlgorithm().setParameters(modelConfig);
+			context.getAlgorithm().setParameters(JSONObject.toJSONString(config.getBaseConfig()));
 			//设置 上次接收到数据的时间
 			context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
 			//设置 本次接收到数据的时间
 			context.setContextUpdateTimestamp(System.currentTimeMillis());
 		}
+		context.setConfig(config);
 		return context;
 	}
 	public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
@@ -83,12 +86,11 @@ public class StreamingContextManager implements InitializingBean{
 			LOGGER.debug("StreamingContext reload.{}",context.toString());
 		}
 		String token = context.getToken();
-		String model = context.getModel();
 		Algorithm algorithm = context.getAlgorithm();
 		ProcessorManager processor = context.getProcessorManager();
 		
 		processor.close(algorithm.getAlgorithmModelId());
-		String algorithmModelId = processor.newAlgorithmModel(token, model);
+		String algorithmModelId = processor.newAlgorithmModel(token);
 		algorithm.setAlgorithmModelId(algorithmModelId);
 	}
 	
@@ -99,14 +101,14 @@ public class StreamingContextManager implements InitializingBean{
 		ProcessorManager processor = context.getProcessorManager();
 		Algorithm algorithm = context.getAlgorithm();
 		processor.close(algorithm.getAlgorithmModelId());
-		streamingContextMap.remove(context.getToken() + "_" + context.getModel());	
+		streamingContextMap.remove(context.getToken());	
 	}
 	
-	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token, String model,String utcDateTime, Map<String, Object> newModelConfig) throws AlgorithmIntanceCreateException {
-		String algorithmModelId = processor.newAlgorithmModel(token, model);
-		Algorithm algorithm = new Algorithm(algorithmModelId, newModelConfig);
-		StreamingContext context =  new StreamingContext(token, model, utcDateTime,algorithm, processor,recordCounter,this);
-		streamingContextMap.put(token +"_"+model, context);
+	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token,String utcDateTime, MotionConfig newModelConfig) throws AlgorithmIntanceCreateException {
+		String algorithmModelId = processor.newAlgorithmModel(token);
+		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(newModelConfig));
+		StreamingContext context =  new StreamingContext(token, utcDateTime,algorithm, processor,recordCounter,this);
+		streamingContextMap.put(token, context);
 		return context;
 	}
 	private void cleanExpiredContext() {

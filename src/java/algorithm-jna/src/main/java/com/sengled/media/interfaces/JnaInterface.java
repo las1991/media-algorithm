@@ -48,6 +48,7 @@ public class JnaInterface implements Function{
 			encoderLibrary = Jpg_encoderLibrary.INSTANCE;
 			encoderLibrary.Init();
 			encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
+			
 			LOGGER.info("init finished");
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
@@ -120,12 +121,12 @@ public class JnaInterface implements Function{
 		}
 	}
 	@Override
-	public String  newAlgorithmModel( String token,String model) throws AlgorithmIntanceCreateException{
-		LOGGER.debug("Token:{},model:{} newAlgorithmModel",token,model);
+	public String  newAlgorithmModel( String token) throws AlgorithmIntanceCreateException{
+		LOGGER.debug("Token:{}  newAlgorithmModel",token);
 		String algorithmModelId;
 		Pointer oldPointer = null;
 		try {
-			Pointer pointer =   algorithmLibrary.create_instance(token+"_"+model);
+			Pointer pointer =   algorithmLibrary.create_instance(token);
 			algorithmModelId = UUID.randomUUID().toString();
 			oldPointer = pointerMap.put(algorithmModelId, pointer);
 		} catch (Exception e) {

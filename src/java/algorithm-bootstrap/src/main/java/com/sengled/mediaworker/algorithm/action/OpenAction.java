@@ -3,15 +3,15 @@ package com.sengled.mediaworker.algorithm.action;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sengled.mediaworker.algorithm.FeedListener;
-import com.sengled.mediaworker.algorithm.StreamingContext;
-import com.sengled.mediaworker.algorithm.StreamingContextManager;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.context.StreamingContextManager;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
 public class OpenAction extends Action{
 	private static final Logger LOGGER = LoggerFactory.getLogger(OpenAction.class);
 
 	@Override
-	public void feed(StreamingContext context, final byte[] nalData, FeedListener listener)throws Exception {
+	public void feed(StreamingContext context, FeedListener[] listeners)throws Exception {
 		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getToken());
 		
 		StreamingContextManager manager = context.getStreamingContextManager();
@@ -21,6 +21,6 @@ public class OpenAction extends Action{
 			manager.reload(context);	
 		}
 		context.setAction(context.execAction);
-		context.feed(nalData, listener);
+		context.feed(listeners);
 	}
 }

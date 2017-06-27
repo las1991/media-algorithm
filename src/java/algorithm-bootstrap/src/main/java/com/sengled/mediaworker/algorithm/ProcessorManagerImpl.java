@@ -1,8 +1,6 @@
 package com.sengled.mediaworker.algorithm;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -25,13 +23,17 @@ import com.sengled.media.interfaces.exceptions.DecodeException;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.context.StreamingContextManager;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
+import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
-	private static final List<String> MODEL_LIST = Arrays.asList("motion");
+	//private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	
 	//Motion间隔时间
     @Value("${motion.interval.time.msce:15000}")
@@ -42,7 +44,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
-	private FeedListener feedListener;
+	@Autowired
+	private FeedListener[] feedListeners;
 	@Autowired
     private StreamingContextManager streamingContextManager;
 	@Autowired
@@ -68,10 +71,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			}
 		});
 	}
-	@Override
-	public void setFeedListener(FeedListenerImpl feedListener) {
-		this.feedListener = feedListener;
-	}
 	
 	private  void handleDatas(final long receiveTime,final String token,final Collection<Frame> datas){
 		
@@ -83,7 +82,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			recordCounter.updateWaitProcessCost(waitProcessCost);
 			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
 			
-			actionHandle(token, frame.getConfigs(), frame.getNalData());
+			actionHandle(token, frame.getConfig(), frame.getNalData());
 			
 			long processCost = System.currentTimeMillis() -  handleStartTime;
 			recordCounter.updateSingleDataProcessCost(processCost);
@@ -91,73 +90,59 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 	}
 	
-	private void actionHandle(String token,Map<String, Object> config, final byte[] nalData) {
-		if( !verifiyConfig(token,config)){
-			LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
+	private void actionHandle(String token,FrameConfig config, final byte[] nalData) {
+	
+		if(null == config.getMotionConfig() && null == config.getObjectConfig()){
+			LOGGER.info("Token:{} Motion off,Object off",token);
 			return;
 		}
-		for (String model : MODEL_LIST) {
-			if (config.get(model) != null) {
-				@SuppressWarnings("unchecked")
-				Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
-				String utcDateTime = (String) config.get("utcDateTime");
-				String action = (String) config.get("action");
-				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,modelConfig);
-				
-				//获得上下文
-				StreamingContext context;
-				try {
-					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, utcDateTime,modelConfig);
-				} catch (Exception e) {
-					LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
-					LOGGER.error("Token:{} model:{} skip.",token,model);
-					continue;
-				}
-				//过滤数据
-				try {
-					if(context.isDataExpire(maxDelayedTimeMsce)){
-						continue;
-					}
-					context.reportCheck(motionIntervalTimeMsce);
-//					if(context.motionIntervalCheck(motionIntervalTimeMsce)){
-//						continue;
-//					}
-				} catch (Exception e2) {
-					LOGGER.error("Token:{}  skip...",token);
-					LOGGER.error(e2.getMessage(),e2);
-					continue;
-				}
-				//解码
-//				YUVImage yuvImage;
-//				try {
-//					yuvImage = decode(token, nalData);
-//				} catch (Exception e1) {
-//					LOGGER.error("Token:{} decode failed. skip...",token);
-//					LOGGER.error(e1.getMessage(),e1);
-//					continue;
-//				}
-				
-				//处理
-				switch (action) {
-					case "open":
-						context.setAction(context.openAction);
-						break;
-					case "exec":
-						context.setAction(context.execAction);
-						break;
-					case "close":
-						context.setAction(context.closeAction);
-						break;
-					default:
-						LOGGER.error("Token:{},action:{} not supported", token,action);
-						continue;
-				}
-				try {
-					context.feed(nalData, feedListener);
-				} catch (Exception e) {
-					LOGGER.error(e.getMessage(),e);
-					continue;
-				}
+		
+		if( null != config.getBaseConfig() ){
+			String utcDateTime = config.getUtcDateTime();
+			String action = config.getAction();
+			LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
+			
+			//获得上下文
+			StreamingContext context;
+			try {
+				context = streamingContextManager.findOrCreateStreamingContext(this, token, utcDateTime,config);
+				context.setNalData(nalData);
+			} catch (Exception e) {
+				LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
+				return;
+			}
+			//过滤数据
+			try {
+				//TODO 上测试前恢复	
+				//if(context.isDataExpire(maxDelayedTimeMsce)){
+				//		continue;
+				//}
+				context.reportCheck(motionIntervalTimeMsce);
+			} catch (Exception e2) {
+				LOGGER.error("Token:{}  skip...",token);
+				LOGGER.error(e2.getMessage(),e2);
+				return;
+			}				
+			//处理
+			switch (action) {
+				case "open":
+					context.setAction(context.openAction);
+					break;
+				case "exec":
+					context.setAction(context.execAction);
+					break;
+				case "close":
+					context.setAction(context.closeAction);
+					break;
+				default:
+					LOGGER.error("Token:{},action:{} not supported", token,action);
+					return;
+			}
+			try {
+				context.feed(feedListeners);
+			} catch (Exception e) {
+				LOGGER.error(e.getMessage(),e);
+				return;
 			}
 		}
 	}
@@ -166,19 +151,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		return jnaInterface.decode(token, nalData);
 	}
 	
-	private boolean verifiyConfig(String token,Map<String, Object> config){
-		LOGGER.debug("Token:{},verifiyConfig ...{}",token,config);
-		boolean  verifiyResult = 
-				null != config &&
-				! config.isEmpty() &&
-				config.containsKey("utcDateTime") &&
-				config.containsKey("action");
-		
-		return verifiyResult;
-	}
-	
-	public String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException{
-		return jnaInterface.newAlgorithmModel(token,model);
+	public String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException{
+		return jnaInterface.newAlgorithmModel(token);
 	}
 	@Override
 	public String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException {
@@ -225,4 +199,5 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			this.yuvImage = yuvImage;
 		}
 	}
+
 }

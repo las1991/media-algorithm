@@ -26,8 +26,8 @@ import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 
 @Component
-public class MotionEventListener implements InitializingBean {
-	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventListener.class);
+public class MotionEventHandler implements InitializingBean {
+	private static final Logger LOGGER = LoggerFactory.getLogger(MotionEventHandler.class);
 	private static final int THREAD_MAXCOUNT = 150;
 
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
@@ -35,8 +35,6 @@ public class MotionEventListener implements InitializingBean {
 	@Value("${aws_screenshot_bucket}")
 	private String bucketName;
 
-//	@Autowired
-//	private DynamodbTemplate dynamodbTemplate;
 	@Autowired
 	private SQSTemplate sqsTemplate;
 	@Autowired
@@ -68,7 +66,6 @@ public class MotionEventListener implements InitializingBean {
 			@Override
 			public void run() {
 				handle(event);
-				LOGGER.info("Handle MotionEvent");
 			}
 		});
 	}
