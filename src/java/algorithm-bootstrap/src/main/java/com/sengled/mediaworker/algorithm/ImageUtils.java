@@ -156,7 +156,9 @@ public class ImageUtils {
 			drawRect(g, objectConfigPos, Color.GREEN, "ZoneInfo", 30, 30);
 			drawRect(g, motionFeedResultPos, Color.yellow, "Motion", 30, 50);
 			drawRect(g, matchResultPos, Color.blue, "Result", 30, 60);
-			ImageIO.write(r, "jpg", new File("/root/save/" + token + System.currentTimeMillis() + ".jpg"));
+			String imageFileName = token + System.currentTimeMillis() + ".jpg";
+			ImageIO.write(r, "jpg", new File("/root/save/" +imageFileName ));
+			LOGGER.debug("Token:{} draw imageFileName:{} MotionFeedResult:{} matchResult:{}",token,imageFileName,motionFeedResult,matchResult);
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 		}
