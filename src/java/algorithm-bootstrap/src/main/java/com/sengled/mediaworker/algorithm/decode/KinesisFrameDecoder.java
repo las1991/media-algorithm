@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.algorithm.decode;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -81,6 +82,26 @@ public class KinesisFrameDecoder {
     	private ObjectConfig objectConfig;
     	
     	
+    	public MotionConfig getBaseConfig(){
+    		if( null != motionConfig){
+    			return motionConfig;
+    		}
+    		if(null != objectConfig ){
+    			MotionConfig config = new MotionConfig();
+    			List<Data> dataList = new ArrayList<>(objectConfig.dataList.size());
+    			for ( Data data : objectConfig.dataList) {
+    				Data obj = new Data();
+    				obj.setId(data.getId());
+    				obj.setPos(data.getPos());
+    				dataList.add(obj);
+				}
+    			config.setDataList(dataList);
+    			config.setSensitivity(objectConfig.sensitivity);
+    			return config;
+    		}
+    		return null;
+    	}
+    	
 		public String getAction() {
 			return action;
 		}
@@ -143,6 +164,10 @@ public class KinesisFrameDecoder {
     	
     }
     public static class ObjectConfig{
+    	@JSONField(name="sensitivity")
+    	//TODO  等待APP Server 增加这个配置
+    	public int sensitivity = 1300;
+    	
     	@JSONField(name="dataList")
     	private List<Data> dataList;
     	

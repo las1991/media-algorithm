@@ -19,7 +19,6 @@ import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
-import com.sengled.mediaworker.context.Context;
 
 /**
  * 
@@ -30,7 +29,6 @@ public class StreamingContext extends Context{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
 
 	private String token;
-	private String model;
 	//接收kinesis数据中的utc时间
 	private String utcDateTime;
 	//保存最后一次Motion的时间
@@ -56,9 +54,7 @@ public class StreamingContext extends Context{
 	public final Action execAction = new ExecAction();
 	public final Action closeAction = new CloseAction();
 	
-	
-	
-	StreamingContext(String token, String model,
+	StreamingContext(String token, 
 					String utcDateTime,
 					Algorithm algorithm,
 					ProcessorManager processorManager,
@@ -66,7 +62,6 @@ public class StreamingContext extends Context{
 					StreamingContextManager streamingContextManager
 					) {
 		this.token = token;
-		this.model = model;
 		this.algorithm = algorithm;
 		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
@@ -75,7 +70,7 @@ public class StreamingContext extends Context{
 		this.contextCreateTimestamp = System.currentTimeMillis();
 		this.contextUpdateTimestamp = contextCreateTimestamp;
 		this.lastMotionTimestamp = null;
-		LOGGER.info("Token:{},Model:{},Create StreamingContext", token,model);
+		LOGGER.info("Token:{},Model:{},Create StreamingContext", token);
 	}
 
 	public void feed(final FeedListener[] listeners) throws Exception {
@@ -137,10 +132,6 @@ public class StreamingContext extends Context{
 
 	public void setAction(Action action) {
 		this.action = action;
-	}
-
-	public String getModel() {
-		return this.model;
 	}
 
 	public void setUtcDateTime(String utcDateTime) {
@@ -230,7 +221,6 @@ public class StreamingContext extends Context{
 	public String toString() {
 		StringBuffer sb = new StringBuffer();
 		sb.append("Token:" + token);
-		sb.append(" model:" + model);
 		sb.append(" utcDateTime" + utcDateTime);
 		sb.append(" lastMotionTimestamp:" + getTimestampFormat(lastMotionTimestamp));
 		sb.append(" lastTimeContextUpdateTimestamp:" + getTimestampFormat(lastTimeContextUpdateTimestamp));

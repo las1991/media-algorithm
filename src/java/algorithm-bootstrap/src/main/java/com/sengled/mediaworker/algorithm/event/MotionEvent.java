@@ -8,15 +8,13 @@ import java.util.Date;
 public class MotionEvent {
 
 	private String token;
-	private String model;
 	private Date utcDate;
 	private byte[] jpgData;
 	private String zoneId;
 	
 	
-	public MotionEvent(String token, String model, Date utcDate, byte[] jpgData, String zoneId) {
+	public MotionEvent(String token, Date utcDate, byte[] jpgData, String zoneId) {
 		this.token = token;
-		this.model = model;
 		this.utcDate = utcDate;
 		this.jpgData = jpgData;
 		this.zoneId = zoneId;
@@ -40,12 +38,6 @@ public class MotionEvent {
 	public void setToken(String token) {
 		this.token = token;
 	}
-	public String getModel() {
-		return model;
-	}
-	public void setModel(String model) {
-		this.model = model;
-	}
 	public Date getUtcDate() {
 		return utcDate;
 	}
@@ -54,7 +46,7 @@ public class MotionEvent {
 	}
 	@Override
 	public String toString() {
-		return "MotionEvent [token=" + token + ", model=" + model + ", utcDate=" + utcDate + ", zoneId=" + zoneId + "]";
+		return "MotionEvent [token=" + token + ", utcDate=" + utcDate + ", zoneId=" + zoneId + "]";
 	}
 	
 	

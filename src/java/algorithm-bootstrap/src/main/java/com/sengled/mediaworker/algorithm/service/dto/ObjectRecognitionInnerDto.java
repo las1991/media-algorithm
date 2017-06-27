@@ -10,9 +10,17 @@ public class ObjectRecognitionInnerDto {
     private String pos;
     @JSONField(name="object")
     private Integer targetType;
-    private Double score;
+    private double score;
 
-    public Long getZoneId() {
+    public ObjectRecognitionInnerDto(Long zoneId, String pos, Integer targetType, double score) {
+		super();
+		this.zoneId = zoneId;
+		this.pos = pos;
+		this.targetType = targetType;
+		this.score = score;
+	}
+
+	public Long getZoneId() {
         return zoneId;
     }
 

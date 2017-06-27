@@ -19,12 +19,11 @@ public class ExecAction extends Action {
 	public void feed(StreamingContext context, FeedListener[] listeners) throws Exception {
 
 		final String token = context.getToken();
-		final String model = context.getModel();
 		ProcessorManager processor = context.getProcessorManager();
 		
 		YUVImage yuvImage = processor.decode(token, context.getNalData());
 		context.setYuvImage(yuvImage);
-		LOGGER.debug("Token:{},Feed model:{},parameters:{},yuvImage size:{}", token, model, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
+		LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
 		
 		long startTime = System.currentTimeMillis();
 		String text = processor.feed(context.getAlgorithm(), yuvImage);

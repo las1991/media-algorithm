@@ -1,8 +1,6 @@
 package com.sengled.mediaworker.algorithm;
 
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -35,7 +33,7 @@ import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
-	private static final List<String> MODEL_LIST = Arrays.asList("motion");
+	//private static final List<String> MODEL_LIST = Arrays.asList("motion");
 	
 	//Motion间隔时间
     @Value("${motion.interval.time.msce:15000}")
@@ -93,57 +91,58 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	}
 	
 	private void actionHandle(String token,FrameConfig config, final byte[] nalData) {
+	
+		if(null == config.getMotionConfig() && null == config.getObjectConfig()){
+			LOGGER.info("Token:{} Motion off,Object off",token);
+			return;
+		}
 		
-		for (String model : MODEL_LIST) {
-			if (config.getMotionConfig() != null) {
-				//Map<String, Object> modelConfig = (Map<String, Object>) config.get(model);
-				String utcDateTime = config.getUtcDateTime();
-				String action = config.getAction();
-				LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
-				
-				//获得上下文
-				StreamingContext context;
-				try {
-					context = streamingContextManager.findOrCreateStreamingContext(this, token, model, utcDateTime,config);
-					context.setNalData(nalData);
-				} catch (Exception e) {
-					LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
-					LOGGER.error("Token:{} model:{} skip.",token,model);
-					continue;
-				}
-				//过滤数据
-				try {
-//TODO 上测试前恢复	
-//					if(context.isDataExpire(maxDelayedTimeMsce)){
-//						continue;
-//					}
-					context.reportCheck(motionIntervalTimeMsce);
-				} catch (Exception e2) {
-					LOGGER.error("Token:{}  skip...",token);
-					LOGGER.error(e2.getMessage(),e2);
-					continue;
-				}				
-				//处理
-				switch (action) {
-					case "open":
-						context.setAction(context.openAction);
-						break;
-					case "exec":
-						context.setAction(context.execAction);
-						break;
-					case "close":
-						context.setAction(context.closeAction);
-						break;
-					default:
-						LOGGER.error("Token:{},action:{} not supported", token,action);
-						continue;
-				}
-				try {
-					context.feed(feedListeners);
-				} catch (Exception e) {
-					LOGGER.error(e.getMessage(),e);
-					continue;
-				}
+		if( null != config.getBaseConfig() ){
+			String utcDateTime = config.getUtcDateTime();
+			String action = config.getAction();
+			LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
+			
+			//获得上下文
+			StreamingContext context;
+			try {
+				context = streamingContextManager.findOrCreateStreamingContext(this, token, utcDateTime,config);
+				context.setNalData(nalData);
+			} catch (Exception e) {
+				LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
+				return;
+			}
+			//过滤数据
+			try {
+				//TODO 上测试前恢复	
+				//if(context.isDataExpire(maxDelayedTimeMsce)){
+				//		continue;
+				//}
+				context.reportCheck(motionIntervalTimeMsce);
+			} catch (Exception e2) {
+				LOGGER.error("Token:{}  skip...",token);
+				LOGGER.error(e2.getMessage(),e2);
+				return;
+			}				
+			//处理
+			switch (action) {
+				case "open":
+					context.setAction(context.openAction);
+					break;
+				case "exec":
+					context.setAction(context.execAction);
+					break;
+				case "close":
+					context.setAction(context.closeAction);
+					break;
+				default:
+					LOGGER.error("Token:{},action:{} not supported", token,action);
+					return;
+			}
+			try {
+				context.feed(feedListeners);
+			} catch (Exception e) {
+				LOGGER.error(e.getMessage(),e);
+				return;
 			}
 		}
 	}
@@ -152,8 +151,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		return jnaInterface.decode(token, nalData);
 	}
 	
-	public String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException{
-		return jnaInterface.newAlgorithmModel(token,model);
+	public String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException{
+		return jnaInterface.newAlgorithmModel(token);
 	}
 	@Override
 	public String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException {
@@ -200,4 +199,5 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			this.yuvImage = yuvImage;
 		}
 	}
+
 }
