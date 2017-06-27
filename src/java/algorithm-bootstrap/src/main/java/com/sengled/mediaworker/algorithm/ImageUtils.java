@@ -126,7 +126,7 @@ public class ImageUtils {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
 			for (int i = 0; i < objectConfig.getDataList().size(); i++) {
-				List<Integer> pos = objectConfig.getDataList().get(i).getPos();
+				List<Integer> pos = objectConfig.getDataList().get(i).getPosList();
 				List<Integer> posList = convert2spotLocation(pos);
 				List<Integer> resultPos = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), posList);
 				objectConfigPos.add(resultPos);

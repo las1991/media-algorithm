@@ -8,11 +8,6 @@ import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSONObject;
-import com.sengled.media.interfaces.Algorithm;
-import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
-import com.sengled.mediaworker.algorithm.ProcessorManager;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 /**
  * 物体识别上下文管理
@@ -48,21 +43,18 @@ public class ObjectContextManager implements InitializingBean{
 		BeanUtils.copyProperties(objectConfig, finalObjectConfig);
 		
 		if (context == null) {
-			context =  newObjectContext(streamingContext);
-		}else{
-			//设置算法参数
-			//设置 上次接收到数据的时间
-			//设置 本次接收到数据的时间
-			context.setUtcDateTime(streamingContext.getUtcDateTime());
-			context.setYuvImage(streamingContext.getYuvImage());
-			context.setNalData(streamingContext.getNalData());
-			context.setObjectConfig(finalObjectConfig);
+			context =  newObjectContext(token);
 		}
+
+		context.setUtcDateTime(streamingContext.getUtcDateTime());
+		context.setYuvImage(streamingContext.getYuvImage());
+		context.setNalData(streamingContext.getNalData());
+		context.setObjectConfig(finalObjectConfig);
 		return context;
 	}
-	private ObjectContext newObjectContext(StreamingContext context) {
-		ObjectContext objectContext =  new ObjectContext(context);
-		objectContextMap.put(context.getToken(), objectContext);
+	private ObjectContext newObjectContext(String token) {
+		ObjectContext objectContext =  new ObjectContext(token);
+		objectContextMap.put(token, objectContext);
 		return objectContext;
 	}
 }

@@ -34,7 +34,9 @@ public class KinesisFrameDecoder {
         buf.readBytes(dataBytes);
         
         try {
-        	FrameConfig frameConfig = JSONObject.parseObject(new String(jsonBytes, "UTF-8"), FrameConfig.class);
+        	String configString = new String(jsonBytes, "UTF-8");
+        	LOGGER.debug("configString:{}",configString);
+        	FrameConfig frameConfig = JSONObject.parseObject(configString, FrameConfig.class);
 			return new Frame(frameConfig, dataBytes);
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("Frame decode error.");
@@ -195,7 +197,7 @@ public class KinesisFrameDecoder {
 		public void setId(int id) {
 			this.id = id;
 		}
-		public List<Integer> getPos() {
+		public List<Integer> getPosList() {
 			String[] poss = pos.split(",");
 			if(4 != poss.length){
 				Collections.emptyList();
@@ -207,11 +209,17 @@ public class KinesisFrameDecoder {
 			posList.add(Integer.valueOf(poss[3]));
 			return posList;
 		}
-		public void setPos(List<Integer> pos) {
+		public String getPos() {
+			return pos;
+		}
+		public void setPosFromList(List<Integer> pos) {
 			if(null == pos || pos.isEmpty()){
 				return;
 			}
 			this.pos = pos.get(0)+"," + pos.get(1) + "," + pos.get(2) + "," + pos.get(3);
+		}
+		public void setPos(String pos) {
+			this.pos  = pos;
 		}
 		public String getObjectList() {
 			return objectList;
