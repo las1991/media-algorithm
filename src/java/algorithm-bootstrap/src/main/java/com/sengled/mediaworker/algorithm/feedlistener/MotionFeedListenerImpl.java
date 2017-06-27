@@ -13,6 +13,8 @@ import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.service.MotionEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
@@ -50,9 +52,13 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 
 	@Override
 	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) {
-		String token =  context.getToken();
-		String model = context.getModel();
+		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
+		if(null == motionConfig){
+			LOGGER.info("Token:{},motionConfig is null config:{}",context.getToken(),context.getConfig());
+			return;
+		}
 		
+		String token =  context.getToken();
 		if(!context.isReport()){
 			LOGGER.debug("Token:{} get Motion.But isReport is false.",token);
 			return;
@@ -67,8 +73,8 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 			LOGGER.error(e.getMessage(),e);
 			return;
 		}
-		LOGGER.info("Token:{},Get {}. zoneId:{},",token,model,zone.zone_id);
-		MotionEvent event = new MotionEvent(token,model,context.getUtcDateTime(),jpgData,zone.zone_id+"");
+		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.zone_id);
+		MotionEvent event = new MotionEvent(token,context.getUtcDateTime(),jpgData,zone.zone_id+"");
 		eventBus.post(event );
 		context.setLastMotionTimestamp(context.getUtcDateTime().getTime());
 	}

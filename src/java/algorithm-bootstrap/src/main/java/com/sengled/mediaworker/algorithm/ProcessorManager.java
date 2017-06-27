@@ -15,7 +15,7 @@ import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 
 public interface ProcessorManager {	
 	Future<?> submit(long receiveTime,String token, Collection<Frame> data);
-	String newAlgorithmModel(String token,String model) throws AlgorithmIntanceCreateException;
+	String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException;
 	void   close(String algorithmModelId)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;
 	YUVImage decode(final String token,final byte[] nalData) throws DecodeException;

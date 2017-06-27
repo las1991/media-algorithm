@@ -7,181 +7,185 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Multimap;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
-
 
 public class ImageUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageUtils.class);
 
 	/**
 	 * 百分比转换像素
-	 * @param width  像素
-	 * @param height 像素
-	 * @param pos    逗号分隔字符串   "0,0,100,100"
+	 * 
+	 * @param width
+	 *            像素
+	 * @param height
+	 *            像素
+	 * @param pos
+	 *            逗号分隔字符串 "0,0,100,100"
 	 * @return
 	 */
-	public static String  convert(int width,int height,String pos){
-		String boxs[] = pos.split(",");
-		int x = Integer.valueOf(boxs[0]);
-		int y = Integer.valueOf(boxs[1]);
-		int xx = Integer.valueOf(boxs[2]);
-		int yy = Integer.valueOf(boxs[3]);
-		String[] result = {""+(x * width)/100,""+(y * height)/100,""+(xx * width)/100+","+(yy * height)/100};
-		return String.join(",", result);	
+	public static List<Integer> convertPctToPixel(int width, int height, List<Integer> posList) {
+		if(null == posList || posList.isEmpty()){
+			return Collections.emptyList();
+		}
+		int x = posList.get(0),y = posList.get(1);
+		int xx = posList.get(2),yy = posList.get(3);
+		int px = (x * width) / 100,py=(y * height) / 100;
+		int pxx = (xx * width) / 100 ,pyy = (yy * height) / 100;
+		return  Arrays.asList(px,py,pxx,pyy);
 	}
+
 	/**
 	 * 长宽标记 转换为2点定位
-	 * @param   逗号分隔字符串   "0,0,100,100"
-	 * @return 
+	 * 
+	 * @param 逗号分隔字符串
+	 *            "0,0,100,100"
+	 * @return
 	 */
-	public static String convert2spotLocation(String posStr){
-		String[] pos  = posStr.split(",");
-		int x = Integer.valueOf(pos[0]);
-		int y = Integer.valueOf(pos[1]);
-		int xx = Integer.valueOf(pos[2]) + x;
-		int yy = Integer.valueOf(pos[3]) + y;
-		return x+","+y+","+xx+","+yy;
+	public static List<Integer> convert2spotLocation(List<Integer>  posList) {
+		if(null == posList || posList.isEmpty()){
+			return Collections.emptyList();
+		}
+		int x = posList.get(0);
+		int y = posList.get(1);
+		int xx = posList.get(2) + x;
+		int yy = posList.get(3) + y;
+		posList.clear();
+		posList.add(x);  posList.add(y);
+		posList.add(xx); posList.add(yy);
+		return posList;
 	}
+
 	/**
 	 * 求矩形相交面积
 	 */
-	public static int area(String[] r1,String[] r2){
-		if(r1.length <4 || r2.length < 4){
+	public static int area(List<Integer> r1, List<Integer> r2) {
+		if (r1.size() < 4 || r2.size() < 4) {
 			return 0;
 		}
-		int x = Integer.valueOf(r1[0]);
-		int y = Integer.valueOf(r1[1]);
-		int x1 = Integer.valueOf(r1[2]);
-		int y1 = Integer.valueOf(r1[3]);
-		int a = Integer.valueOf(r2[0]);
-		int b = Integer.valueOf(r2[1]);
-		int a1= Integer.valueOf(r2[2]);
-		int b1= Integer.valueOf(r2[3]);
-		boolean bool = (x1  > a &&     a1 > x &&    y1 > b &&   b1 > y);
-		if(! bool){
+		int x = r1.get(0), y = r1.get(1), x1 = r1.get(2), y1 = r1.get(3);
+		int a = r2.get(0), b = r2.get(1), a1 = r2.get(2), b1 = r2.get(3);
+
+		boolean bool = (x1 > a && a1 > x && y1 > b && b1 > y);
+		if (!bool) {
 			return 0;
 		}
-		int width=Math.min(x1,a1)-Math.max(x, a);
-		int height=Math.min(y1, b1)-Math.max(y, b);
-		return  (width * height);
+		int width = Math.min(x1, a1) - Math.max(x, a);
+		int height = Math.min(y1, b1) - Math.max(y, b);
+		return (width * height);
 	}
-	
+
 	/**
 	 * 求面积area占矩形rectangle的百分比
 	 */
-	public static float areaPercent(String[] rectangle,float area){
-		if(rectangle.length < 4){
+	public static float areaPercent(List<Integer> rectangle, float area) {
+		if (null == rectangle || rectangle.size() != 4) {
 			return 0;
 		}
-		float x = Float.valueOf(rectangle[0]);
-		float y = Float.valueOf(rectangle[1]);
-		float x1 = Float.valueOf(rectangle[2]);
-		float y1 = Float.valueOf(rectangle[3]);
-		float width = x1 -x;
+		float x = Float.valueOf(rectangle.get(0));
+		float y = Float.valueOf(rectangle.get(1));
+		float x1 = Float.valueOf(rectangle.get(2));
+		float y1 = Float.valueOf(rectangle.get(3));
+		float width = x1 - x;
 		float height = y1 - y;
-		return area/(width * height) * 100;
+		try {
+			return area / (width * height) * 100;
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			return 0;
+		}
 	}
 
 	/**
 	 * 画矩形
+	 * 
 	 * @param token
 	 * @param yuvImage
 	 * @param objectConfig
 	 * @param objectRecognitionResult
 	 * @param motionFeedResult
 	 */
-	public  static void  draw(ProcessorManager processorManager,String token,YUVImage yuvImage,ObjectConfig objectConfig ,ObjectRecognitionResult objectRecognitionResult,MotionFeedResult motionFeedResult,List<Object> finalObjectsResult){
+	public static void draw(String token, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
+			MotionFeedResult motionFeedResult, Multimap<Integer, Object> matchResult) {
 		try {
-			List<String> objectConfigPos = new ArrayList<String>(); 
-			for(int i=0;i<objectConfig.getDataList().size();i++){
-				String pos = objectConfig.getDataList().get(i).getPos();
-				String posStr = convert2spotLocation(pos);
-				String resultPos = convert(yuvImage.getWidth(), yuvImage.getHeight(), posStr);
+			List<List<Integer>> objectConfigPos = new ArrayList<>();
+			for (int i = 0; i < objectConfig.getDataList().size(); i++) {
+				List<Integer> pos = objectConfig.getDataList().get(i).getPos();
+				List<Integer> posList = convert2spotLocation(pos);
+				List<Integer> resultPos = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), posList);
 				objectConfigPos.add(resultPos);
 			}
-			
-			List<String> objectRecognitionResultPos = new ArrayList<String>(); 
-			for(Object obj : objectRecognitionResult.objects){
-				List<String> strList = new ArrayList<>(obj.bbox_pct.size());
-				for(Integer i : obj.bbox_pct){
-					strList.add(String.valueOf(i));
-				}
-				String[] strings = new String[strList.size()];
-				strList.toArray(strings);
-				objectRecognitionResultPos.add(convert(yuvImage.getWidth(), yuvImage.getHeight(),String.join(",", strings)));
-			}
-			
-			List<String> motionFeedResultPos = new ArrayList<>();
-			for ( ZoneInfo zi : motionFeedResult.motion) {
-				for( List<Integer> z : zi.boxs){
-					String[] pos = {z.get(0)+"",z.get(1)+"",z.get(2)+"",z.get(3)+""};
-					String posStr = convert(yuvImage.getWidth(), yuvImage.getHeight(), String.join(",", pos));
+			List<List<Integer>> motionFeedResultPos = new ArrayList<>();
+			for (ZoneInfo zi : motionFeedResult.motion) {
+				for (List<Integer> z : zi.boxs) {
+					List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), z);
 					motionFeedResultPos.add(posStr);
 				}
 			}
-			List<String> finalObjectRecognitionResultPos = new ArrayList<>();
-			for ( Object obj : finalObjectsResult) {
-				List<String> strList = new ArrayList<>(obj.bbox_pct.size());
-				for(Integer i : obj.bbox_pct){
-					strList.add(String.valueOf(i));
+
+			List<List<Integer>> matchResultPos = new ArrayList<>();
+			Map<Integer, Collection<Object>> map = matchResult.asMap();
+			for (Entry<Integer, Collection<Object>> entry : map.entrySet()) {
+				Collection<Object> objects = entry.getValue();
+				for (Object object : objects) {
+					List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.bbox_pct);
+					matchResultPos.add(posStr);
 				}
-				String[] strings = new String[strList.size()];
-				strList.toArray(strings);
-				finalObjectRecognitionResultPos.add(convert(yuvImage.getWidth(), yuvImage.getHeight(),String.join(",", strings)));
-				
 			}
-			
-			byte[] jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+
 			BufferedImage img = ImageIO.read(new ByteArrayInputStream(jpgData));
 			BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
 			r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
 			Graphics g = r.getGraphics();
-			drawRect(g, objectConfigPos, Color.GREEN,"ZoneInfo",30,30);
-			drawRect(g, objectRecognitionResultPos, Color.RED,"Object",30,40);
-			drawRect(g, motionFeedResultPos, Color.yellow,"Motion",30,50);
-			drawRect(g, finalObjectRecognitionResultPos, Color.blue,"Result",30,60);
-			ImageIO.write(r, "jpg", new File("/root/save/"+token+System.currentTimeMillis()+".jpg"));
+			drawRect(g, objectConfigPos, Color.GREEN, "ZoneInfo", 30, 30);
+			drawRect(g, motionFeedResultPos, Color.yellow, "Motion", 30, 50);
+			drawRect(g, matchResultPos, Color.blue, "Result", 30, 60);
+			ImageIO.write(r, "jpg", new File("/root/save/" + token + System.currentTimeMillis() + ".jpg"));
 		} catch (Exception e) {
-			LOGGER.error(e.getMessage(),e);
+			LOGGER.error(e.getMessage(), e);
 		}
-}
-	private static void drawRect(Graphics g,List<String> boxs,Color color,String word,int wx,int wy){
-		for (String pos : boxs) {
-			String[] p = pos.split(",");
-			int x = Integer.valueOf(p[0]);
-			int y = Integer.valueOf(p[1]);
-			int xx = Integer.valueOf(p[2]);
-			int yy = Integer.valueOf(p[3]);
+	}
+
+	private static void drawRect(Graphics g, List<List<Integer>> boxs, Color color, String word, int wx, int wy) {
+		for (List<Integer> pos : boxs) {
+			int x = pos.get(0);
+			int y = pos.get(1);
+			int xx = pos.get(2);
+			int yy = pos.get(3);
 			g.setColor(color);
-			g.drawRect(x, y, xx-x, yy-y);
+			g.drawRect(x, y, xx - x, yy - y);
 			g.drawString(word, wx, wy);
 		}
 	}
+
 	public static void main(String[] args) throws IOException {
 		BufferedImage img = ImageIO.read(new File("D://test/1.jpg"));
-		
-		 BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
-         r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
-         
-         r.getGraphics().drawString("hello world", 20, 20);
-         
-         Graphics g = r.getGraphics();
-         g.setColor(Color.RED);
-         g.drawRect(0, 0, 100, 100);
-         
-         
-         ImageIO.write(r, "jpg", new File("D://test/1.chenxh.jpg"));
+
+		BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+		r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
+
+		r.getGraphics().drawString("hello world", 20, 20);
+
+		Graphics g = r.getGraphics();
+		g.setColor(Color.RED);
+		g.drawRect(0, 0, 100, 100);
+
+		ImageIO.write(r, "jpg", new File("D://test/1.chenxh.jpg"));
 	}
 }

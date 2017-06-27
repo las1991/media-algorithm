@@ -34,7 +34,6 @@ public class JnaInterface implements Function{
 	
 	static{
 		try {
-			
 			LOGGER.info("init...");
 			String jnaHome = System.getProperty("jna.library.path");
 			LOGGER.info("jna.library.path={}", jnaHome);
@@ -122,12 +121,12 @@ public class JnaInterface implements Function{
 		}
 	}
 	@Override
-	public String  newAlgorithmModel( String token,String model) throws AlgorithmIntanceCreateException{
-		LOGGER.debug("Token:{},model:{} newAlgorithmModel",token,model);
+	public String  newAlgorithmModel( String token) throws AlgorithmIntanceCreateException{
+		LOGGER.debug("Token:{}  newAlgorithmModel",token);
 		String algorithmModelId;
 		Pointer oldPointer = null;
 		try {
-			Pointer pointer =   algorithmLibrary.create_instance(token+"_"+model);
+			Pointer pointer =   algorithmLibrary.create_instance(token);
 			algorithmModelId = UUID.randomUUID().toString();
 			oldPointer = pointerMap.put(algorithmModelId, pointer);
 		} catch (Exception e) {

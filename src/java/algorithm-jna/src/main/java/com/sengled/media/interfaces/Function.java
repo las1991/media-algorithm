@@ -12,7 +12,7 @@ public interface Function {
 	
 	byte[] encode(String token,int width,int height,int dstWidth,int dstHeight,byte[] yuvData) throws EncodeException;
 	
-	String newAlgorithmModel(String model,String token)throws AlgorithmIntanceCreateException;
+	String newAlgorithmModel(String token)throws AlgorithmIntanceCreateException;
 	
 	String feed(String jsonConfig,String cObjectID, YUVImage yuvImage)throws FeedException;
 

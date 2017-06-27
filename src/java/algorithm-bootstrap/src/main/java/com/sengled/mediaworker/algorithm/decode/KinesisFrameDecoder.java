@@ -1,6 +1,8 @@
 package com.sengled.mediaworker.algorithm.decode;
 
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 import org.slf4j.Logger;
@@ -81,6 +83,26 @@ public class KinesisFrameDecoder {
     	private ObjectConfig objectConfig;
     	
     	
+    	public MotionConfig getBaseConfig(){
+    		if( null != motionConfig){
+    			return motionConfig;
+    		}
+    		if(null != objectConfig ){
+    			MotionConfig config = new MotionConfig();
+    			List<Data> dataList = new ArrayList<>(objectConfig.dataList.size());
+    			for ( Data data : objectConfig.dataList) {
+    				Data obj = new Data();
+    				obj.setId(data.getId());
+    				obj.setPos(data.getPos());
+    				dataList.add(obj);
+				}
+    			config.setDataList(dataList);
+    			config.setSensitivity(objectConfig.sensitivity);
+    			return config;
+    		}
+    		return null;
+    	}
+    	
 		public String getAction() {
 			return action;
 		}
@@ -110,11 +132,6 @@ public class KinesisFrameDecoder {
 			return "FrameConfig [action=" + action + ", utcDateTime=" + utcDateTime + ", motionConfig=" + motionConfig
 					+ ", objectConfig=" + objectConfig + "]";
 		}
-		public boolean verifiyConfig(){
-			//TODO 校验接收到的配置是否完整
-			//LOGGER.error("Token:{} verifiyConfig failed. config:{}",token,config);
-			return true;
-		}
     	
     }
     public static class MotionConfig{
@@ -143,6 +160,10 @@ public class KinesisFrameDecoder {
     	
     }
     public static class ObjectConfig{
+    	@JSONField(name="sensitivity")
+    	//TODO  等待APP Server 增加这个配置
+    	public int sensitivity = 1300;
+    	
     	@JSONField(name="dataList")
     	private List<Data> dataList;
     	
@@ -174,11 +195,23 @@ public class KinesisFrameDecoder {
 		public void setId(int id) {
 			this.id = id;
 		}
-		public String getPos() {
-			return pos;
+		public List<Integer> getPos() {
+			String[] poss = pos.split(",");
+			if(4 != poss.length){
+				Collections.emptyList();
+			}
+			List<Integer> posList = new ArrayList<>();
+			posList.add(Integer.valueOf(poss[0]));
+			posList.add(Integer.valueOf(poss[1]));
+			posList.add(Integer.valueOf(poss[2]));
+			posList.add(Integer.valueOf(poss[3]));
+			return posList;
 		}
-		public void setPos(String pos) {
-			this.pos = pos;
+		public void setPos(List<Integer> pos) {
+			if(null == pos || pos.isEmpty()){
+				return;
+			}
+			this.pos = pos.get(0)+"," + pos.get(1) + "," + pos.get(2) + "," + pos.get(3);
 		}
 		public String getObjectList() {
 			return objectList;
