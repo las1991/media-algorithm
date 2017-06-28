@@ -84,8 +84,10 @@ public class ObjectEventHandler implements InitializingBean {
 			putSqs(utcDateTime, token, imageS3Path, event.getResult());
 		} catch (S3RuntimeException e) {
 			LOGGER.error(e.getMessage(),e);
+			//FIXME s3 failed count
 		} catch (SqsRuntimeException e) {
 			LOGGER.error(e.getMessage(),e);
+			//FIXME sqs failed count
 		}
 	}
 	private void saveS3(String imageS3Path,byte[] jpgData) throws S3RuntimeException{

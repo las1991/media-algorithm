@@ -8,13 +8,10 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import com.alibaba.fastjson.JSONObject;
 import com.codahale.metrics.Gauge;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.MetricRegistry;
-import com.codahale.metrics.Reservoir;
 import com.codahale.metrics.SlidingWindowReservoir;
-import com.codahale.metrics.Snapshot;
 import com.sengled.mediaworker.metrics.custom.ServicesMetrics;
 
 @Component
@@ -22,6 +19,7 @@ public class RecordCounter implements InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
 	
 	private final static String METRICS_NAME = "algorithm";
+	private final static String OBJECT_METRICS_NAME = "object";
 	private final static int HISTOGRAM_MAX_STORE = 2000;
 	
     @Autowired
@@ -47,6 +45,15 @@ public class RecordCounter implements InitializingBean{
     private Histogram waitProcessCostHistogram;
     //数据中的utc时间与当前时间差值 
     private Histogram receiveDelayHistogram;
+    
+    //以下为物体识别统计
+    private AtomicLong  objectMotionCount = new AtomicLong();
+    private AtomicLong  objectDataDelayedCount = new AtomicLong();
+    private Histogram   objectReceiveDelayHistogram;
+    private Histogram   objectSingleDataProcessCostHistogram;
+    
+    
+    
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		LOGGER.info("Initializing...");
@@ -106,6 +113,21 @@ public class RecordCounter implements InitializingBean{
 	        waitProcessCostHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "waitProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	        receiveDelayHistogram = metricRegistry.register(MetricRegistry.name(METRICS_NAME, "receiveDelay"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	        
+	        //以下为物体识别
+	        metricRegistry.register( MetricRegistry.name(OBJECT_METRICS_NAME, "objectMotionCount"), new Gauge<Long>(){
+	            @Override
+	            public Long getValue() {
+	                return objectMotionCount.getAndSet(0);
+	            }
+	        });
+	        metricRegistry.register( MetricRegistry.name(OBJECT_METRICS_NAME, "objectDataDelayedCount"), new Gauge<Long>(){
+	            @Override
+	            public Long getValue() {
+	                return objectDataDelayedCount.getAndSet(0);
+	            }
+	        });
+	        objectReceiveDelayHistogram = metricRegistry.register(MetricRegistry.name(OBJECT_METRICS_NAME, "objectReceiveDelay"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
+	        objectSingleDataProcessCostHistogram = metricRegistry.register(MetricRegistry.name(OBJECT_METRICS_NAME, "objectSingleDataProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	}
 	public long addAndGetRecordCount(long delta) {
 		servicesMetrics.mark(ServicesMetrics.RECEIVE, delta);
@@ -148,4 +170,21 @@ public class RecordCounter implements InitializingBean{
 	public void updateReceiveDelay(long value){
 		receiveDelayHistogram.update(value);
 	}
+	
+	
+	//object 
+	public void addAndGetObjectMotionCount(long value){
+		objectMotionCount.addAndGet(value);
+	}
+	public void addAndGetObjectDataDelayedCount(long value){
+		objectDataDelayedCount.addAndGet(value);
+	}
+	public void updateObjectReceiveDelay(long value){
+		objectReceiveDelayHistogram.update(value);
+	}
+	public void updateObjectSingleDataProcessCost(long value){
+		objectSingleDataProcessCostHistogram.update(value);
+	}
+	
+	
 }

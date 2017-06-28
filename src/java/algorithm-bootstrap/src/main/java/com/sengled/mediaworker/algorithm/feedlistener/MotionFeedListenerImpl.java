@@ -52,6 +52,8 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 
 	@Override
 	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) {
+		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
+		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
 		if(null == motionConfig){
 			LOGGER.info("Token:{},motionConfig is null config:{}",context.getToken(),context.getConfig());
