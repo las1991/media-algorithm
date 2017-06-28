@@ -16,7 +16,7 @@ import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig
  */
 public class ObjectContext extends Context {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectContext.class);
-	private static final Long objectIntervalTimeMsce = 30000L;// 物体识别间隔
+
 
 	private String token;
 	private Long lastObjectTimestamp;
@@ -24,6 +24,8 @@ public class ObjectContext extends Context {
 	private byte[] nalData;
 	private YUVImage yuvImage;
 	private ObjectConfig objectConfig;
+	//接收到数据的时间
+	private Long contextUpdateTimestamp = System.currentTimeMillis();
 
 
 	public ObjectContext(String token){
@@ -34,7 +36,7 @@ public class ObjectContext extends Context {
 		this.lastObjectTimestamp = lastObjectTimestamp;
 	}
 
-	public boolean isSkip() {
+	public boolean isSkip(long objectIntervalTimeMsce) {
 		boolean skip = false;
 		Date utcDateTime = getUtcDateTime();
 		LOGGER.info("lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,utcDateTime);
@@ -68,10 +70,6 @@ public class ObjectContext extends Context {
 		this.token = token;
 	}
 
-	public static Long getObjectintervaltimemsce() {
-		return objectIntervalTimeMsce;
-	}
-
 	public Long getLastObjectTimestamp() {
 		return lastObjectTimestamp;
 	}
@@ -102,6 +100,14 @@ public class ObjectContext extends Context {
 
 	public void setObjectConfig(ObjectConfig objectConfig) {
 		this.objectConfig = objectConfig;
+	}
+
+	public Long getContextUpdateTimestamp() {
+		return contextUpdateTimestamp;
+	}
+
+	public void setContextUpdateTimestamp(Long contextUpdateTimestamp) {
+		this.contextUpdateTimestamp = contextUpdateTimestamp;
 	}
 
 }

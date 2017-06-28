@@ -163,8 +163,7 @@ public class KinesisFrameDecoder {
     }
     public static class ObjectConfig{
     	@JSONField(name="sensitivity")
-    	//TODO  等待APP Server 增加这个配置
-    	public int sensitivity = 1300;
+    	public int sensitivity;
     	
     	@JSONField(name="dataList")
     	private List<Data> dataList;

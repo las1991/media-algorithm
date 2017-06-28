@@ -2,9 +2,11 @@ package com.sengled.mediaworker.algorithm;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -25,6 +27,7 @@ import com.google.common.collect.Multimap;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
+import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.context.ObjectContext;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Data;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
@@ -41,9 +44,15 @@ import com.sengled.mediaworker.httpclient.IHttpClient;
 public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectRecognitionImpl.class);
 	
-	private static final int percent = 20;// zone 和物体识别次百分比
-	private static final int objectAndMotionIntersectionPct = 70;// zone // 和物体识别次百分比
-	private static final int threadNum = Math.max(1, Runtime.getRuntime().availableProcessors() - 1);
+	@Value("${object.zone.intersection.pct}")
+	private  int objectAndZoneIntersectionPct;// zone 和物体识别次百分比
+	
+	@Value("${object.motion.intersection.pct}")
+	private  int objectAndMotionIntersectionPct;// zone // 和物体识别百分比
+	
+	@Value("${object.thread.count}")
+	private  int threadNum;
+	
 	private static final int EVENT_BUS_THREAD_COUNT = 100;
 	
 	@Value("${object.recognition.url}")
@@ -55,18 +64,31 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	ProcessorManager  processorManager;
 	@Autowired
 	private ObjectEventHandler objectEventHandler;
+	@Autowired
+	RecordCounter recordCounter;
 	
 	private List<ExecutorService> executors;
 	private AsyncEventBus eventBus;
 	
+	
 	@Override
 	public void afterPropertiesSet() throws Exception {
+		LOGGER.info("Initializing...");
+		try {
+			initialize();
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			System.exit(1);
+		}		
+	}
+	
+	private void initialize() {
+		LOGGER.info("ObjectRecognition init. EVENT_BUS_THREAD_COUNT:{}",EVENT_BUS_THREAD_COUNT);
 		try {
 			executors = new ArrayList<ExecutorService>(threadNum);
 			for (int i=0;i<threadNum;i++) {
 				executors.add(Executors.newSingleThreadExecutor()); 
 			}
-			LOGGER.info("ObjectFeedListener init.EVENT_BUS_THREAD_COUNT:{}",EVENT_BUS_THREAD_COUNT);
 			eventBus = new AsyncEventBus(Executors.newFixedThreadPool(EVENT_BUS_THREAD_COUNT));
 			eventBus.register(objectEventHandler);
 		} catch (Exception e) {
@@ -74,19 +96,15 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			System.exit(1);
 		}
 	}
-	
+
 	@Override
 	public Future<?> submit(final ObjectContext context,final MotionFeedResult mfr) {
-		//hash token
-		//提交到指定线程队列中
-		
+		//hash token 提交到指定线程队列中
 		String token  = context.getToken();
 		int hashCode = token.hashCode();
-		LOGGER.debug("Token:{},HashCode:{}",token,hashCode);
-		
-		
-		
 		int threadIndex = hashCode % threadNum;
+		LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
+		
 		return executors.get(threadIndex).submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
@@ -98,6 +116,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	
 	private void handle(ObjectContext objectContext,MotionFeedResult mfr){
+		LOGGER.debug("Run objectRecognition. ObjectContext:{},MotionFeedResult:{}",objectContext,mfr);
 		
 		long startTime = System.currentTimeMillis();
 		
@@ -106,14 +125,19 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		
 		HttpEntity putEntity = new ByteArrayEntity(objectContext.getNalData());
 		HttpResponseResult result = httpclient.put(objectRecognitionUrl, putEntity);
-		if (result.getCode().intValue() != 200) {
+		
+		long objectCost = System.currentTimeMillis() - startTime;
+		recordCounter.updateObjectSingleDataProcessCost(objectCost);
+		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
+		
+		if ( 200 != result.getCode().intValue() ) {
 			LOGGER.error("object recognition http code {},body:{}", result.getCode(), result.getBody());
 			return ;
 		}
 
 		Multimap<Integer, Object>  matchResult = match(objectContext.getToken(), objectContext.getYuvImage(), result.getBody(), oc, mfr);
 		
-		if(matchResult ==null || matchResult.isEmpty()){
+		if( null == matchResult || matchResult.isEmpty() ){
 			LOGGER.info("Token:{},Object Match Result is NULL",token);
 			return;
 		}
@@ -209,7 +233,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 			Collection<Object> objectList = objectZoneidToBoxSet.getValue();
 			Collection<List<Integer>> motionList = motionZoneidToBox.get(zoneid);
-
+			Set<Object> hasObjSet = new HashSet<>();
 			for (List<Integer> motionBox : motionList) {
 				for (Object object : objectList) {
 					List<Integer> objectBox = object.bbox_pct;
@@ -217,8 +241,11 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 					float  areaPercentObject= ImageUtils.areaPercent(objectBox, area);
 					float areaPercentMotion = ImageUtils.areaPercent(motionBox, area);
 					if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
-						LOGGER.info("step2Filter zoneid:{} object:{}", zoneid, object.type);
-						result.put(zoneid,  object);
+						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.type);
+						if( ! hasObjSet.contains(object)){
+							result.put(zoneid,  object);
+							hasObjSet.add(object);
+						}
 					}
 				}
 			}
@@ -237,6 +264,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		for (Object object : objectRecognitionResult.objects) {
 			String objectType = object.type;
 			List<Integer> objectBox = object.bbox_pct;
+			
 			// zone
 			List<Data> dataList = objectConfig.getDataList();// zone 配置
 			for (Data data : dataList) {
@@ -247,10 +275,10 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				int area = ImageUtils.area(objectBox, zoneBox);
 				float objectBoxPct = ImageUtils.areaPercent(objectBox, area);
 				float zoneBoxpercent = ImageUtils.areaPercent(zoneBox, area);
-				LOGGER.info("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
-				if (objectBoxPct >= percent && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
+				LOGGER.debug("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
+				if (objectBoxPct >= objectAndZoneIntersectionPct && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
 					finalObjectsResult.put(data.getId(), object);
-					LOGGER.info("step1Filter zoneid:{} object:{}", data.getId(), object);
+					LOGGER.debug("step1Filter zoneid:{} object:{}", data.getId(), object);
 				}
 			}
 		}
