@@ -16,14 +16,17 @@ import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 import com.sengled.media.interfaces.YUVImage;
+import com.sengled.mediaworker.algorithm.context.Context;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
 
 public class ImageUtils {
@@ -122,7 +125,7 @@ public class ImageUtils {
 	 * @param motionFeedResult
 	 */
 	public static void draw(String token, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
-			MotionFeedResult motionFeedResult, Multimap<Integer, Object> matchResult) {
+			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult) {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
 			for (int i = 0; i < objectConfig.getDataList().size(); i++) {
@@ -138,6 +141,13 @@ public class ImageUtils {
 					motionFeedResultPos.add(posStr);
 				}
 			}
+			List<List<Integer>> objectResultPos = new ArrayList<>();
+			for ( Object object : objectRecognitionResult.objects) {
+				List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.bbox_pct);
+				objectResultPos.add(posStr	);
+			}
+			
+			
 
 			List<List<Integer>> matchResultPos = new ArrayList<>();
 			Map<Integer, Collection<Object>> map = matchResult.asMap();
@@ -154,9 +164,11 @@ public class ImageUtils {
 			r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
 			Graphics g = r.getGraphics();
 			drawRect(g, objectConfigPos, Color.GREEN, "ZoneInfo", 30, 30);
-			drawRect(g, motionFeedResultPos, Color.yellow, "Motion", 30, 50);
-			drawRect(g, matchResultPos, Color.blue, "Result", 30, 60);
-			String imageFileName = token + System.currentTimeMillis() + ".jpg";
+			drawRect(g, motionFeedResultPos, Color.yellow, "MOTION", 30, 50);
+			drawRect(g, objectResultPos, Color.red, "OBJECT", 30, 70);
+			drawRect(g, matchResultPos, Color.blue, "Result", 30, 90);
+			
+			String imageFileName = token + "_" + DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
 			ImageIO.write(r, "jpg", new File("/root/save/" +imageFileName ));
 			LOGGER.debug("Token:{} draw imageFileName:{} MotionFeedResult:{} matchResult:{}",token,imageFileName,motionFeedResult,matchResult);
 		} catch (Exception e) {
