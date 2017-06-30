@@ -20,14 +20,13 @@ public class KinesisFrameDecoder {
 
     public static Frame decode(byte[] data) throws FrameDecodeException {
 
+        //data format :[$ (1byte)][jsonlen(2byte)][jsondata (jsonlen byte)][h264 nal (data.length - jsonlen - 2 - 1)]
         ByteBuf buf = Unpooled.wrappedBuffer(data);
         int firstByte = buf.readByte();
         if ('$' != firstByte) {
             throw new IllegalArgumentException("非法数据"+firstByte);
         }
-        
         int jsonBytesLength = buf.readUnsignedShort();
-        
         final byte[] jsonBytes = new byte[jsonBytesLength];
         final byte[] dataBytes = new byte[data.length - jsonBytesLength - 2 - 1];
         buf.readBytes(jsonBytes);
