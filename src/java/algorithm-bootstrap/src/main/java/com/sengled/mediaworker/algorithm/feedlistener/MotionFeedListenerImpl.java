@@ -14,7 +14,6 @@ import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.service.MotionEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
@@ -51,7 +50,7 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 	}
 
 	@Override
-	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) {
+	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) throws Exception{
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
 		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();

@@ -163,7 +163,7 @@ public class KinesisFrameDecoder {
     }
     public static class ObjectConfig{
     	@JSONField(name="sensitivity")
-    	public int sensitivity;
+    	private int sensitivity;
     	
     	@JSONField(name="dataList")
     	private List<Data> dataList;
@@ -174,9 +174,15 @@ public class KinesisFrameDecoder {
 		public void setDataList(List<Data> dataList) {
 			this.dataList = dataList;
 		}
+		public int getSensitivity() {
+			return sensitivity;
+		}
+		public void setSensitivity(int sensitivity) {
+			this.sensitivity = sensitivity;
+		}
 		@Override
 		public String toString() {
-			return "ObjectConfig [dataList=" + dataList + "]";
+			return "ObjectConfig [sensitivity=" + sensitivity + ", dataList=" + dataList + "]";
 		}
 		
     }
@@ -188,8 +194,8 @@ public class KinesisFrameDecoder {
     	private String pos;
     	
     	@JSONField(name="objectList")
-    	
     	private String objectList;
+    	
 		public int getId() {
 			return id;
 		}
