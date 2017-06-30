@@ -39,7 +39,11 @@ public class ExecAction extends Action {
 			return;
 		}
 		for(FeedListener listener : listeners){
-			listener.feedResultHandle(context,motionFeedResult);
+			try {
+				listener.feedResultHandle(context,motionFeedResult);
+			} catch (Exception e) {
+				LOGGER.error(e.getMessage(),e);
+			}
 		}
 	}
 }

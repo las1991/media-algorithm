@@ -26,6 +26,12 @@ public class HttpResponseResult {
 	public String toString() {
 		return "code:" + code + " body:"+body;
 	}
+	public  boolean responseOk(){
+		if(null !=code && code.intValue() == 200){
+			return true;
+		}
+		return false;
+	}
 
 }
 

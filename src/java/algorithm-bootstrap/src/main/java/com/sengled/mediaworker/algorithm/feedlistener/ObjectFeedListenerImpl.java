@@ -41,12 +41,18 @@ public class ObjectFeedListenerImpl implements FeedListener {
     private Long objectIntervalTimeMsce;
     
 	@Override
-	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) {
+	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) throws Exception{
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
-		
-		Date utcDate = context.getUtcDateTime();
-		long delayTime = System.currentTimeMillis() - utcDate.getTime();
+		ObjectConfig objectConfig = context.getConfig().getObjectConfig();
 		String token = context.getToken();
+		Date utcDate = context.getUtcDateTime();
+
+		if (null == objectConfig) {
+			LOGGER.info("Token:{},objectConfig is null config:{}", token, context.getConfig());
+			return;
+		}
+
+		long delayTime = System.currentTimeMillis() - utcDate.getTime();
 		recordCounter.updateObjectReceiveDelay(delayTime);
 		recordCounter.addAndGetObjectMotionCount(1);
 		if(delayTime > maxDelayedTimeMsce){
@@ -54,13 +60,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
 			LOGGER.info("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
 			return;
 		}
-		
-		ObjectConfig objectConfig = context.getConfig().getObjectConfig();
-		if (null == objectConfig) {
-			LOGGER.error("Token:{},objectConfig is null config:{}", token, context.getConfig());
-			return;
-		}
-
+	
 		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(context);
 		if (objectContext.isSkip(objectIntervalTimeMsce)) {
 			return;

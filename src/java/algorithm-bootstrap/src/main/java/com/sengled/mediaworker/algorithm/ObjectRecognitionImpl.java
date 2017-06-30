@@ -101,7 +101,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	public Future<?> submit(final ObjectContext context,final MotionFeedResult mfr) {
 		//hash token 提交到指定线程队列中
 		String token  = context.getToken();
-		int hashCode = token.hashCode();
+		int hashCode = Math.abs(token.hashCode());
 		int threadIndex = hashCode % threadNum;
 		LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
 		
@@ -130,12 +130,31 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		recordCounter.updateObjectSingleDataProcessCost(objectCost);
 		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
 		
-		if ( 200 != result.getCode().intValue() ) {
-			LOGGER.error("object recognition http code {},body:{}", result.getCode(), result.getBody());
+		if ( ! result.responseOk() ) {
+			LOGGER.error("object recognition HttpResponseResult{}", result);
 			return ;
 		}
 
-		Multimap<Integer, Object>  matchResult = match(objectContext.getToken(), objectContext.getYuvImage(), result.getBody(), oc, mfr);
+		JSONObject jsonObj = JSONObject.parseObject(result.getBody());
+		if (jsonObj.getJSONArray("objects").isEmpty()) {
+			LOGGER.info("object recognition NORESULT.");
+			return ;
+		}
+		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(jsonObj, ObjectRecognitionResult.class);
+		Multimap<Integer, Object>  matchResult = match(objectContext.getToken(), objectContext.getYuvImage(), objectResult, oc, mfr);
+		
+		if (LOGGER.isDebugEnabled()) {
+			byte[] jpgData;
+			try {
+				YUVImage yuvImage = objectContext.getYuvImage();
+				jpgData = processorManager.encode(objectContext.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+				ImageUtils.draw(token, jpgData, yuvImage, oc, mfr, objectResult,matchResult);
+			} catch (EncodeException e) {
+				LOGGER.error(e.getMessage(),e);
+				return;
+			}
+			
+		}
 		
 		if( null == matchResult || matchResult.isEmpty() ){
 			LOGGER.info("Token:{},Object Match Result is NULL",token);
@@ -155,10 +174,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		eventBus.post(event );
 		objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());
 		
-		if (LOGGER.isDebugEnabled()) {
-			//ImageUtils.draw(event.getToken(), jpgData,objectContext.getYuvImage() objectConfig,objectRecognitionResult, motionFeedResult,objectMatchResult);
-			ImageUtils.draw(event.getToken(), jpgData, objectContext.getYuvImage(), oc, mfr, matchResult);
-		}
 	}
 	
 
@@ -179,27 +194,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 *            Motion结果
 	 * @return
 	 */
-	public Multimap<Integer, Object>  match(String token,YUVImage yuvImage, String responseText, ObjectConfig objectConfig,MotionFeedResult motionFeedResult) {
-
-		JSONObject jsonObj = JSONObject.parseObject(responseText);
-		if (jsonObj.getJSONArray("objects").isEmpty()) {
-			LOGGER.info("object recognition NORESULT.");
-			return null;
-		}
-
-		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(jsonObj, ObjectRecognitionResult.class);
-		LOGGER.info("recognition object JSON result:{},javaBean Result{}", jsonObj.toJSONString(),
-				objectResult.toString());
-		if (objectResult == null || objectResult.objects == null || objectResult.objects.isEmpty()) {
-			LOGGER.info("object recognition objectResult empty.");
-			return null;
-		}
+	public Multimap<Integer, Object>  match(String token,YUVImage yuvImage, ObjectRecognitionResult objectRecognitionResult, ObjectConfig objectConfig,MotionFeedResult motionFeedResult) {
 	
-		return  filter(token, yuvImage, objectConfig, objectResult, motionFeedResult);		
-	}
-
-	private Multimap<Integer, Object> filter(String token, YUVImage yuvImage, ObjectConfig objectConfig,
-			ObjectRecognitionResult objectRecognitionResult, MotionFeedResult motionFeedResult) {
 		LOGGER.info("Token:{},objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}", token,
 				JSONObject.toJSON(objectConfig), JSONObject.toJSON(objectRecognitionResult),
 				JSONObject.toJSON(motionFeedResult));
@@ -207,7 +203,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		Multimap<Integer, Object> objectsResult = step1Filter(objectRecognitionResult, objectConfig);
 		Multimap<Integer, Object> objectMatchResult = step2Filter(motionFeedResult, objectsResult);
 		LOGGER.info("Match result:{}",objectMatchResult);
-		return objectMatchResult;
+		return objectMatchResult;	
 	}
 
 	/**
@@ -241,6 +237,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 					float  areaPercentObject= ImageUtils.areaPercent(objectBox, area);
 					float areaPercentMotion = ImageUtils.areaPercent(motionBox, area);
 					if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
+					//if (areaPercentObject >= objectAndMotionIntersectionPct ) {
 						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.type);
 						if( ! hasObjSet.contains(object)){
 							result.put(zoneid,  object);

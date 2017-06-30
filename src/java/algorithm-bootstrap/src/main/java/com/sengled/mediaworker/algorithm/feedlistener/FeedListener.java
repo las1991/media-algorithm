@@ -4,5 +4,5 @@ import com.sengled.mediaworker.algorithm.context.StreamingContext;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
 public interface FeedListener {
-	void feedResultHandle(StreamingContext context,MotionFeedResult motionFeedResult);
+	void feedResultHandle(StreamingContext context,MotionFeedResult motionFeedResult)throws Exception;
 }
