@@ -4,10 +4,13 @@ import java.util.Date;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.BeanUtils;
+import org.springframework.beans.BeanWrapperImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ObjectRecognition;
 import com.sengled.mediaworker.algorithm.context.ObjectContext;
@@ -25,8 +28,6 @@ import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 public class ObjectFeedListenerImpl implements FeedListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectFeedListenerImpl.class);
 
-	@Autowired
-	ObjectContextManager objectContextManager;
 
 	@Autowired
 	ObjectRecognition objectRecognitionImpl;
@@ -37,8 +38,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
     @Value("${max.delayed.time.msce}")
     private long maxDelayedTimeMsce;
     
-    @Value("${object.interval.time.msce}")
-    private Long objectIntervalTimeMsce;
+
     
 	@Override
 	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) throws Exception{
@@ -60,12 +60,15 @@ public class ObjectFeedListenerImpl implements FeedListener {
 			LOGGER.info("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
 			return;
 		}
-	
-		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(context);
-		if (objectContext.isSkip(objectIntervalTimeMsce)) {
+		
+		YUVImage yuvImage = context.getYuvImage();
+		if( null == yuvImage ){
 			return;
 		}
 		
-		objectRecognitionImpl.submit(objectContext, motionFeedResult);		
+		byte[] copyNalData = context.getNalData();
+		YUVImage copyYuvImage = new YUVImage(yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getYUVData());		
+		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
+		objectRecognitionImpl.submit(token,objectConfig,copyUtcDate,copyYuvImage,copyNalData,motionFeedResult);		
 	}
 }

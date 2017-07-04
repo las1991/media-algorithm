@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.algorithm.context;
 
+import java.util.Date;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -53,25 +54,14 @@ public class ObjectContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public ObjectContext findOrCreateStreamingContext(StreamingContext streamingContext){
-		String token = streamingContext.getToken();
-		ObjectContext context =  objectContextMap.get(token);
-		
-		ObjectConfig objectConfig =  streamingContext.getConfig().getObjectConfig();
-		ObjectConfig finalObjectConfig = new ObjectConfig();
-		BeanUtils.copyProperties(objectConfig, finalObjectConfig);
-		YUVImage yuvImage = streamingContext.getYuvImage();
-		YUVImage image  = new YUVImage(yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getYUVData());
-		
+	public ObjectContext findOrCreateStreamingContext(String token,Date utcDate,ObjectConfig config){
+		ObjectContext context =  objectContextMap.get(token);	
 		if (context == null) {
 			context =  newObjectContext(token);
 		}
-
-		context.setUtcDateTime(streamingContext.getUtcDateTime());
-		context.setYuvImage(image);
-		context.setNalData(streamingContext.getNalData());
-		context.setObjectConfig(finalObjectConfig);
+		context.setUtcDateTime(utcDate);
 		context.setContextUpdateTimestamp(System.currentTimeMillis());
+		context.setObjectConfig(config);
 		return context;
 	}
 	private ObjectContext newObjectContext(String token) {

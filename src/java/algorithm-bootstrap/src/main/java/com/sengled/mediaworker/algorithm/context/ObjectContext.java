@@ -21,8 +21,6 @@ public class ObjectContext extends Context {
 	private String token;
 	private Long lastObjectTimestamp;
 	private Date utcDateTime;
-	private byte[] nalData;
-	private YUVImage yuvImage;
 	private ObjectConfig objectConfig;
 	//接收到数据的时间
 	private Long contextUpdateTimestamp = System.currentTimeMillis();
@@ -78,21 +76,6 @@ public class ObjectContext extends Context {
 		this.utcDateTime = utcDateTime;
 	}
 
-	public byte[] getNalData() {
-		return nalData;
-	}
-
-	public void setNalData(byte[] nalData) {
-		this.nalData = nalData;
-	}
-
-	public YUVImage getYuvImage() {
-		return yuvImage;
-	}
-
-	public void setYuvImage(YUVImage yuvImage) {
-		this.yuvImage = yuvImage;
-	}
 
 	public ObjectConfig getObjectConfig() {
 		return objectConfig;

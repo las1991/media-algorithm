@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -124,7 +125,7 @@ public class ImageUtils {
 	 * @param objectRecognitionResult
 	 * @param motionFeedResult
 	 */
-	public static void draw(String token, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
+	public static void draw(String token,Date utcDate, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
 			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult) {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
@@ -168,7 +169,7 @@ public class ImageUtils {
 			drawRect(g, objectResultPos, Color.red, "OBJECT", 30, 70);
 			drawRect(g, matchResultPos, Color.blue, "Result", 30, 90);
 			
-			String imageFileName = token + "_" + DateFormatUtils.format(System.currentTimeMillis(), "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
+			String imageFileName = token + "_" + DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
 			ImageIO.write(r, "jpg", new File("/root/save/" +imageFileName ));
 			LOGGER.debug("Token:{} draw imageFileName:{} MotionFeedResult:{} matchResult:{}",token,imageFileName,motionFeedResult,matchResult);
 		} catch (Exception e) {

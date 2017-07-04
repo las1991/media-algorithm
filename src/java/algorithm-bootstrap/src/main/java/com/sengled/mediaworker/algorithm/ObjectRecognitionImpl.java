@@ -1,7 +1,10 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -12,6 +15,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.slf4j.Logger;
@@ -29,6 +33,7 @@ import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.context.ObjectContext;
+import com.sengled.mediaworker.algorithm.context.ObjectContextManager;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Data;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
@@ -58,6 +63,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	@Value("${object.recognition.url}")
 	private String objectRecognitionUrl;
 	
+    @Value("${object.interval.time.msce}")
+    private Long objectIntervalTimeMsce;
+    
 	@Autowired
 	IHttpClient httpclient;
 	@Autowired
@@ -66,6 +74,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	private ObjectEventHandler objectEventHandler;
 	@Autowired
 	RecordCounter recordCounter;
+	@Autowired
+	ObjectContextManager objectContextManager;
+
 	
 	private List<ExecutorService> executors;
 	private AsyncEventBus eventBus;
@@ -97,10 +108,10 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 	}
 
+	
 	@Override
-	public Future<?> submit(final ObjectContext context,final MotionFeedResult mfr) {
+	public Future<?> submit(String token,ObjectConfig oc, Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr) {
 		//hash token 提交到指定线程队列中
-		String token  = context.getToken();
 		int hashCode = Math.abs(token.hashCode());
 		int threadIndex = hashCode % threadNum;
 		LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
@@ -108,22 +119,27 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		return executors.get(threadIndex).submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
-				handle(context,mfr);
+				try {
+					handle(token,oc,utcDate,yuvImage,nalData,mfr);
+				} catch (Exception e) {
+					LOGGER.error(e.getMessage(),e);
+				}
 				return null;
 			}
 		});
 	}
 	
-	
-	private void handle(ObjectContext objectContext,MotionFeedResult mfr){
-		LOGGER.debug("Run objectRecognition. ObjectContext:{},MotionFeedResult:{}",objectContext,mfr);
+	private void handle(String token, ObjectConfig oc,Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr)throws Exception{
+		LOGGER.debug("Run objectRecognition. token:{},MotionFeedResult:{}",token,mfr);
 		
+		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,oc);
+
+		if (objectContext.isSkip(objectIntervalTimeMsce)) {
+			return;
+		}
+
 		long startTime = System.currentTimeMillis();
-		
-		ObjectConfig oc = objectContext.getObjectConfig();
-		String token = objectContext.getToken();
-		
-		HttpEntity putEntity = new ByteArrayEntity(objectContext.getNalData());
+		HttpEntity putEntity = new ByteArrayEntity(nalData);
 		HttpResponseResult result = httpclient.put(objectRecognitionUrl, putEntity);
 		
 		long objectCost = System.currentTimeMillis() - startTime;
@@ -136,26 +152,29 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 
 		JSONObject jsonObj = JSONObject.parseObject(result.getBody());
-		if (jsonObj.getJSONArray("objects").isEmpty()) {
-			LOGGER.info("object recognition NORESULT.");
-			return ;
-		}
+
 		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(jsonObj, ObjectRecognitionResult.class);
-		Multimap<Integer, Object>  matchResult = match(objectContext.getToken(), objectContext.getYuvImage(), objectResult, oc, mfr);
+		Multimap<Integer, Object>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
 		
 		if (LOGGER.isDebugEnabled()) {
 			byte[] jpgData;
 			try {
-				YUVImage yuvImage = objectContext.getYuvImage();
-				jpgData = processorManager.encode(objectContext.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-				ImageUtils.draw(token, jpgData, yuvImage, oc, mfr, objectResult,matchResult);
-			} catch (EncodeException e) {
+				jpgData = processorManager.encode(token,yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+				ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult);
+
+				FileOutputStream file = new FileOutputStream(new File("/root/save/"+ token +"_"+ DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS")));
+				file.write(nalData);
+				file.close();
+				
+			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 				return;
 			}
-			
 		}
-		
+		if (jsonObj.getJSONArray("objects").isEmpty()) {
+			LOGGER.info("object recognition NORESULT.");
+			return ;
+		}
 		if( null == matchResult || matchResult.isEmpty() ){
 			LOGGER.info("Token:{},Object Match Result is NULL",token);
 			return;
@@ -164,13 +183,12 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		
 		byte[] jpgData;
 		try {
-			YUVImage yuvImage = objectContext.getYuvImage();
-			jpgData = processorManager.encode(objectContext.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+			jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
 		} catch (EncodeException e) {
 			LOGGER.error(e.getMessage(),e);
 			return;
 		}
-		ObjectEvent event = new ObjectEvent(objectContext.getToken(),matchResult,jpgData,objectContext.getUtcDateTime());
+		ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
 		eventBus.post(event );
 		objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());
 		
@@ -224,12 +242,12 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 
 		Map<Integer, Collection<Object>> objectZoneidToBox = objectsResult.asMap();
+		Set<Object> hasObjSet = new HashSet<>();
 		for (Entry<Integer, Collection<Object>> objectZoneidToBoxSet : objectZoneidToBox.entrySet()) {// zone
 			int zoneid = objectZoneidToBoxSet.getKey();
 
 			Collection<Object> objectList = objectZoneidToBoxSet.getValue();
 			Collection<List<Integer>> motionList = motionZoneidToBox.get(zoneid);
-			Set<Object> hasObjSet = new HashSet<>();
 			for (List<Integer> motionBox : motionList) {
 				for (Object object : objectList) {
 					List<Integer> objectBox = object.bbox_pct;
@@ -281,4 +299,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 		return finalObjectsResult;
 	}
+
+
 }
