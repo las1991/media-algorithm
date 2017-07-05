@@ -4,7 +4,7 @@ public class HttpResponseResult {
 	/**
 	 * 服务端返回状态码
 	 */
-	private Integer code = 555;
+	private Integer code = -1;
 	
 	/**
 	 * 服务端返回内容

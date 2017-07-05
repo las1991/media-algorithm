@@ -28,7 +28,6 @@ import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 public class ObjectFeedListenerImpl implements FeedListener {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectFeedListenerImpl.class);
 
-
 	@Autowired
 	ObjectRecognition objectRecognitionImpl;
 
@@ -37,8 +36,6 @@ public class ObjectFeedListenerImpl implements FeedListener {
 	
     @Value("${max.delayed.time.msce}")
     private long maxDelayedTimeMsce;
-    
-
     
 	@Override
 	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) throws Exception{

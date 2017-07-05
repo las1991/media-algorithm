@@ -1,10 +1,14 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -16,6 +20,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.imageio.ImageIO;
+import javax.imageio.stream.ImageOutputStream;
 
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
@@ -23,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.Multimap;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.mediaworker.algorithm.context.Context;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
@@ -94,7 +98,6 @@ public class ImageUtils {
 		int height = Math.min(y1, b1) - Math.max(y, b);
 		return (width * height);
 	}
-
 	/**
 	 * 求面积area占矩形rectangle的百分比
 	 */
@@ -116,6 +119,25 @@ public class ImageUtils {
 		}
 	}
 
+	
+	public static byte[] drawRect(List<List<Integer>> boxs,Color color,byte[] jpgData){
+		BufferedImage img;
+		try {
+			img = ImageIO.read(new ByteArrayInputStream(jpgData));
+			BufferedImage r = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+			r.getGraphics().drawImage(img, 0, 0, img.getWidth(), img.getHeight(), null);
+			Graphics g = r.getGraphics();
+			drawRect(g, boxs, color, "", 0, 0);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();  
+            ImageIO.write(r, "jpg", out);  
+            byte[] b = out.toByteArray();  			
+			return b;
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+		}
+		return null;
+	}
+	
 	/**
 	 * 画矩形
 	 * 
@@ -125,7 +147,7 @@ public class ImageUtils {
 	 * @param objectRecognitionResult
 	 * @param motionFeedResult
 	 */
-	public static void draw(String token,Date utcDate, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
+	public static byte[] draw(String token,Date utcDate, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
 			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult) {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
@@ -148,8 +170,6 @@ public class ImageUtils {
 				objectResultPos.add(posStr	);
 			}
 			
-			
-
 			List<List<Integer>> matchResultPos = new ArrayList<>();
 			Map<Integer, Collection<Object>> map = matchResult.asMap();
 			for (Entry<Integer, Collection<Object>> entry : map.entrySet()) {
@@ -168,12 +188,22 @@ public class ImageUtils {
 			drawRect(g, motionFeedResultPos, Color.yellow, "MOTION", 30, 50);
 			drawRect(g, objectResultPos, Color.red, "OBJECT", 30, 70);
 			drawRect(g, matchResultPos, Color.blue, "Result", 30, 90);
-			
-			String imageFileName = token + "_" + DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
-			ImageIO.write(r, "jpg", new File("/root/save/" +imageFileName ));
-			LOGGER.debug("Token:{} draw imageFileName:{} MotionFeedResult:{} matchResult:{}",token,imageFileName,motionFeedResult,matchResult);
+			ByteArrayOutputStream out = new ByteArrayOutputStream();  
+            ImageIO.write(r, "jpg", out);  
+            byte[] b = out.toByteArray();
+            out.close();
+//			String imageFileName = token + "_" + DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
+//			File file = new File("/root/save/" +imageFileName );
+//			ImageIO.write(r, "jpg", file);
+//			FileInputStream input = new FileInputStream(file);
+//			byte[] buffer = new byte[(int) file.length()];
+//			input.read(buffer);
+//			input.close();
+			LOGGER.debug("Token:{} draw  MotionFeedResult:{} matchResult:{}",token,motionFeedResult,matchResult);
+			return b;
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
+			return null;
 		}
 	}
 
@@ -183,9 +213,12 @@ public class ImageUtils {
 			int y = pos.get(1);
 			int xx = pos.get(2);
 			int yy = pos.get(3);
-			g.setColor(color);
-			g.drawRect(x, y, xx - x, yy - y);
-			g.drawString(word, wx, wy);
+			Graphics2D g2d = (Graphics2D)g;
+			g2d.setStroke(new BasicStroke(3));
+			
+			g2d.setColor(color);
+			g2d.drawRect(x, y, xx - x, yy - y);
+			g2d.drawString(word, wx, wy);
 		}
 	}
 
@@ -199,8 +232,13 @@ public class ImageUtils {
 
 		Graphics g = r.getGraphics();
 		g.setColor(Color.RED);
-		g.drawRect(0, 0, 100, 100);
+		Graphics2D g2d = (Graphics2D)g;
+		g2d.setStroke(new BasicStroke(3));
+		
+		g2d.drawRect(0, 0, 100, 100);
+		
 
 		ImageIO.write(r, "jpg", new File("D://test/1.chenxh.jpg"));
+
 	}
 }
