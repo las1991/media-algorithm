@@ -1,7 +1,5 @@
 package com.sengled.mediaworker.algorithm;
 
-import java.io.File;
-import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -15,9 +13,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
 import org.slf4j.Logger;
@@ -62,7 +58,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	private static final int EVENT_BUS_THREAD_COUNT = 100;
 	
-	@Value("${object.recognition.url}")
+	@Value("http://${OBJECT.RECOGNITION.HOST}:${OBJECT.RECOGNITION.PORT}${OBJECT.RECOGNITION.PATH}")
 	private String objectRecognitionUrl;
 	
     @Value("${object.interval.time.msce}")
@@ -178,9 +174,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				LOGGER.error(e.getMessage(),e);
 				return;
 			}
-			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
-			eventBus.post(event );
-			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());
 		}else{
 			LOGGER.info("Token:{},Object Match Result is NULL",token);
 		}
@@ -191,15 +184,18 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				if( null == jpgData){
 					jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
 				}
-				jpgData = ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult);
-				FileOutputStream file = new FileOutputStream(new File(debugImageSavePath +"/"+ token +"_"+ DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS")));
-				file.write(nalData);
-				file.close();
+				jpgData = ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult,debugImageSavePath);
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 				return;
 			}
 		}
+		if( null != matchResult && ! matchResult.isEmpty() ){
+			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
+			eventBus.post(event );
+			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());	
+		}
+
 	}
 	
 

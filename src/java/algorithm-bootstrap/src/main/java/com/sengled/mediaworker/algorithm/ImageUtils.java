@@ -148,7 +148,8 @@ public class ImageUtils {
 	 * @param motionFeedResult
 	 */
 	public static byte[] draw(String token,Date utcDate, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
-			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult) {
+			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult,
+			String path) {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
 			for (int i = 0; i < objectConfig.getDataList().size(); i++) {
@@ -188,19 +189,16 @@ public class ImageUtils {
 			drawRect(g, motionFeedResultPos, Color.yellow, "MOTION", 30, 50);
 			drawRect(g, objectResultPos, Color.red, "OBJECT", 30, 70);
 			drawRect(g, matchResultPos, Color.blue, "Result", 30, 90);
-			ByteArrayOutputStream out = new ByteArrayOutputStream();  
-            ImageIO.write(r, "jpg", out);  
-            byte[] b = out.toByteArray();
-            out.close();
-//			String imageFileName = token + "_" + DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
-//			File file = new File("/root/save/" +imageFileName );
-//			ImageIO.write(r, "jpg", file);
-//			FileInputStream input = new FileInputStream(file);
-//			byte[] buffer = new byte[(int) file.length()];
-//			input.read(buffer);
-//			input.close();
+
+			String imageFileName = token + "_" + DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS") + ".jpg";
+			File file = new File(path+"/" +imageFileName );
+			ImageIO.write(r, "jpg", file);
+			FileInputStream input = new FileInputStream(file);
+			byte[] buffer = new byte[(int) file.length()];
+			input.read(buffer);
+			input.close();
 			LOGGER.debug("Token:{} draw  MotionFeedResult:{} matchResult:{}",token,motionFeedResult,matchResult);
-			return b;
+			return buffer;
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
 			return null;
