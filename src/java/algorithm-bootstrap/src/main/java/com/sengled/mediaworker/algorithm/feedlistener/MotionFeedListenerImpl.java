@@ -1,5 +1,8 @@
 package com.sengled.mediaworker.algorithm.feedlistener;
 
+import java.awt.Color;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.Executors;
 
 import org.slf4j.Logger;
@@ -11,6 +14,7 @@ import org.springframework.stereotype.Component;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
+import com.sengled.mediaworker.algorithm.ImageUtils;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
@@ -70,10 +74,26 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		byte[] jpgData;
 		try {
 			jpgData = processorManagerImpl.encode(context.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+			//FIXME 对图像进行motion画框操作{
+			if(LOGGER.isDebugEnabled()){
+				List<List<Integer>> boxs = new ArrayList<List<Integer>>();
+				for (ZoneInfo zoneInfo : motionFeedResult.motion) {
+					for (List<Integer> list : zoneInfo.boxs) {
+						List<Integer> posStr = ImageUtils.convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), list);
+						boxs.add(posStr);
+					}
+				}
+				jpgData = ImageUtils.drawRect(boxs, Color.YELLOW, jpgData);
+			}
+			//}
 		} catch (EncodeException e) {
 			LOGGER.error(e.getMessage(),e);
 			return;
+		}catch(Exception e2){
+			LOGGER.error(e2.getMessage(),e2);
+			return;
 		}
+
 		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.zone_id);
 		MotionEvent event = new MotionEvent(token,context.getUtcDateTime(),jpgData,zone.zone_id+"");
 		eventBus.post(event );

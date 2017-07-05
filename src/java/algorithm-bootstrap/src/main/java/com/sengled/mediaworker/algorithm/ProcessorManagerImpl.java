@@ -33,17 +33,15 @@ import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
 	
-	//private static final List<String> MODEL_LIST = Arrays.asList("motion");
-	
-	//Motion间隔时间
-    @Value("${motion.interval.time.msce:15000}")
+    @Value("${motion.interval.time.msce}")
     private Long motionIntervalTimeMsce;
-	//包最大延时
-    @Value("${max.delayed.time.msce:10000}")
+    
+    @Value("${max.delayed.time.msce}")
     private Long maxDelayedTimeMsce;
 	
 	private JnaInterface jnaInterface;
 	private ExecutorService  threadPool;
+	
 	@Autowired
 	private FeedListener[] feedListeners;
 	@Autowired
@@ -113,7 +111,6 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			}
 			//过滤数据
 			try {
-				//TODO 上测试前恢复	
 				if(context.isDataExpire(maxDelayedTimeMsce)){
 						return;
 				}

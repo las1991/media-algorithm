@@ -41,18 +41,18 @@ import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 public class RecordProcessor implements IRecordProcessor {
 	private static final Logger LOGGER = LoggerFactory.getLogger(RecordProcessor.class);
 	private static final String[] UTC_DATE_FORMAT = new String[] { "yyyy-MM-dd HH:mm:ss.SSS" };
+    // Checkpointing interval
+    private static final long CHECKPOINT_INTERVAL_MILLIS = 1 * 60 * 1000; // 1 minute
+    //max BehindLatest
+    private static final long MAX_BEHINDLASTEST_MILLIS = 30 * 1000; // 30 sec
+    //max execute time
+    private static final long MAX_EXECUTE_MILLIS = 20 * 1000;//20 sec
+    
 	private String kinesisShardId;
 	private RecordCounter recordCounter;
 	private ProcessorManager processorManager;
 	private Future<?> future;
 	private ExecutorService executorService;
-
-    // Checkpointing interval
-    private static final long CHECKPOINT_INTERVAL_MILLIS = 1 * 60 * 1000; // 1 minute
-    //max BehindLatest
-    private static final long MAX_BEHINDLASTEST_MILLIS = 20 * 1000; // 20 sec
-    //max execute time
-    private static final long MAX_EXECUTE_MILLIS = 20 * 1000;//20 sec
     private long nextCheckpointTimeInMillis;
     private boolean isShutdown;
     
@@ -62,7 +62,80 @@ public class RecordProcessor implements IRecordProcessor {
 		this.processorManager = processorManager;
 		this.executorService = Executors.newSingleThreadExecutor();
 	}
+	@Override
+	public void initialize(InitializationInput initializationInput) {
+		LOGGER.info("Initializing...");
+		String shardId = initializationInput.getShardId();
+		this.kinesisShardId = shardId;
+		nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
+		LOGGER.info("Initializing record processor for shard:{} checkpoint interval:{} ms",shardId,CHECKPOINT_INTERVAL_MILLIS);
+	}
+	@Override
+	public void processRecords(ProcessRecordsInput processRecordsInput) {
+		List<Record> records = processRecordsInput.getRecords();
+		IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
+		Long behindLatest = processRecordsInput.getMillisBehindLatest();
+		long receiveTime = System.currentTimeMillis();
+		
+		LOGGER.info("kinesisShardId:{},Received records size:{}",kinesisShardId,records.size());
+		LOGGER.info("kinesisShardId:{},BehindLatest:{}",kinesisShardId,behindLatest);
+		recordCounter.addAndGetRecordCount(records.size());
 
+		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
+			recordCounter.addAndGetReceiveDelayedCount(records.size());
+			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
+			return;
+		}
+		
+		long startTime = System.currentTimeMillis();
+        boolean isSubmited = false;
+		
+        //如果上次提交的任务已执行完成，则提交新任务，否则等待
+		while( ! isShutdown){
+			if((future == null) || future.isDone() || future.isCancelled()){
+				final Multimap<String, Frame> dataMap = unpacking(records);
+				future = executorService.submit(new Runnable() {
+					@Override
+					public void run() {
+						submitTask(dataMap,receiveTime);
+					}
+				});
+				LOGGER.debug("Submited records size:{}",records.size());
+				isSubmited = true;
+				break;
+			}else{
+				try {
+					future.get(1, TimeUnit.SECONDS);
+				} catch (InterruptedException e) {
+					LOGGER.error(e.getMessage(),e);
+ 				} catch (ExecutionException e) {
+ 					LOGGER.error(e.getMessage(),e);
+ 				} catch (TimeoutException e) {
+ 					LOGGER.warn("Wait submit sleep 1 sce");
+ 				}
+				LOGGER.info("Wait submit. Sleep . Had been waiting for {} msec",(System.currentTimeMillis() - startTime));
+			}
+		}
+ 
+		if(isSubmited){
+	        //Checkpoint once every checkpoint interval
+	        if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
+	            checkpoint(checkpointer);
+	            nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
+	        }
+		}
+	}
+	@Override
+	public void shutdown(ShutdownInput shutdownInput) {
+		IRecordProcessorCheckpointer checkpointer = shutdownInput.getCheckpointer();
+		ShutdownReason reason = shutdownInput.getShutdownReason();
+		LOGGER.info("Shutting down record processor for shard: {}. Reason:{}",kinesisShardId,reason);
+		if(reason.equals(ShutdownReason.TERMINATE)){
+			LOGGER.info("Shard:{} state SHARD_END. shutdown RecordProcessor",kinesisShardId);
+			checkpoint(checkpointer);
+		}
+		threadShutdownNow();
+	}
 	//提交一批数据，并等待执行结果返回
 	private  void submitTask(final Multimap<String, Frame> token2MultipleFrames,long receiveTime) {
 		long startTime = System.currentTimeMillis();
@@ -134,6 +207,7 @@ public class RecordProcessor implements IRecordProcessor {
 		}
 		return dataMap;
 	}
+	
     private String getToken(String partitionKey){
     	String token =  partitionKey.split(",")[0];
     	if(StringUtils.isNotBlank(token)){
@@ -141,88 +215,11 @@ public class RecordProcessor implements IRecordProcessor {
     	}
     	return partitionKey;
     }
-
-	@Override
-	public void initialize(InitializationInput initializationInput) {
-		LOGGER.info("Initializing...");
-		String shardId = initializationInput.getShardId();
-		this.kinesisShardId = shardId;
-		nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
-		LOGGER.info("Initializing record processor for shard:{} checkpoint interval:{} ms",shardId,CHECKPOINT_INTERVAL_MILLIS);
-	}
-
-	@Override
-	public void processRecords(ProcessRecordsInput processRecordsInput) {
-		
-		List<Record> records = processRecordsInput.getRecords();
-		IRecordProcessorCheckpointer checkpointer = processRecordsInput.getCheckpointer();
-		Long behindLatest = processRecordsInput.getMillisBehindLatest();
-		long receiveTime = System.currentTimeMillis();
-		
-		LOGGER.info("kinesisShardId:{},Received records size:{}",kinesisShardId,records.size());
-		LOGGER.info("kinesisShardId:{},BehindLatest:{}",kinesisShardId,behindLatest);
-		recordCounter.addAndGetRecordCount(records.size());
-		//TODO 上测试前恢复		
-		if(behindLatest > MAX_BEHINDLASTEST_MILLIS){
-			recordCounter.addAndGetReceiveDelayedCount(records.size());
-			LOGGER.warn("kinesisShardId:{},BehindLatest:{} > MAX_RECEIVE_DELAYED_MILLIS:{} skip.",kinesisShardId,behindLatest,MAX_BEHINDLASTEST_MILLIS);
-			return;
-		}
-		
-		long startTime = System.currentTimeMillis();
-        boolean isSubmited = false;
-		final Multimap<String, Frame> dataMap = unpacking(records);
-		
-        //如果上次提交的任务已执行完成，则提交新任务，否则等待
-		while( ! isShutdown){
-			if((future == null) || future.isDone() || future.isCancelled()){
-				future = executorService.submit(new Runnable() {
-					@Override
-					public void run() {
-						submitTask(dataMap,receiveTime);
-					}
-				});
-				LOGGER.debug("Submited records size:{}",records.size());
-				isSubmited = true;
-				break;
-			}else{
-				LOGGER.info("Wait submit. Sleep . Had been waiting for {} msec",(System.currentTimeMillis() - startTime));
-				try {
-					future.get(1, TimeUnit.SECONDS);
-				} catch (InterruptedException e) {
-					LOGGER.error(e.getMessage(),e);
- 				} catch (ExecutionException e) {
- 					LOGGER.error(e.getMessage(),e);
- 				} catch (TimeoutException e) {
- 					LOGGER.warn("Wait submit sleep 1 sce");
- 				}
- 
-			}
-		}
- 
-		if(isSubmited){
-	        //Checkpoint once every checkpoint interval
-	        if (System.currentTimeMillis() > nextCheckpointTimeInMillis) {
-	            checkpoint(checkpointer);
-	            nextCheckpointTimeInMillis = System.currentTimeMillis() + CHECKPOINT_INTERVAL_MILLIS;
-	        }
-		}
-	}
-
+    
     private void threadShutdownNow(){
     	LOGGER.info("RecordProcessor executorService shutdown now. for shard: {}",kinesisShardId);
     	isShutdown = true;
     	executorService.shutdownNow();
     }
-	@Override
-	public void shutdown(ShutdownInput shutdownInput) {
-		IRecordProcessorCheckpointer checkpointer = shutdownInput.getCheckpointer();
-		ShutdownReason reason = shutdownInput.getShutdownReason();
-		LOGGER.info("Shutting down record processor for shard: {}. Reason:{}",kinesisShardId,reason);
-		if(reason.equals(ShutdownReason.TERMINATE)){
-			LOGGER.info("Shard:{} state SHARD_END. shutdown RecordProcessor",kinesisShardId);
-			checkpoint(checkpointer);
-		}
-		threadShutdownNow();
-	}
+
 }

@@ -15,6 +15,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
@@ -66,6 +68,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     @Value("${object.interval.time.msce}")
     private Long objectIntervalTimeMsce;
     
+    @Value("${debug.image.save.path}")
+    private String debugImageSavePath;
 	@Autowired
 	IHttpClient httpclient;
 	@Autowired
@@ -130,10 +134,12 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	}
 	
 	private void handle(String token, ObjectConfig oc,Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr)throws Exception{
-		LOGGER.debug("Run objectRecognition. token:{},MotionFeedResult:{}",token,mfr);
-		
+		LOGGER.debug("Run objectRecognition. token:{},ObjectConfig:{},MotionFeedResult:{}",token,oc,mfr);
+		if(oc ==null || utcDate==null || yuvImage==null || nalData==null || mfr == null){
+			LOGGER.error("parameter error.");
+			return;
+		}
 		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,oc);
-
 		if (objectContext.isSkip(objectIntervalTimeMsce)) {
 			return;
 		}
@@ -146,52 +152,54 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		recordCounter.updateObjectSingleDataProcessCost(objectCost);
 		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
 		
-		if ( ! result.responseOk() ) {
+		//请求Object服务
+		if ( ! result.responseOk() && StringUtils.isNotBlank(result.getBody())) {
 			LOGGER.error("object recognition HttpResponseResult{}", result);
 			return ;
 		}
 
-		JSONObject jsonObj = JSONObject.parseObject(result.getBody());
-
-		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(jsonObj, ObjectRecognitionResult.class);
-		Multimap<Integer, Object>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
+		//Object 响应结果
+		JSONObject objectResponseBodyJson = JSONObject.parseObject(result.getBody());
+		if (null == objectResponseBodyJson || objectResponseBodyJson.getJSONArray("objects").isEmpty()) {
+			LOGGER.info("object recognition NORESULT.");
+			return ;
+		}
 		
-		if (LOGGER.isDebugEnabled()) {
-			byte[] jpgData;
+		//Object 响应结果 匹配zoneinfo 匹配motion 
+		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(objectResponseBodyJson, ObjectRecognitionResult.class);
+		Multimap<Integer, Object>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
+		LOGGER.info("Token:{},match ObjectRecognition ObjectConfig:{} Cost:{}", token,oc,(System.currentTimeMillis() - startTime));
+		
+		byte[] jpgData = null;
+		if( null != matchResult && ! matchResult.isEmpty() ){
 			try {
-				jpgData = processorManager.encode(token,yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-				ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult);
-
-				FileOutputStream file = new FileOutputStream(new File("/root/save/"+ token +"_"+ DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS")));
+				jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+			} catch (EncodeException e) {
+				LOGGER.error(e.getMessage(),e);
+				return;
+			}
+			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
+			eventBus.post(event );
+			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());
+		}else{
+			LOGGER.info("Token:{},Object Match Result is NULL",token);
+		}
+		
+		//FIXME 画矩形框
+		if (LOGGER.isDebugEnabled()) {
+			try {
+				if( null == jpgData){
+					jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+				}
+				jpgData = ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult);
+				FileOutputStream file = new FileOutputStream(new File(debugImageSavePath +"/"+ token +"_"+ DateFormatUtils.format(utcDate, "yyyy-MM-dd-HH_mm_ss_SSS")));
 				file.write(nalData);
 				file.close();
-				
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 				return;
 			}
 		}
-		if (jsonObj.getJSONArray("objects").isEmpty()) {
-			LOGGER.info("object recognition NORESULT.");
-			return ;
-		}
-		if( null == matchResult || matchResult.isEmpty() ){
-			LOGGER.info("Token:{},Object Match Result is NULL",token);
-			return;
-		}
-		LOGGER.info("Token:{},match ObjectRecognition ObjectConfig:{} Cost:{}", token,oc,(System.currentTimeMillis() - startTime));
-		
-		byte[] jpgData;
-		try {
-			jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-		} catch (EncodeException e) {
-			LOGGER.error(e.getMessage(),e);
-			return;
-		}
-		ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
-		eventBus.post(event );
-		objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());
-		
 	}
 	
 
@@ -254,7 +262,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 					int area = ImageUtils.area(objectBox, motionBox);
 					float  areaPercentObject= ImageUtils.areaPercent(objectBox, area);
 					float areaPercentMotion = ImageUtils.areaPercent(motionBox, area);
-					if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
+					if (areaPercentObject >= objectAndMotionIntersectionPct && areaPercentMotion>= objectAndMotionIntersectionPct) {
+					//if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
 					//if (areaPercentObject >= objectAndMotionIntersectionPct ) {
 						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.type);
 						if( ! hasObjSet.contains(object)){
