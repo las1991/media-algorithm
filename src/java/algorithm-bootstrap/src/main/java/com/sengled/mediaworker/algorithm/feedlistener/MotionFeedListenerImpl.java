@@ -59,7 +59,7 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
 		if(null == motionConfig){
-			LOGGER.info("Token:{},motionConfig is null config:{}",context.getToken(),context.getConfig());
+			LOGGER.info("Token:{},motionConfig is null. config:{}",context.getToken(),context.getConfig());
 			return;
 		}
 		

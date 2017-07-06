@@ -2,10 +2,10 @@ package com.sengled.mediaworker.algorithm.context;
 
 import java.util.Date;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 
 /**
@@ -37,7 +37,7 @@ public class ObjectContext extends Context {
 	public boolean isSkip(long objectIntervalTimeMsce) {
 		boolean skip = false;
 		Date utcDateTime = getUtcDateTime();
-		LOGGER.info("lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,utcDateTime);
+		LOGGER.info("isSkip lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,DateFormatUtils.format(utcDateTime, UTC_DATE_FORMAT[0]));
 		if (lastObjectTimestamp != null && utcDateTime != null) {
 			long sinceLastMotion = (utcDateTime.getTime() - lastObjectTimestamp.longValue());
 

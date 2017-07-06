@@ -164,7 +164,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		//Object 响应结果 匹配zoneinfo 匹配motion 
 		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(objectResponseBodyJson, ObjectRecognitionResult.class);
 		Multimap<Integer, Object>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
-		LOGGER.info("Token:{},match ObjectRecognition ObjectConfig:{} Cost:{}", token,oc,(System.currentTimeMillis() - startTime));
+		LOGGER.info("Token:{},ObjectRecognition  Cost:{}", token,(System.currentTimeMillis() - startTime));
 		
 		byte[] jpgData = null;
 		if( null != matchResult && ! matchResult.isEmpty() ){
@@ -195,7 +195,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			eventBus.post(event );
 			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());	
 		}
-
 	}
 	
 
@@ -218,7 +217,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 */
 	public Multimap<Integer, Object>  match(String token,YUVImage yuvImage, ObjectRecognitionResult objectRecognitionResult, ObjectConfig objectConfig,MotionFeedResult motionFeedResult) {
 	
-		LOGGER.info("Token:{},objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}", token,
+		LOGGER.debug("Token:{},Match objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}", token,
 				JSONObject.toJSON(objectConfig), JSONObject.toJSON(objectRecognitionResult),
 				JSONObject.toJSON(motionFeedResult));
 		
@@ -304,6 +303,4 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 		return finalObjectsResult;
 	}
-
-
 }
