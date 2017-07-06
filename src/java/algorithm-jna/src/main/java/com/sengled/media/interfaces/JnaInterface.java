@@ -114,7 +114,7 @@ public class JnaInterface implements Function{
 			}
 			return jpg_frame.data.getByteArray(0, jpg_frame.size);
 		} catch (Exception e) {
-			throw new EncodeException("DecodeException "+e.getMessage());
+			throw new EncodeException("EncodeException "+e.getMessage());
 		}finally{
 			encoderLibrary.Destroy(jpg_frame);
 			pointer.dispose();

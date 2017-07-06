@@ -1,18 +1,16 @@
 package com.sengled.mediaworker.algorithm.context;
 
 import java.util.Date;
+import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
-import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
-import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 /**
  * 物体识别上下文管理
@@ -54,23 +52,14 @@ public class ObjectContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public ObjectContext findOrCreateStreamingContext(StreamingContext streamingContext){
-		String token = streamingContext.getToken();
-		ObjectContext context =  objectContextMap.get(token);
-		
-		ObjectConfig objectConfig =  streamingContext.getConfig().getObjectConfig();
-		ObjectConfig finalObjectConfig = new ObjectConfig();
-		BeanUtils.copyProperties(objectConfig, finalObjectConfig);
-		
+	public ObjectContext findOrCreateStreamingContext(String token,Date utcDate,ObjectConfig config){
+		ObjectContext context =  objectContextMap.get(token);	
 		if (context == null) {
 			context =  newObjectContext(token);
 		}
-
-		context.setUtcDateTime(streamingContext.getUtcDateTime());
-		context.setYuvImage(streamingContext.getYuvImage());
-		context.setNalData(streamingContext.getNalData());
-		context.setObjectConfig(finalObjectConfig);
+		context.setUtcDateTime(utcDate);
 		context.setContextUpdateTimestamp(System.currentTimeMillis());
+		context.setObjectConfig(config);
 		return context;
 	}
 	private ObjectContext newObjectContext(String token) {

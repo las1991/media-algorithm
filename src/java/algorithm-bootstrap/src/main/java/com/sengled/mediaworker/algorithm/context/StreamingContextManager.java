@@ -65,9 +65,9 @@ public class StreamingContextManager implements InitializingBean{
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token,String utcDateTime,FrameConfig config) throws AlgorithmIntanceCreateException{
 		StreamingContext context =  streamingContextMap.get(token);
-		MotionConfig modelConfig = config.getBaseConfig();
+		MotionConfig baseConfig = config.getBaseConfig();
 		if (context == null) {
-			context =  newAlgorithmContext(processor,token,utcDateTime, modelConfig);
+			context =  newAlgorithmContext(processor,token,utcDateTime, baseConfig);
 		}else{
 			//设置  数据中的UTC时间
 			context.setUtcDateTime(utcDateTime);

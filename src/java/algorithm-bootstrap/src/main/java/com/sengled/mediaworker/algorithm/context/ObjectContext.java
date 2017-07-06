@@ -2,10 +2,10 @@ package com.sengled.mediaworker.algorithm.context;
 
 import java.util.Date;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 
 /**
@@ -21,8 +21,6 @@ public class ObjectContext extends Context {
 	private String token;
 	private Long lastObjectTimestamp;
 	private Date utcDateTime;
-	private byte[] nalData;
-	private YUVImage yuvImage;
 	private ObjectConfig objectConfig;
 	//接收到数据的时间
 	private Long contextUpdateTimestamp = System.currentTimeMillis();
@@ -39,7 +37,7 @@ public class ObjectContext extends Context {
 	public boolean isSkip(long objectIntervalTimeMsce) {
 		boolean skip = false;
 		Date utcDateTime = getUtcDateTime();
-		LOGGER.info("lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,utcDateTime);
+		LOGGER.info("isSkip lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,DateFormatUtils.format(utcDateTime, UTC_DATE_FORMAT[0]));
 		if (lastObjectTimestamp != null && utcDateTime != null) {
 			long sinceLastMotion = (utcDateTime.getTime() - lastObjectTimestamp.longValue());
 
@@ -78,21 +76,6 @@ public class ObjectContext extends Context {
 		this.utcDateTime = utcDateTime;
 	}
 
-	public byte[] getNalData() {
-		return nalData;
-	}
-
-	public void setNalData(byte[] nalData) {
-		this.nalData = nalData;
-	}
-
-	public YUVImage getYuvImage() {
-		return yuvImage;
-	}
-
-	public void setYuvImage(YUVImage yuvImage) {
-		this.yuvImage = yuvImage;
-	}
 
 	public ObjectConfig getObjectConfig() {
 		return objectConfig;
