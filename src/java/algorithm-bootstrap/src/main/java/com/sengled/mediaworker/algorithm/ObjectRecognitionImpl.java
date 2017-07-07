@@ -251,10 +251,12 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 			Collection<Object> objectList = objectZoneidToBoxSet.getValue();
 			Collection<List<Integer>> motionList = motionZoneidToBox.get(zoneid);
-			for (List<Integer> motionBox : motionList) {
-				for (Object object : objectList) {
-					List<Integer> objectBox = object.bbox_pct;
+			for (Object object : objectList) {
+				List<Integer> objectBox = object.bbox_pct;
+				int areaSum = 0;
+				for (List<Integer> motionBox : motionList) {
 					int area = ImageUtils.area(objectBox, motionBox);
+					areaSum += area;
 					float  areaPercentObject= ImageUtils.areaPercent(objectBox, area);
 					float areaPercentMotion = ImageUtils.areaPercent(motionBox, area);
 					if (areaPercentObject >= objectAndMotionIntersectionPct && areaPercentMotion>= objectAndMotionIntersectionPct) {
@@ -267,7 +269,16 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 						}
 					}
 				}
+				float  areaSumPercentObject= ImageUtils.areaPercent(objectBox, areaSum);
+				if( areaSumPercentObject >= objectAndMotionIntersectionPct){
+					LOGGER.debug("step2Filter object and motion intersection area sum:{} ,zoneid:{}",areaSumPercentObject,zoneid);
+					if( ! hasObjSet.contains(object)){
+						result.put(zoneid,  object);
+						hasObjSet.add(object);
+					}
+				}
 			}
+			
 		}
 		return result;
 	}
