@@ -9,6 +9,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -117,7 +118,7 @@ public class StreamingContextManager implements InitializingBean{
 			StreamingContext context = entry.getValue();
 			long currentTime = System.currentTimeMillis();
 			long  updateTimestamp = context.getContextUpdateTimestamp();
-			LOGGER.info("Token:{},currentTime{},updateDate:{}",entry.getKey(),new Date(currentTime),new Date(updateTimestamp));
+			LOGGER.info("Token:{},currentTime{},updateDate:{}",entry.getKey(),DateFormatUtils.format(currentTime, Context.UTC_DATE_FORMAT[0]),DateFormatUtils.format(updateTimestamp,Context.UTC_DATE_FORMAT[0]));
 
 			if((currentTime - updateTimestamp ) >= CONTEXT_EXPIRE_TIME_MILLIS){
 				LOGGER.info("Token:{} Context expired clean...",context.getToken());

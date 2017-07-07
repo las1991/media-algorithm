@@ -122,83 +122,95 @@ int getForegroundMask(rvResource* rv, Mat& srcImg, Mat& fg_mask, int index)
 void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int limit,rvResource* rv, 
         int index, Rect &zone_rect )
 {
-	if ( fg_mask.empty() || index < 0 || index > 2 )
-	{
-		return;
-	}
-    
-    vector< vector<Point> > allContours;
-    vector< Vec4i > hierarchy,subHierarchy;
-    vector< vector<Point> > validContours;
-	vector< vector<Point> > invalidContours;
-    vector< vector<Point> > snowContours;
-
-	Mat fillContoursMat;
-	fg_mask.copyTo(fillContoursMat);
-    findContours(fg_mask, allContours, hierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-    int allConSize = allContours.size();
-    int valideMotionNum = 0;
-    for (size_t i = 0; i < allConSize; i++)
+    if ( fg_mask.empty() || index < 0 || index > 2 )
     {
-        if ( fabs(contourArea(Mat(allContours[i]))) >= limit ) //问题
-        {
-			valideMotionNum++;
+ 	return;
+    }
+    
+    Mat fillContoursMat;
+    fg_mask.copyTo(fillContoursMat);
+    
+    vector< Vec4i > hierarchy,subHierarchy;
+	
+    //two frame and operator
+    Mat diff,diff_mask;			
+    absdiff(grad_img,rv->bg_frame[index],diff);
+    threshold(diff,diff_mask,20,255,CV_THRESH_BINARY );
+    //two foreground frame and operator
+    Mat result;	
+    bitwise_and(fillContoursMat,diff_mask,result);
+    Mat element = getStructuringElement(MORPH_RECT,Size(3,3));
+    dilate(result,result,element,Point(-1,-1),1 );
+    //filter too small rect
+    RotatedRect rect;
+    vector< vector<Point> > tmpContours;
+    findContours(result, tmpContours, subHierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
+    int tmpsize = tmpContours.size();
+    Rect tmprect;
+    for (size_t i = 0; i < tmpsize; i++){
+        if ( fabs(contourArea(Mat(tmpContours[i]))) < limit ) {
+            continue;
         }
-		else
-		{
-            invalidContours.push_back( allContours[i] );
-		}
-    }    
-	
-	if ( invalidContours.size() > 0 )
-	{
-		drawContours(fillContoursMat, invalidContours, -1, Scalar(0), CV_FILLED, 8);
-	}
-	
-	
-	if ( valideMotionNum > 0 )
-	{
-		//two frame and operator
-		Mat diff,diff_mask;			
-		absdiff(grad_img,rv->bg_frame[index],diff);
-		threshold(diff,diff_mask,120,255,CV_THRESH_BINARY );
-		//Mat element = getStructuringElement(MORPH_RECT,Size(4,4));
-		//dilate(diff_mask,diff_mask,element,Point(-1,-1),1 );
-		//two foreground frame and operator
-		Mat result;	
-		bitwise_and(fillContoursMat,diff_mask,result);
-		Mat element = getStructuringElement(MORPH_RECT,Size(3,3));
-		dilate(result,result,element,Point(-1,-1),1 );
-		//filter too small rect
-		RotatedRect rect;
-		vector< vector<Point> > tmpContours;
-		findContours(result, tmpContours, subHierarchy, CV_RETR_EXTERNAL, CV_CHAIN_APPROX_SIMPLE);
-		int tmpsize = tmpContours.size();
-		Rect tmprect;
-		for (size_t i = 0; i < tmpsize; i++)
-		{
-			if ( fabs(contourArea(Mat(tmpContours[i]))) < limit ) //问题
-			{
-				continue;
-			}
-			//contours.push_back(tmpContours[i]); 
-            int index_size = tmpContours[i].size();
-            for( int j = 0; j < index_size; j++ )
-            {
-                tmpContours[i][j].x += zone_rect.x;
-                tmpContours[i][j].y += zone_rect.y;
+	    //contours.push_back(tmpContours[i]); 
+        int index_size = tmpContours[i].size();
+        for( int j = 0; j < index_size; j++ )
+        {
+            tmpContours[i][j].x += zone_rect.x;
+            tmpContours[i][j].y += zone_rect.y;
+        }
+	tmprect = boundingRect(tmpContours[i]);
+	rectangles.push_back(tmprect);
+    }
+
+    Rect vec_temp; 
+    for(unsigned int i = 1; i < rectangles.size(); i++){
+        for(unsigned int m = rectangles.size() - 1; m >= i; m--){
+            if(rectangles[m].x < rectangles[m - 1].x){
+                vec_temp = rectangles[m - 1]; 
+                rectangles[m - 1] = rectangles[m];
+                rectangles[m] = vec_temp;
             }
-			tmprect = boundingRect(tmpContours[i]);
-			rectangles.push_back(tmprect);
-		}	
-	}	
+        }
+    }
+    Rect temp;
+    for(unsigned int i = 0; i < rectangles.size(); i++){
+        for(unsigned int m = i + 1; m < rectangles.size(); m++){
+            if(rectangles[i].x + rectangles[i].width >= rectangles[m].x && rectangles[m].y <= rectangles[i].y + rectangles[i].height 
+                && rectangles[m].y + rectangles[m].height >= rectangles[i].y)
+            {
+                if(rectangles[i].x > rectangles[m].x)
+                    temp.x = rectangles[m].x;
+                else
+                    temp.x = rectangles[i].x;
+
+                if(rectangles[i].y > rectangles[m].y)
+                    temp.y = rectangles[m].y;
+                else
+                    temp.y = rectangles[i].y;
+    
+                if(rectangles[i].x + rectangles[i].width > rectangles[m].x + rectangles[m].width)
+                    temp.width = rectangles[i].x + rectangles[i].width - temp.x;
+                else
+                    temp.width = rectangles[m].x + rectangles[m].width - temp.x;
+
+                if(rectangles[i].y + rectangles[i].height > rectangles[m].y + rectangles[m].height)
+                    temp.height = rectangles[i].y + rectangles[i].height - temp.y;
+                else
+                    temp.height = rectangles[m].y + rectangles[m].height - temp.y;
+                rectangles[i] = temp;
+ 
+                rectangles.erase((vector<Rect>::iterator)(&rectangles[m]));
+                i--;
+                break;
+            }
+        }
+    } 	
+ 	
     //save current image
-	grad_img.copyTo(rv->bg_frame[index]);	
+    grad_img.copyTo(rv->bg_frame[index]);	
 	
     return;
 }
-
-
 
 void getEdge(Mat& src, Mat& dst)
 {
@@ -241,25 +253,119 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 	int zone_count = rv->pAlgoParams->motion_params.zone_count;
 	zone_count = zone_count > 3 ? 3:zone_count;
 	
-	map<int,cv::Rect> motion_zones;
-	for ( int i = 0; i < zone_count; i++ )
-	{
-		SLS_RoiRect roirect = rv->pAlgoParams->motion_params.zone_pos[i];
-		cv::Rect cvrect(roirect.x,roirect.y,roirect.width,roirect.height);
-		motion_zones[rv->pAlgoParams->motion_params.zone_id[i]] = cvrect;		
-	}	
+    map<int,cv::Rect> motion_zones;
+    for ( int i = 0; i < zone_count; i++ )
+    {
+        SLS_RoiRect roirect = rv->pAlgoParams->motion_params.zone_pos[i];
+        cv::Rect cvrect(roirect.x,roirect.y,roirect.width,roirect.height);
+        motion_zones[rv->pAlgoParams->motion_params.zone_id[i]] = cvrect;		
+    }
+    int zone_id0, zone_id1, zone_id2;
+    cv::Rect zrect0, zrect1, zrect2;
+    int delete_second = 0;
+    int delete_last = 0;
+    switch(zone_count){
+    case 1:
+	break;
+    case 2:
+        zone_id0 = rv->pAlgoParams->motion_params.zone_id[0];
+        zone_id1 = rv->pAlgoParams->motion_params.zone_id[1];
+        zrect0 = motion_zones[zone_id0];
+        zrect1 = motion_zones[zone_id1];
+
+        if(zrect0.x < zrect1.x && zrect0.y < zrect1.y && zrect0.x + zrect0.width > zrect1.x + zrect1.width 
+           && zrect0.y + zrect0.height > zrect1.y + zrect1.height){
+            motion_zones.erase(zone_id0);
+        }
+        
+        if(zrect1.x < zrect0.x && zrect1.y < zrect0.y && zrect1.x + zrect1.width > zrect0.x + zrect0.width 
+           && zrect1.y + zrect1.height > zrect0.y + zrect0.height){
+            motion_zones.erase(zone_id1);
+        }
+
+        break;
+    case 3:
+        zone_id0 = rv->pAlgoParams->motion_params.zone_id[0];
+        zone_id1 = rv->pAlgoParams->motion_params.zone_id[1];
+        zone_id2 = rv->pAlgoParams->motion_params.zone_id[2];
+        
+        zrect0 = motion_zones[zone_id0];
+        zrect1 = motion_zones[zone_id1];
+        zrect2 = motion_zones[zone_id2];
+
+        int first, second, last;
+        if(zrect0.x <= zrect1.x){
+            if(zrect0.x <= zrect2.x){
+                first = zone_id0;
+                if(zrect1.x <= zrect2.x){
+                    second = zone_id1;
+                    last = zone_id2;
+                }else{
+                    second = zone_id2;
+                    last = zone_id1;
+                }
+            }else{
+                first = zone_id2;
+                second = zone_id0;
+                last = zone_id1;
+            }
+        }else{
+            if(zrect1.x <= zrect2.x){
+               first = zone_id1;
+               if(zrect0.x <= zrect2.x){
+                   second = zone_id0;
+                   last = zone_id2;
+               }else{
+                   second = zone_id2;
+                   last = zone_id0;
+               }
+            }else{
+               first = zone_id2;
+               second = zone_id1;
+               last = zone_id0;
+            }
+        }
+        if(motion_zones[first].y < motion_zones[second].y 
+             && motion_zones[first].x + motion_zones[first].width > motion_zones[second].x + motion_zones[second].width
+             && motion_zones[first].y + motion_zones[first].height > motion_zones[second].y + motion_zones[second].height)
+        {
+            motion_zones.erase(second);
+            delete_second = 1;
+        }
+        if(motion_zones[first].y < motion_zones[last].y 
+           && motion_zones[first].x + motion_zones[first].width > motion_zones[last].x + motion_zones[last].width
+           && motion_zones[first].y + motion_zones[first].height > motion_zones[last].y + motion_zones[last].height)
+        {
+            motion_zones.erase(last);
+            delete_last = 1;
+        }
+        if(!delete_second && !delete_last){
+            if(motion_zones[second].y < motion_zones[last].y 
+              && motion_zones[second].x + motion_zones[second].width > motion_zones[last].x + motion_zones[last].width
+              && motion_zones[second].y + motion_zones[second].height > motion_zones[last].y + motion_zones[last].height)
+            {
+               motion_zones.erase(last);
+               delete_last = 1;
+            }
+        }
+        break;
+    default:
+        break;
+    }
 
     Mat grayimg(rv->frame_height,rv->frame_width,CV_8U, rv->srcFrame.data );	
 	Mat gradframe,dstmat;
-	if ( grayimg.cols != MINMUM_FRAME_WIDTH && grayimg.rows != MINMUM_FRAME_HEIGHT )
-	{
-		resize(grayimg,dstmat,Size(MINMUM_FRAME_WIDTH,MINMUM_FRAME_HEIGHT));
-		getEdge(dstmat, gradframe);
-	}
-	else
-	{
-		getEdge(grayimg, gradframe);
-	}
+    if ( grayimg.cols != MINMUM_FRAME_WIDTH && grayimg.rows != MINMUM_FRAME_HEIGHT )
+    {
+        resize(grayimg,dstmat,Size(MINMUM_FRAME_WIDTH,MINMUM_FRAME_HEIGHT));
+        dstmat.copyTo(gradframe);
+        //getEdge(dstmat, gradframe);
+    }
+    else
+    {
+        dstmat.copyTo(gradframe);
+        //getEdge(grayimg, gradframe);
+    }
     
     vector<Rect> rectangles;
     vector<int> zoneArray;
@@ -411,20 +517,4 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
     }  	
     
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
