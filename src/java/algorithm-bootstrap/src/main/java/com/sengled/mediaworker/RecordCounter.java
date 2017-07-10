@@ -49,6 +49,7 @@ public class RecordCounter implements InitializingBean{
     //以下为物体识别统计
     private AtomicLong  objectMotionCount = new AtomicLong();
     private AtomicLong  objectDataDelayedCount = new AtomicLong();
+    private AtomicLong  objectErrorCount = new AtomicLong();
     private Histogram   objectReceiveDelayHistogram;
     private Histogram   objectSingleDataProcessCostHistogram;
     
@@ -126,6 +127,12 @@ public class RecordCounter implements InitializingBean{
 	                return objectDataDelayedCount.getAndSet(0);
 	            }
 	        });
+	        metricRegistry.register( MetricRegistry.name(OBJECT_METRICS_NAME, "objectErrorCount"), new Gauge<Long>(){
+	            @Override
+	            public Long getValue() {
+	                return objectErrorCount.getAndSet(0);
+	            }
+	        });
 	        objectReceiveDelayHistogram = metricRegistry.register(MetricRegistry.name(OBJECT_METRICS_NAME, "objectReceiveDelay"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	        objectSingleDataProcessCostHistogram = metricRegistry.register(MetricRegistry.name(OBJECT_METRICS_NAME, "objectSingleDataProcessCost"),new Histogram(new SlidingWindowReservoir(HISTOGRAM_MAX_STORE)));
 	}
@@ -176,6 +183,9 @@ public class RecordCounter implements InitializingBean{
 	public void addAndGetObjectMotionCount(long value){
 		objectMotionCount.addAndGet(value);
 	}
+	public void addAndGetObjectErrorCount(long value) {
+		objectErrorCount.addAndGet(value);
+	}
 	public void addAndGetObjectDataDelayedCount(long value){
 		objectDataDelayedCount.addAndGet(value);
 	}
@@ -185,6 +195,6 @@ public class RecordCounter implements InitializingBean{
 	public void updateObjectSingleDataProcessCost(long value){
 		objectSingleDataProcessCostHistogram.update(value);
 	}
-	
+
 	
 }
