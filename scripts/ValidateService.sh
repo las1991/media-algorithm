@@ -5,7 +5,7 @@ if [ $? -ne 0 ];then
     private_ip=`ip -4 -o addr show eth0 |awk '{print $4}' | sed 's/\/.*//' 2>/dev/null`
 fi
 
-timeout=90
+timeout=300
 timeuse=0
 
 while true

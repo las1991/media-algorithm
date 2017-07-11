@@ -82,21 +82,21 @@ hooks:
        runas: root
   ApplicationStart:
      - location: /opt/sengled/apps/scripts/ApplicationStart.sh 
-       timeout: 30
+       timeout: 300
        runas: root
   ValidateService:
      - location: /opt/sengled/apps/scripts/ValidateService.sh 
-       timeout: 120
+       timeout: 300
        runas: root
   ApplicationStop:
      - location: /opt/sengled/apps/scripts/ApplicationStop.sh 
-       timeout: 30
+       timeout: 300
        runas: root
   ApplicationRestart:
      - location: /opt/sengled/apps/scripts/ApplicationRestart.sh 
-       timeout: 30
+       timeout: 300
        runas: root
   ApplicationReload:
      - location: /opt/sengled/apps/scripts/ApplicationReload.sh 
-       timeout: 30
+       timeout: 300
        runas: root
