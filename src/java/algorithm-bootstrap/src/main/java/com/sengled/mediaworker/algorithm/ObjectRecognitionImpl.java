@@ -149,8 +149,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
 		
 		//请求Object服务
-		if ( ! result.responseOk() && StringUtils.isNotBlank(result.getBody())) {
+		if ( ! result.responseOk() || StringUtils.isBlank(result.getBody())) {
 			LOGGER.error("object recognition HttpResponseResult{}", result);
+			recordCounter.addAndGetObjectErrorCount(1);
 			return ;
 		}
 
