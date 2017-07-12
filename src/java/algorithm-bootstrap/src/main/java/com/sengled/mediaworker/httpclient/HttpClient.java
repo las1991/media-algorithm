@@ -27,9 +27,9 @@ public class HttpClient implements IHttpClient {
 	public HttpClient(HttpClientConfig config){
 		cm = new PoolingHttpClientConnectionManager();
 		requestConfig = RequestConfig.custom()
-				 .setConnectionRequestTimeout(1000)//从连接池获取连接超时
+				 .setConnectionRequestTimeout(3000)//从连接池获取连接超时
 				 .setSocketTimeout(config.getSocketTimeout())//数据传输超时
-				 .setConnectTimeout(1000)//建立连接超时
+				 .setConnectTimeout(3000)//建立连接超时
 				 .build();
 		cm.setMaxTotal(config.getHttpPoolNum());//连接池SIZE
 		cm.setDefaultMaxPerRoute(config.getMaxPerRoute()); //连接每个远程主机数据的SIZE 
