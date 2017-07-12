@@ -8,10 +8,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
@@ -98,7 +102,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		try {
 			executors = new ArrayList<ExecutorService>(threadNum);
 			for (int i=0;i<threadNum;i++) {
-				executors.add(Executors.newSingleThreadExecutor()); 
+				ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(10);
+	            ThreadPoolExecutor pool = new ThreadPoolExecutor(1, 1,0L, TimeUnit.MILLISECONDS,queue,new ThreadPoolExecutor.AbortPolicy());
+				executors.add(pool); 
 			}
 			eventBus = new AsyncEventBus(Executors.newFixedThreadPool(EVENT_BUS_THREAD_COUNT));
 			eventBus.register(objectEventHandler);
@@ -110,23 +116,25 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 	
 	@Override
-	public Future<?> submit(String token,ObjectConfig oc, Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr) {
+	public void submit(String token,ObjectConfig oc, Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr) {
 		//hash token 提交到指定线程队列中
 		int hashCode = Math.abs(token.hashCode());
 		int threadIndex = hashCode % threadNum;
 		LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
 		
-		return executors.get(threadIndex).submit(new Callable<Void>() {
-			@Override
-			public Void call() throws Exception {
-				try {
-					handle(token,oc,utcDate,yuvImage,nalData,mfr);
-				} catch (Exception e) {
-					LOGGER.error(e.getMessage(),e);
+		
+		ExecutorService thread = executors.get(threadIndex);
+		try {
+			thread.submit(new Callable<Void>() {
+				@Override
+				public Void call() throws Exception {
+						handle(token,oc,utcDate,yuvImage,nalData,mfr);
+					return null;
 				}
-				return null;
-			}
-		});
+			});
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+		}
 	}
 	
 	private void handle(String token, ObjectConfig oc,Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr)throws Exception{
