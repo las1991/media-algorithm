@@ -353,7 +353,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
         break;
     }
 
-    Mat grayimg(rv->frame_height,rv->frame_width,CV_8U, rv->srcFrame.data );	
+    Mat grayimg(rv->frame_height,rv->frame_width,CV_8U, rv->srcFrame.data);	
 	Mat gradframe,dstmat;
     if ( grayimg.cols != MINMUM_FRAME_WIDTH && grayimg.rows != MINMUM_FRAME_HEIGHT )
     {
@@ -363,7 +363,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
     }
     else
     {
-        dstmat.copyTo(gradframe);
+        grayimg.copyTo(gradframe);
         //getEdge(grayimg, gradframe);
     }
     
