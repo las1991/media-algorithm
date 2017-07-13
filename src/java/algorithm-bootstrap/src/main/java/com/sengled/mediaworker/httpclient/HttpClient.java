@@ -1,8 +1,11 @@
 package com.sengled.mediaworker.httpclient;
 
+import java.io.IOException;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.config.RequestConfig;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
@@ -23,7 +26,7 @@ public class HttpClient implements IHttpClient {
 	private  PoolingHttpClientConnectionManager cm = null;
 	private  RequestConfig requestConfig = null;
 	private long keepaliveMs = 1000;
-	
+	private CloseableHttpClient client;
 	public HttpClient(HttpClientConfig config){
 		cm = new PoolingHttpClientConnectionManager();
 		requestConfig = RequestConfig.custom()
@@ -34,24 +37,22 @@ public class HttpClient implements IHttpClient {
 		cm.setMaxTotal(config.getHttpPoolNum());//连接池SIZE
 		cm.setDefaultMaxPerRoute(config.getMaxPerRoute()); //连接每个远程主机数据的SIZE 
 		this.keepaliveMs = config.getKeepaliveMs();
-	}
-
-	public   HttpResponseResult  get(String url){
-		LOGGER.debug("request url:" + url);
-		HttpResponseResult hrr = new HttpResponseResult();
-		CloseableHttpClient client = HttpClients.custom()
+		client = HttpClients.custom()
 				.setConnectionManager(cm)
 				.useSystemProperties()
 				.disableConnectionState()
 				.setDefaultRequestConfig(requestConfig)
 				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy(){
-
 					@Override
 					public long getKeepAliveDuration(HttpResponse arg0, HttpContext arg1) {
 						return keepaliveMs;
 					}
-				})
-				.build();
+				}).build();
+	}
+
+	public   HttpResponseResult  get(String url){
+		LOGGER.debug("request url:" + url);
+		HttpResponseResult hrr = new HttpResponseResult();
 		HttpGet httpGet = new HttpGet(url);
 		try {
 			// 执行get请求
@@ -79,18 +80,6 @@ public class HttpClient implements IHttpClient {
 		LOGGER.debug("request url:" + url);
 		LOGGER.debug("request postdata:" + postdata);
 		HttpResponseResult hrr = new HttpResponseResult();
-		CloseableHttpClient client = HttpClients.custom()
-				.setConnectionManager(cm)
-				.useSystemProperties()
-				.disableConnectionState()
-				.setDefaultRequestConfig(requestConfig)
-				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy(){
-					@Override
-					public long getKeepAliveDuration(HttpResponse arg0, HttpContext arg1) {
-						return keepaliveMs;
-					}
-				})
-				.build();
 
 		try {
 			HttpPost httpPost = new HttpPost(url);
@@ -121,24 +110,13 @@ public class HttpClient implements IHttpClient {
 		LOGGER.debug("request url:" + url);
 		
 		HttpResponseResult hrr = new HttpResponseResult();
-		CloseableHttpClient client = HttpClients.custom()
-				.setConnectionManager(cm)
-				.useSystemProperties()
-				.disableConnectionState()
-				.setDefaultRequestConfig(requestConfig)
-				.setKeepAliveStrategy(new ConnectionKeepAliveStrategy(){
-					@Override
-					public long getKeepAliveDuration(HttpResponse arg0, HttpContext arg1) {
-						return keepaliveMs;
-					}
-				})
-				.build();
 
 		HttpPut putRequest = new HttpPut(url);
 		putRequest.setEntity(putEntity );
+		CloseableHttpResponse  httpResponse = null;
 		try {
 			// 执行put请求
-			HttpResponse httpResponse = client.execute(putRequest);
+			httpResponse = client.execute(putRequest);
 			// 获取响应消息实体
 			HttpEntity entity = httpResponse.getEntity();
 			// 响应状态
@@ -152,9 +130,19 @@ public class HttpClient implements IHttpClient {
 				hrr.setBody(body);
 				return hrr;
 			}
+			
 		} catch (Exception e) {
 			LOGGER.error("put {}, {}", url, e.getMessage());
+		}finally{
+			if( null != httpResponse){
+				try {
+					httpResponse.close();
+				} catch (IOException e2) {
+					LOGGER.error(e2.getMessage(),e2);
+				}
+			}
 		}
+		System.out.println("cm:"+cm.getTotalStats());
 		return hrr;
 	}
 	
@@ -199,9 +187,7 @@ public class HttpClient implements IHttpClient {
 		}
 		
 	}
-	
 	public int getAvailable(){
 		return cm.getTotalStats().getAvailable();
-	}
-	
+	}	
 }
