@@ -24,10 +24,7 @@ public class ExecAction extends Action {
 		YUVImage yuvImage = processor.decode(token, context.getNalData());
 		context.setYuvImage(yuvImage);
 		LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
-		//debug
-		if( null != yuvImage){
-			LOGGER.info("decode yuvImage width:{} height:{}",yuvImage.getWidth(),yuvImage.getHeight());
-		}
+
 		long startTime = System.currentTimeMillis();
 		String text = processor.feed(context.getAlgorithm(), yuvImage);
 		LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),text.trim());

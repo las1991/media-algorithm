@@ -30,7 +30,6 @@ public class RecordProcessorFactory implements IRecordProcessorFactory,Initializ
 	@Override
 	public void afterPropertiesSet() throws Exception {
     	LOGGER.info("RecordProcessorFactory afterPropertiesSet...");
-		//processorManager.setFeedListener(feedListener);
 	}
 	
     /**
