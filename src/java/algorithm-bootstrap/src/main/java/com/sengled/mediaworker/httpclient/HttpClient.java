@@ -25,9 +25,9 @@ public class HttpClient implements IHttpClient {
 	
 	private  PoolingHttpClientConnectionManager cm = null;
 	private  RequestConfig requestConfig = null;
-	private long keepaliveMs = 1000;
 	private CloseableHttpClient client;
 	public HttpClient(HttpClientConfig config){
+		final long keepaliveMs = config.getKeepaliveMs();
 		cm = new PoolingHttpClientConnectionManager();
 		requestConfig = RequestConfig.custom()
 				 .setConnectionRequestTimeout(3000)//从连接池获取连接超时
@@ -36,7 +36,6 @@ public class HttpClient implements IHttpClient {
 				 .build();
 		cm.setMaxTotal(config.getHttpPoolNum());//连接池SIZE
 		cm.setDefaultMaxPerRoute(config.getMaxPerRoute()); //连接每个远程主机数据的SIZE 
-		this.keepaliveMs = config.getKeepaliveMs();
 		client = HttpClients.custom()
 				.setConnectionManager(cm)
 				.useSystemProperties()
@@ -142,7 +141,6 @@ public class HttpClient implements IHttpClient {
 				}
 			}
 		}
-		System.out.println("cm:"+cm.getTotalStats());
 		return hrr;
 	}
 	
