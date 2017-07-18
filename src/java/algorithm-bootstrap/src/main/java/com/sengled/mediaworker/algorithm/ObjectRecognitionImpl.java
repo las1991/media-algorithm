@@ -315,7 +315,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				float objectBoxPct = ImageUtils.areaPercent(objectBox, area);
 				float zoneBoxpercent = ImageUtils.areaPercent(zoneBox, area);
 				LOGGER.debug("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
-				if (objectBoxPct >= objectAndZoneIntersectionPct && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
+				//if (objectBoxPct >= objectAndZoneIntersectionPct && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
+				if (objectBoxPct >= objectAndZoneIntersectionPct &&  "person".equals(objectType)) {
 					finalObjectsResult.put(data.getId(), object);
 					LOGGER.debug("step1Filter zoneid:{} object:{}", data.getId(), object);
 				}
