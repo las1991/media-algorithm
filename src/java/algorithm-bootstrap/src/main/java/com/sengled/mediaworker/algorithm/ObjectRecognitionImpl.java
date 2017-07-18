@@ -152,6 +152,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		HttpEntity putEntity = new ByteArrayEntity(nalData);
 		HttpResponseResult result = httpclient.put(objectRecognitionUrl, putEntity);
 		
+		
 		long objectCost = System.currentTimeMillis() - startTime;
 		recordCounter.updateObjectSingleDataProcessCost(objectCost);
 		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
@@ -163,6 +164,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			return ;
 		}
 
+		//FIXME debug
+        LOGGER.info("Token:{},httpclient result:{}",token,result);
+				
 		//Object 响应结果
 		JSONObject objectResponseBodyJson = JSONObject.parseObject(result.getBody());
 		if (null == objectResponseBodyJson || objectResponseBodyJson.getJSONArray("objects").isEmpty()) {
