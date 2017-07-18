@@ -307,6 +307,10 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		for (Object object : objectRecognitionResult.objects) {
 			String objectType = object.type;
 			List<Integer> objectBox = object.bbox_pct;
+			//FIXME
+			if(object.score < 0.8d){
+				continue;
+			}
 			
 			// zone
 			List<Data> dataList = objectConfig.getDataList();// zone 配置
