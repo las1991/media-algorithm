@@ -8,6 +8,7 @@ import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
@@ -16,13 +17,13 @@ public class ExecAction extends Action {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ExecAction.class);
 
 	@Override
-	public void feed(StreamingContext context, FeedListener[] listeners) throws Exception {
+	public void feed(StreamingContext context, final Frame frame,final FeedListener[] listeners) throws Exception {
 
 		final String token = context.getToken();
 		ProcessorManager processor = context.getProcessorManager();
 		
-		YUVImage yuvImage = processor.decode(token, context.getNalData());
-		context.setYuvImage(yuvImage);
+		final YUVImage yuvImage = processor.decode(token, frame.getNalData());
+		
 		LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
 
 		long startTime = System.currentTimeMillis();
@@ -40,7 +41,7 @@ public class ExecAction extends Action {
 		}
 		for(FeedListener listener : listeners){
 			try {
-				listener.feedResultHandle(context,motionFeedResult);
+				listener.feedResultHandle(context,yuvImage,frame.getNalData(),motionFeedResult);
 			} catch (Exception e) {
 				LOGGER.error(e.getMessage(),e);
 			}

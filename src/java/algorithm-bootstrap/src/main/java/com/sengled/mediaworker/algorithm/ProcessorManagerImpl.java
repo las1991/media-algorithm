@@ -80,7 +80,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			recordCounter.updateWaitProcessCost(waitProcessCost);
 			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
 			
-			actionHandle(token, frame.getConfig(), frame.getNalData());
+			actionHandle(token, frame);
 			
 			long processCost = System.currentTimeMillis() -  handleStartTime;
 			recordCounter.updateSingleDataProcessCost(processCost);
@@ -88,59 +88,61 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 	}
 	
-	private void actionHandle(String token,FrameConfig config, final byte[] nalData) {
+	private void actionHandle(String token,Frame frame) {
+		FrameConfig config = frame.getConfig();
+		if( null == config  ||  null == config.getBaseConfig()){
+			LOGGER.error("Token:{} FrameConfig:{}  error",token,config);
+			return;
+		}
 	
 		if(null == config.getMotionConfig() && null == config.getObjectConfig()){
 			LOGGER.info("Token:{} Motion off,Object off",token);
 			return;
 		}
 		
-		if( null != config.getBaseConfig() ){
-			String utcDateTime = config.getUtcDateTime();
-			String action = config.getAction();
-			LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
-			
-			//获得上下文
-			StreamingContext context;
-			try {
-				context = streamingContextManager.findOrCreateStreamingContext(this, token, utcDateTime,config);
-				context.setNalData(nalData);
-			} catch (Exception e) {
-				LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
-				return;
-			}
-			//过滤数据
-			try {
-				if(context.isDataExpire(maxDelayedTimeMsce)){
-						return;
-				}
-				context.reportCheck(motionIntervalTimeMsce);
-			} catch (Exception e2) {
-				LOGGER.error("Token:{}  skip...",token);
-				LOGGER.error(e2.getMessage(),e2);
-				return;
-			}				
-			//处理
-			switch (action) {
-				case "open":
-					context.setAction(context.openAction);
-					break;
-				case "exec":
-					context.setAction(context.execAction);
-					break;
-				case "close":
-					context.setAction(context.closeAction);
-					break;
-				default:
-					LOGGER.error("Token:{},action:{} not supported", token,action);
+		String utcDateTime = config.getUtcDateTime();
+		String action = config.getAction();
+		LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
+		
+		//获得上下文
+		StreamingContext context;
+		try {
+			context = streamingContextManager.findOrCreateStreamingContext(this, token, utcDateTime,config);
+		} catch (Exception e) {
+			LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
+			return;
+		}
+		//过滤数据
+		try {
+			if(context.isDataExpire(maxDelayedTimeMsce)){
 					return;
 			}
-			try {
-				context.feed(feedListeners);
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(),e);
+			context.reportCheck(motionIntervalTimeMsce);
+		} catch (Exception e2) {
+			LOGGER.error("Token:{}  skip...",token);
+			LOGGER.error(e2.getMessage(),e2);
+			return;
+		}				
+		//处理
+		switch (action) {
+			case "open":
+				context.setAction(context.openAction);
+				break;
+			case "exec":
+				context.setAction(context.execAction);
+				break;
+			case "close":
+				context.setAction(context.closeAction);
+				break;
+			default:
+				LOGGER.error("Token:{},action:{} not supported", token,action);
 				return;
-			}
+		}
+		try {
+			context.feed(frame, feedListeners);
+		} catch (Exception e) {
+			LOGGER.error(e.getMessage(),e);
+			return;
 		}
 	}
 	@Override
