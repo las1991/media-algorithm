@@ -2,6 +2,7 @@ package com.sengled.mediaworker.algorithm.feedlistener;
 
 import java.awt.Color;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -54,7 +55,7 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 	}
 
 	@Override
-	public void feedResultHandle(StreamingContext context, MotionFeedResult motionFeedResult) throws Exception{
+	public void feedResultHandle(StreamingContext context, YUVImage yuvImage, byte[] nalData,MotionFeedResult motionFeedResult) throws Exception {
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
 		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
@@ -64,13 +65,11 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		}
 		
 		String token =  context.getToken();
-		if(!context.isReport()){
+		if( ! context.isReport() ){
 			LOGGER.debug("Token:{} get Motion.But isReport is false.",token);
 			return;
 		}
 		ZoneInfo  zone = motionFeedResult.motion.get(0);
-		YUVImage yuvImage = context.getYuvImage();
-		
 		byte[] jpgData;
 		try {
 			jpgData = processorManagerImpl.encode(context.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
@@ -95,8 +94,9 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		}
 
 		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.zone_id);
-		MotionEvent event = new MotionEvent(token,context.getUtcDateTime(),jpgData,zone.zone_id+"");
-		eventBus.post(event );
-		context.setLastMotionTimestamp(context.getUtcDateTime().getTime());
+		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
+		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,zone.zone_id.intValue()+"");
+		eventBus.post(event);
+		context.setLastMotionTimestamp(copyUtcDate.getTime());
 	}
 }

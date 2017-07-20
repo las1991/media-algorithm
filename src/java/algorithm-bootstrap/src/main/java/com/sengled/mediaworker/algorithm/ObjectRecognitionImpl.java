@@ -133,6 +133,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 				}
 			});
 		} catch (Exception e) {
+			LOGGER.error("ThreadPool AbortPolicy");
 			LOGGER.error(e.getMessage(),e);
 		}
 	}

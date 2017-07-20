@@ -17,6 +17,7 @@ import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
+import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 
@@ -41,8 +42,7 @@ public class StreamingContext extends Context{
 	private Long contextCreateTimestamp;
 	//配置
 	private FrameConfig config;
-	private byte[] nalData;
-	private YUVImage yuvImage;
+
 	private boolean isReport = true;
 	private Algorithm algorithm;
 	private Action action;
@@ -73,11 +73,11 @@ public class StreamingContext extends Context{
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", token);
 	}
 
-	public void feed(final FeedListener[] listeners) throws Exception {
-		if (nalData == null || listeners == null) {
+	public void feed(final Frame frame,final FeedListener[] listeners) throws Exception {
+		if ( listeners == null) {
 			throw new IllegalArgumentException("params exception.");
 		}
-		action.feed(this, listeners);
+		action.feed(this, frame, listeners);
 	}
 
 	public Date getUtcDateTime() {
@@ -201,21 +201,6 @@ public class StreamingContext extends Context{
 		this.config = config;
 	}
 
-	public byte[] getNalData() {
-		return nalData;
-	}
-
-	public void setNalData(byte[] nalData) {
-		this.nalData = nalData;
-	}
-
-	public YUVImage getYuvImage() {
-		return yuvImage;
-	}
-
-	public void setYuvImage(YUVImage yuvImage) {
-		this.yuvImage = yuvImage;
-	}
 
 	@Override
 	public String toString() {
