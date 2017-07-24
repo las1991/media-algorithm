@@ -151,15 +151,14 @@ void getValidContours( Mat &grad_img,Mat& fg_mask, vector<Rect>& rectangles, int
         if ( fabs(contourArea(Mat(tmpContours[i]))) < limit ) {
             continue;
         }
-	    //contours.push_back(tmpContours[i]); 
+        //contours.push_back(tmpContours[i]); 
         int index_size = tmpContours[i].size();
-        for( int j = 0; j < index_size; j++ )
-        {
+        for( int j = 0; j < index_size; j++ ){
             tmpContours[i][j].x += zone_rect.x;
             tmpContours[i][j].y += zone_rect.y;
         }
-	tmprect = boundingRect(tmpContours[i]);
-	rectangles.push_back(tmprect);
+        tmprect = boundingRect(tmpContours[i]);
+        rectangles.push_back(tmprect);
     }
 
     Rect vec_temp; 
@@ -247,7 +246,7 @@ void getEdge(Mat& src, Mat& dst)
 
 void mMotionAction(rvResource* rv,algorithm_result *result)
 {
-	//check is enable motion action
+    //check is enable motion action
     SLS_CommonSettingParams setting_params = rv->pAlgoParams->motion_setting_params;
 	
     int zone_count = rv->pAlgoParams->motion_params.zone_count;
@@ -438,7 +437,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
             }
             
             rectangles.clear();
-            getValidContours( roiImg,fg_mask, rectangles, (int)(roiImg.cols * roiImg.rows / setting_params.sensitivity),
+            getValidContours( roiImg,fg_mask, rectangles, (int)(MINMUM_FRAME_WIDTH * MINMUM_FRAME_HEIGHT / setting_params.sensitivity),
 		    	rv,distance(motion_zones.begin(), it) ,rect);
 			
             if( rectangles.size() > 0 )
