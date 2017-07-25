@@ -24,7 +24,7 @@ public class JNIFunction {
 			public void doLog(String chars) {
 		        final int lastCharIndex = chars.length() - 1;
 				if (chars.length() > 0 && '\n' == chars.charAt(lastCharIndex)) {
-					LOGGER.debug("{}.\\n", chars.substring(0, lastCharIndex - 1));
+					LOGGER.debug("{}.\\n", chars.substring(0, lastCharIndex));
 				} else {
 					LOGGER.debug("{}.", chars);
 				}
@@ -38,7 +38,7 @@ public class JNIFunction {
 			public void doLog(String chars) {
 		        final int lastCharIndex = chars.length() - 1;
 				if (chars.length() > 0 && '\n' == chars.charAt(lastCharIndex)) {
-					LOGGER.info("{}.\\n", chars.substring(0, lastCharIndex - 1));
+					LOGGER.info("{}.\\n", chars.substring(0, lastCharIndex));
 				} else {
 					LOGGER.info("{}.", chars);
 				}
@@ -52,7 +52,7 @@ public class JNIFunction {
 			public void doLog(String chars) {
 		        final int lastCharIndex = chars.length() - 1;
 				if (chars.length() > 0 && '\n' == chars.charAt(lastCharIndex)) {
-					LOGGER.warn("{}.\\n", chars.substring(0, lastCharIndex - 1));
+					LOGGER.warn("{}.\\n", chars.substring(0, lastCharIndex));
 				} else {
 					LOGGER.warn("{}.", chars);
 				}
@@ -65,7 +65,7 @@ public class JNIFunction {
 			public void doLog(String chars) {
 		        final int lastCharIndex = chars.length() - 1;
 				if (chars.length() > 0 && '\n' == chars.charAt(lastCharIndex)) {
-					LOGGER.error("{}.\\n", chars.substring(0, lastCharIndex - 1));
+					LOGGER.error("{}.\\n", chars.substring(0, lastCharIndex));
 				} else {
 					LOGGER.error("{}.", chars);
 				}
@@ -149,6 +149,4 @@ public class JNIFunction {
     public native long getLog4CFunction();
     
     public native int invokeLog4CFunction(long funcPtr, int level, String hello);
-    
-  
 }
