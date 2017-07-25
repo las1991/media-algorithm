@@ -201,6 +201,8 @@ public class KinesisFrameDecoder {
 		public void setId(int id) {
 			this.id = id;
 		}
+		
+		@JSONField(serialize=false)
 		public List<Integer> getPosList() {
 			String[] poss = pos.split(",");
 			if(4 != poss.length){
@@ -237,5 +239,4 @@ public class KinesisFrameDecoder {
 		}
     	
     }
-    
 }

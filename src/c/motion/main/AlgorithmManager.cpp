@@ -70,7 +70,7 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
             error_code = -1;
             break;
         }
-        rv->plog->log_print(SLS_LOG_DEBUG,"sensitivity=%d\n",psensi->valueint);
+        rv->plog->log_print(SLS_LOG_DEBUG,"sensitivity=%d",psensi->valueint);
         rv->pAlgoParams->motion_setting_params.sensitivity = psensi->valueint;
 
         cJSON *pparam_array= cJSON_GetObjectItem(pjson,"dataList");
@@ -105,15 +105,30 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
                 error_code = -1;
                 break;
             }
-            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%d\n",subitem->string,subitem->valueint);
-            rv->pAlgoParams->motion_params.zone_id[i] = subitem->valueint;
+            
+            cJSON *pid = cJSON_GetObjectItem(item,"id");
+            if( pid == NULL )
+            {
+                rv->plog->log_print(SLS_LOG_ERROR,"parse json id error");
+                break;
+            }
 
-            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%s\n",subitem->next->string,subitem->next->valuestring);
-            char *str = subitem->next->valuestring;
+            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%d","id", pid->valueint);
+            rv->pAlgoParams->motion_params.zone_id[i] = pid->valueint;
+
+            cJSON *ppos = cJSON_GetObjectItem(item,"pos");
+            if( ppos == NULL )
+            {
+                rv->plog->log_print(SLS_LOG_ERROR,"parse json pos error");
+                break;
+            }
+
+            rv->plog->log_print(SLS_LOG_DEBUG,"%s:%s", "pos", ppos->valuestring);
+            char *str = ppos->valuestring;
             //char *token = strtok(str,",");
             int z_pos[4]={0},count=0;
             GetPos(str,z_pos);
-            rv->plog->log_print(SLS_LOG_DEBUG,"%d:%d:%d:%d\n",z_pos[0],z_pos[1],z_pos[2],z_pos[3]);
+            rv->plog->log_print(SLS_LOG_DEBUG,"%d:%d:%d:%d",z_pos[0],z_pos[1],z_pos[2],z_pos[3]);
 
             rv->pAlgoParams->motion_params.zone_pos[i].x = z_pos[0];
             rv->pAlgoParams->motion_params.zone_pos[i].y = z_pos[1];
