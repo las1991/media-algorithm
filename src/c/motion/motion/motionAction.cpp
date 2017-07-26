@@ -15,6 +15,8 @@
 using namespace std;
 using namespace cv;
 
+#define INNER_SENSITIVITY   (MINMUM_FRAME_WIDTH * MINMUM_FRAME_HEIGHT * 0.08 * 0.08)
+
 //--------------------------------------------------------------------------------
 
 //report motion event
@@ -32,6 +34,25 @@ void reportMotionEvent(rvResource* rv, bool is_motion, map< int,vector<Rect> > &
         int zone_id;
         vector<Rect> rects;
         Rect rect;
+
+        int rect_area = 0;
+        for( it = detect_results.begin(); it != detect_results.end(); it++ )
+        {
+            rects = it->second;
+            int rsize = rects.size();
+            for(int i = 0; i < rsize; i++)
+            {
+                rect = rects[i];
+                rect_area += rect.width * rect.height;
+            }
+        }
+        if(rect_area < INNER_SENSITIVITY)
+        {
+             res_describe->bresult = false;
+             cJSON_Delete(root);
+             return;
+        }
+
         for( it = detect_results.begin(); it != detect_results.end(); it++ )
         {
             zone_id = it->first;

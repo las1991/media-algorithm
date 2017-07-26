@@ -12,8 +12,6 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -305,29 +303,29 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 */
 	private Multimap<Integer, Object> step1Filter(ObjectRecognitionResult objectRecognitionResult,ObjectConfig objectConfig) {
 		Multimap<Integer, Object> finalObjectsResult = ArrayListMultimap.create();//zoneid->Object
-		for (Object object : objectRecognitionResult.objects) {
-			String objectType = object.type;
-			List<Integer> objectBox = object.bbox_pct;
+		for (Object resultObject : objectRecognitionResult.objects) {
+			String resultObjectType = resultObject.type;     //eg: person|cat|cat|dog
+			List<Integer> objectBox = resultObject.bbox_pct;
 			//FIXME
-			if(object.score < 0.8d){
+			if(resultObject.score < 0.8d){
 				continue;
 			}
 			
 			// zone
 			List<Data> dataList = objectConfig.getDataList();// zone 配置
-			for (Data data : dataList) {
-				String objectTypes = data.getObjectList();
+			for (Data zoneData : dataList) {
+				String objectTypesConf = zoneData.getObjectList(); //eg:1,2,3 see:ObjectType
 				// 判断与物体识别结果相交
-				List<Integer> pos = data.getPosList();
+				List<Integer> pos = zoneData.getPosList();
 				List<Integer> zoneBox = ImageUtils.convert2spotLocation(pos);
 				int area = ImageUtils.area(objectBox, zoneBox);
 				float objectBoxPct = ImageUtils.areaPercent(objectBox, area);
 				float zoneBoxpercent = ImageUtils.areaPercent(zoneBox, area);
-				LOGGER.debug("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", object, data, area,objectBoxPct, zoneBoxpercent);
-				//if (objectBoxPct >= objectAndZoneIntersectionPct && objectTypes.contains(ObjectType.findByName(objectType).value + "")) {
-				if (objectBoxPct >= objectAndZoneIntersectionPct &&  "person".equals(objectType)) {
-					finalObjectsResult.put(data.getId(), object);
-					LOGGER.debug("step1Filter zoneid:{} object:{}", data.getId(), object);
+				LOGGER.debug("object:{} data:{}  intersection area:{} objectBoxPct:{}, zoneBoxpercent:{}", resultObject, zoneData, area,objectBoxPct, zoneBoxpercent);
+				if (objectBoxPct >= objectAndZoneIntersectionPct && objectTypesConf.contains(ObjectType.findByName(resultObjectType).value + "")) {
+				//if (objectBoxPct >= objectAndZoneIntersectionPct &&  "person".equals(objectType)) {
+					finalObjectsResult.put(zoneData.getId(), resultObject);
+					LOGGER.debug("step1Filter zoneid:{} object:{}", zoneData.getId(), resultObject);
 				}
 			}
 		}
