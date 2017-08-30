@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.algorithm;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -146,7 +147,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}
 	}
 	@Override
-	public YUVImage decode(final String token,final byte[] nalData) throws DecodeException{
+	public List<YUVImage> decode(final String token,final byte[] nalData) throws DecodeException{
 		return jnaInterface.decode(token, nalData);
 	}
 	

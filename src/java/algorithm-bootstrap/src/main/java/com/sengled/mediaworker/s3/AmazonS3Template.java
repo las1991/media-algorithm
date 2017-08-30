@@ -50,8 +50,7 @@ public class AmazonS3Template {
 		try {
 			ObjectMetadata objectMetadata = new ObjectMetadata();
 			objectMetadata.setContentLength(length);
-			PutObjectRequest putObjectRequest = new PutObjectRequest(
-					bucketName,key, data, objectMetadata);
+			PutObjectRequest putObjectRequest = new PutObjectRequest(bucketName,key, data, objectMetadata);
 			return client().putObject(putObjectRequest);
 		} catch (AmazonClientException ex) {
 			throw new IOException(ex.getMessage(), ex);

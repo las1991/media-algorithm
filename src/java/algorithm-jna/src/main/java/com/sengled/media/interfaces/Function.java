@@ -1,5 +1,7 @@
 package com.sengled.media.interfaces;
 
+import java.util.List;
+
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.media.interfaces.exceptions.DecodeException;
@@ -8,7 +10,7 @@ import com.sengled.media.interfaces.exceptions.FeedException;
 
 public interface Function {
 
-	YUVImage decode(String token,byte[] nalData)throws DecodeException;
+    List<YUVImage> decode(String token,byte[] nalData)throws DecodeException;
 	
 	byte[] encode(String token,int width,int height,int dstWidth,int dstHeight,byte[] yuvData) throws EncodeException;
 	

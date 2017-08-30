@@ -25,20 +25,20 @@ public interface Nal_decoderLibrary extends Library {
 	 */
 	int Init();
 	/**
-	 * Original signature : <code>int DecodeNal(char*, int, const char*, YUVFrame*)</code><br>
+	 * Original signature : <code>int DecodeNal(char*, int, const char*, YUVFrame2*)</code><br>
 	 * <i>native declaration : nal_decoder.h:8</i><br>
-	 * @deprecated use the safer methods {@link #DecodeNal(java.nio.ByteBuffer, int, java.lang.String, com.sengled.media.jna.nal_decoder.YUVFrame)} and {@link #DecodeNal(com.sun.jna.Pointer, int, com.sun.jna.Pointer, com.sengled.media.jna.nal_decoder.YUVFrame)} instead
+	 * @deprecated use the safer methods {@link #DecodeNal(java.nio.ByteBuffer, int, java.lang.String, com.sengled.media.jna.nal_decoder.YUVFrame2)} and {@link #DecodeNal(com.sun.jna.Pointer, int, com.sun.jna.Pointer, com.sengled.media.jna.nal_decoder.YUVFrame2)} instead
 	 */
 	@Deprecated 
-	int DecodeNal(Pointer data_buffer, int len, Pointer token, YUVFrame yuv_frame);
+	int DecodeNal(Pointer data_buffer, int len, Pointer token, YUVFrame2 yuv_frame);
 	/**
-	 * Original signature : <code>int DecodeNal(char*, int, const char*, YUVFrame*)</code><br>
+	 * Original signature : <code>int DecodeNal(char*, int, const char*, YUVFrame2*)</code><br>
 	 * <i>native declaration : nal_decoder.h:8</i>
 	 */
-	int DecodeNal(ByteBuffer data_buffer, int len, String token, YUVFrame yuv_frame);
+	int DecodeNal(ByteBuffer data_buffer, int len, String token, YUVFrame2 yuv_frame);
 	/**
-	 * Original signature : <code>int Destroy(YUVFrame*)</code><br>
+	 * Original signature : <code>int Destroy(YUVFrame2*)</code><br>
 	 * <i>native declaration : nal_decoder.h:10</i>
 	 */
-	int Destroy(YUVFrame yuv_frame);
+	int Destroy(YUVFrame2 yuv_frame);
 }
