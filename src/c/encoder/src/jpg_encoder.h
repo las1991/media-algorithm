@@ -1,5 +1,5 @@
-#ifndef __YUVENCODER__H
-#define __YUVENCODER__H
+#ifndef __JPGENCODER__H
+#define __JPGENCODER__H
 
 #include <yuv.h>
 #include <log.h>

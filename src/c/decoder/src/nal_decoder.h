@@ -1,5 +1,5 @@
-#ifndef __CONVERTJPG__H
-#define __CONVERTJPG__H
+#ifndef __NALDECODER__H
+#define __NALDECODER__H
 #include <yuv.h>
 
 void SetLogCallback(void* callback);

@@ -1,12 +1,14 @@
+#ifndef __LOG_H
+#define __LOG_H
 /**
  * Motion log level.
  **/
-#define  SLS_LOG_INFO                         0x0001
+#define  SLS_LOG_DEBUG                        0x0001
 
 /**
  * Stuff which is only useful for algorithm developers.
  **/
-#define  SLS_LOG_DEBUG                        0x0002
+#define  SLS_LOG_INFO                         0x0002
 
 /**
  * Something somehow does not look correct
@@ -22,3 +24,5 @@
  * Something went wrong and recovery is not possible
  **/
 #define  SLS_LOG_FATAL                        0x0005
+
+#endif
