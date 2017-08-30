@@ -72,24 +72,19 @@ public class JNIFunction {
 			}
 		};
 		
-
-		// logger 赋值
-    	LOGGERS = new LeveledLogger[256];
-    	for (int level = 0; level < LOGGERS.length; level++) {
-    	    if (level == 1) { // fix: c 层的缺陷
+        // logger 赋值
+        LOGGERS = new LeveledLogger[256];
+        for (int level = 0; level < LOGGERS.length; level++) {
+            if (level < LOGLEVEL_INFO) {
+                LOGGERS[level] = debugLogger;
+            } else if (level < LOGLEVEL_WARN) {
                 LOGGERS[level] = infoLogger;
-    	    } else if (level == 2) {  // fix: c 层的缺陷
-    	        LOGGERS[level] = debugLogger;
-    	    } else if (level < LOGLEVEL_INFO) {
-				LOGGERS[level] = debugLogger;
-			} else if (level < LOGLEVEL_WARN) {
-				LOGGERS[level] = infoLogger;
-			} else if (level < LOGLEVEL_EORROR) {
-				LOGGERS[level] = warnLogger;
-			} else {
-				LOGGERS[level] = errorLogger;
-			}
-		}
+            } else if (level < LOGLEVEL_EORROR) {
+                LOGGERS[level] = warnLogger;
+            } else {
+                LOGGERS[level] = errorLogger;
+            }
+        }
     }
     private static final class JNIFunctionHolder {
         private static final JNIFunction INSTANCE = new JNIFunction();
