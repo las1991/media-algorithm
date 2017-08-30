@@ -1,5 +1,7 @@
 package com.sengled.mediaworker.algorithm.action;
 
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,29 +24,26 @@ public class ExecAction extends Action {
 		final String token = context.getToken();
 		ProcessorManager processor = context.getProcessorManager();
 		
-		final YUVImage yuvImage = processor.decode(token, frame.getNalData());
-		
-		LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
-
-		long startTime = System.currentTimeMillis();
-		String text = processor.feed(context.getAlgorithm(), yuvImage);
-		LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),text.trim());
-		
-		if(StringUtils.isBlank(text.trim())){
-			LOGGER.debug("Token:{},Feed result NORESULT. ",token);
-			return;
-		}
-		MotionFeedResult motionFeedResult = JSONObject.parseObject(text.trim(), MotionFeedResult.class);
-		if(motionFeedResult ==null || !motionFeedResult.verify()){
-			LOGGER.info("Token:{},Feed result NORESULT. feed result:{} ",token,text);
-			return;
-		}
-		for(FeedListener listener : listeners){
-			try {
-				listener.feedResultHandle(context,yuvImage,frame.getNalData(),motionFeedResult);
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(),e);
-			}
-		}
+		final List<YUVImage> yuvImageList = processor.decode(token, frame.getNalData());
+		for (YUVImage yuvImage : yuvImageList) {
+		    LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
+		    long startTime = System.currentTimeMillis();
+	        String text = processor.feed(context.getAlgorithm(), yuvImage);
+	        LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),text.trim());
+	        if(StringUtils.isNotBlank(text.trim())){
+	            MotionFeedResult motionFeedResult = JSONObject.parseObject(text.trim(), MotionFeedResult.class);
+	            if(motionFeedResult ==null || !motionFeedResult.verify()){
+	                LOGGER.info("Token:{},Feed result NORESULT. feed result:{} ",token,text);
+	                continue;
+	            }
+	            for(FeedListener listener : listeners){
+	                try {
+	                    listener.feedResultHandle(context,yuvImage,frame.getNalData(),motionFeedResult);
+	                } catch (Exception e) {
+	                    LOGGER.error(e.getMessage(),e);
+	                }
+	            }
+	        }
+        }
 	}
 }

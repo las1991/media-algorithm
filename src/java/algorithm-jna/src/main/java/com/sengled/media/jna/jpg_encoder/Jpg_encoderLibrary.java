@@ -13,15 +13,15 @@ public interface Jpg_encoderLibrary extends Library {
 	public static final String JNA_LIBRARY_NAME = "jpg_encoder";
 	public static final NativeLibrary JNA_NATIVE_LIB = NativeLibrary.getInstance(Jpg_encoderLibrary.JNA_LIBRARY_NAME);
 	public static final Jpg_encoderLibrary INSTANCE = (Jpg_encoderLibrary)Native.loadLibrary(Jpg_encoderLibrary.JNA_LIBRARY_NAME, Jpg_encoderLibrary.class);
-	/** <i>native declaration : ./log.h</i> */
-	public static final int SLS_LOG_INFO = (int)0x0001;
-	/** <i>native declaration : ./log.h</i> */
-	public static final int SLS_LOG_DEBUG = (int)0x0002;
-	/** <i>native declaration : ./log.h</i> */
+	/** <i>native declaration : .\log.h</i> */
+	public static final int SLS_LOG_DEBUG = (int)0x0001;
+	/** <i>native declaration : .\log.h</i> */
+	public static final int SLS_LOG_INFO = (int)0x0002;
+	/** <i>native declaration : .\log.h</i> */
 	public static final int SLS_LOG_WARNING = (int)0x0003;
-	/** <i>native declaration : ./log.h</i> */
+	/** <i>native declaration : .\log.h</i> */
 	public static final int SLS_LOG_ERROR = (int)0x0004;
-	/** <i>native declaration : ./log.h</i> */
+	/** <i>native declaration : .\log.h</i> */
 	public static final int SLS_LOG_FATAL = (int)0x0005;
 	/**
 	 * Original signature : <code>void SetLogCallback(void*)</code><br>

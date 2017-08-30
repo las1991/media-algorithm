@@ -2,12 +2,13 @@ package com.sengled.media.interfaces;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.media.interfaces.exceptions.DecodeException;
@@ -17,6 +18,7 @@ import com.sengled.media.jna.jpg_encoder.JPGFrame;
 import com.sengled.media.jna.jpg_encoder.Jpg_encoderLibrary;
 import com.sengled.media.jna.nal_decoder.Nal_decoderLibrary;
 import com.sengled.media.jna.nal_decoder.YUVFrame;
+import com.sengled.media.jna.nal_decoder.YUVFrame2;
 import com.sengled.media.jna.sengled_algorithm_base.Sengled_algorithm_baseLibrary;
 import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result;
 import com.sengled.media.jni.JNIFunction;
@@ -57,14 +59,15 @@ public class JnaInterface implements Function{
 		}
 	}
 	@Override
-	public YUVImage decode(String token, byte[] nalData) throws DecodeException {
+	public List<YUVImage> decode(String token, byte[] nalData) throws DecodeException {
 		if(null == nalData || nalData.length == 0){
 			LOGGER.error("Token:{} decode params error.",token);
 			throw new IllegalArgumentException("decode params error.");
 		}
 		LOGGER.debug("decode token:{},nalData length:{}",token,nalData.length);
 
-		YUVFrame yuv_frame = new YUVFrame();
+		List<YUVImage> yuvImageList = new ArrayList<>();
+		YUVFrame2 yuv_frame = new YUVFrame2();
 		try {
 			ByteBuffer data_buffer  = ByteBuffer.wrap(nalData);
 			int len = nalData.length;
@@ -77,13 +80,28 @@ public class JnaInterface implements Function{
 				LOGGER.error("decode failed. code:{} token:{}",code,token);
 				throw new Exception("return code error.");
 			}
-			byte[] yuvData = yuv_frame.data.getByteArray(0, yuv_frame.size);
-			if(null == yuvData ||  0 == yuvData.length ){
-				LOGGER.error("decode failed. yuvData empty. code:{} token:{}",code,token);
-				throw new Exception("yuvData empty.");
+			int size0 = yuv_frame.size[0];
+			int size1 = yuv_frame.size[1];
+			if( size0 != 0 ){
+			    byte[] yuvData = yuv_frame.data[0].getByteArray(0, yuv_frame.size[0]);    
+			    if(null == yuvData ||  0 == yuvData.length ){
+	                LOGGER.error("decode failed. yuvData empty. code:{} token:{}",code,token);
+	                throw new Exception("yuvData empty.");
+	            }
+			    yuvImageList.add(new YUVImage(yuv_frame.width,yuv_frame.height,yuvData));
+			    
 			}
+			if( size1 != 0 ){
+                byte[] yuvData = yuv_frame.data[1].getByteArray(0, yuv_frame.size[1]);
+                if(null == yuvData ||  0 == yuvData.length ){
+                    LOGGER.error("decode failed. yuvData empty. code:{} token:{}",code,token);
+                    throw new Exception("yuvData empty.");
+                }
+                yuvImageList.add(new YUVImage(yuv_frame.width,yuv_frame.height,yuvData));
+            }
+			
 			LOGGER.debug("Token:{},decode finished. width:{},height:{}",token,yuv_frame.width,yuv_frame.height);
-			return new  YUVImage(yuv_frame.width,yuv_frame.height,yuvData);
+			return yuvImageList;
 		}catch(Exception e){
 			throw new DecodeException("DecodeException "+e.getMessage());
 		}finally{

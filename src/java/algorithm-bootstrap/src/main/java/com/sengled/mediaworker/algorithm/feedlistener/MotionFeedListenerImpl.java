@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.google.common.eventbus.AsyncEventBus;
@@ -38,6 +39,10 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 	private MotionEventHandler motionEventHandler;
 	@Autowired
 	ProcessorManager processorManagerImpl;
+	
+	@Value("${motion.interval.time.msce}")
+    private Long motionIntervalTimeMsce;
+	
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		try {
@@ -63,6 +68,8 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 			LOGGER.info("Token:{},motionConfig is null. config:{}",context.getToken(),context.getConfig());
 			return;
 		}
+		
+		context.reportCheck(motionIntervalTimeMsce);
 		
 		String token =  context.getToken();
 		if( ! context.isReport() ){

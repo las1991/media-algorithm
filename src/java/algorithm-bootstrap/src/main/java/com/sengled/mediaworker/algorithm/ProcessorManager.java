@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.algorithm;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.Future;
 
 import com.sengled.media.interfaces.Algorithm;
@@ -18,7 +19,7 @@ public interface ProcessorManager {
 	String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException;
 	void   close(String algorithmModelId)throws AlgorithmIntanceCloseException ;
 	String feed(Algorithm algorithm, YUVImage yuvImage) throws FeedException;
-	YUVImage decode(final String token,final byte[] nalData) throws DecodeException;
+	List<YUVImage> decode(final String token,final byte[] nalData) throws DecodeException;
 	byte[] encode(String token,byte[] yuvData,int width,int  height,int  dstWidth,int  dstHeight)throws EncodeException;
 	void shutdown();
 }
