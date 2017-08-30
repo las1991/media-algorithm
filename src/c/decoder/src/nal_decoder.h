@@ -6,8 +6,8 @@ void SetLogCallback(void* callback);
 
 int Init();
 
-int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame);
+int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame2* yuv_frame);
 
-int Destroy(YUVFrame* yuv_frame);
+int Destroy(YUVFrame2* yuv_frame);
 
 #endif

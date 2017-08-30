@@ -408,7 +408,7 @@ end:
     return;
 }
 
-int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame)
+int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame2* yuv_frame)
 {
     int ret = 0;
     int tmp_size;
@@ -420,7 +420,7 @@ int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame* yuv_frame
     SplitNalBuffer(data_buffer, len, data, size);
     // debug end
 
-    memset(yuv_frame, 0, sizeof(YUVFrame));
+    memset(yuv_frame, 0, sizeof(YUVFrame2));
     DecodeContext* decodectx = (DecodeContext* )av_mallocz(sizeof(DecodeContext));
 
     //decodectx->frame = av_frame_alloc();
@@ -505,7 +505,7 @@ failed:
     return -1;
 }
 
-int Destroy(YUVFrame* yuv_frame)
+int Destroy(YUVFrame2* yuv_frame)
 {
     int i = 0;
     for(; i < 2; i++)
