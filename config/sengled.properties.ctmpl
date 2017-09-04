@@ -3,8 +3,6 @@ PUBLIC_IPV4=$PUBLIC_IPV4
 PRIVATE_IPV4=$PRIVATE_IPV4
 
 #aws s3 key
-aws_access_key_id=
-aws_secret_access_key=
 aws_s3_region=
 aws_screenshot_bucket=
 
@@ -12,13 +10,9 @@ aws_screenshot_bucket=
 AWS_SERVICE_NAME_PREFIX=
 
 # kinesis
-AWS_KINESIS_KEY=
-AWS_KINESIS_SECRET=
 AWS_KINESIS_REGION=
 
 # sqs
-AWS_SQS_KEY=
-AWS_SQS_SECRET=
 AWS_SQS_REGION=
 
 # object recognition services

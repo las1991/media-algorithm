@@ -6,6 +6,7 @@ import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.sqs.AmazonSQS;
 import com.amazonaws.services.sqs.AmazonSQSClient;
+import com.amazonaws.services.sqs.AmazonSQSClientBuilder;
 import com.amazonaws.services.sqs.model.*;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
@@ -35,12 +36,6 @@ import static com.google.common.base.Preconditions.checkState;
 public class SQSTemplate implements InitializingBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SQSTemplate.class);
-
-    @Value("${AWS_SQS_KEY}")
-    private String awsKey;
-
-    @Value("${AWS_SQS_SECRET}")
-    private String awsSecret;
 
     @Value("${AWS_SQS_REGION:cn-north-1}")
     private String regionName;
@@ -74,9 +69,9 @@ public class SQSTemplate implements InitializingBean {
     }
 
     private void initialize() {
-        AmazonSQS sqsClient =new AmazonSQSClient(new BasicAWSCredentials(awsKey, awsSecret));
-        Region region  =  Region.getRegion(Regions.fromName(regionName));
-        sqsClient.setRegion(region);
+        AmazonSQS sqsClient =  AmazonSQSClientBuilder.standard()
+                                .withRegion(regionName)
+                                .build();
         String queueUrl = sqsClient.getQueueUrl(queue).getQueueUrl();
         LOGGER.info("QueueUrl:{}",queueUrl);
         this.sqsClient = sqsClient;

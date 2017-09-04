@@ -20,7 +20,7 @@
 	<properties>
 		<py4j.version>0.10.3</py4j.version>
 		<metric.version>3.1.2</metric.version>
-		<aws.version>1.11.27</aws.version>
+		<aws.version>1.11.165</aws.version>
 	</properties>
 
 	<dependencyManagement>
