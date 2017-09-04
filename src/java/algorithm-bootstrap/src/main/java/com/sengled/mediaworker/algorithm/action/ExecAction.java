@@ -1,10 +1,12 @@
 package com.sengled.mediaworker.algorithm.action;
 
+import java.util.Collections;
 import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.YUVImage;
@@ -25,6 +27,11 @@ public class ExecAction extends Action {
 		ProcessorManager processor = context.getProcessorManager();
 		
 		final List<YUVImage> yuvImageList = processor.decode(token, frame.getNalData());
+		if( CollectionUtils.isEmpty(yuvImageList)){
+		    LOGGER.warn("[{}] decode result is empty.",token);
+		    return;
+		}
+		LOGGER.debug("[{}] decode result size:{}",token,yuvImageList.size());
 		for (YUVImage yuvImage : yuvImageList) {
 		    LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
 		    long startTime = System.currentTimeMillis();
