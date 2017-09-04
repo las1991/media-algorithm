@@ -13,10 +13,12 @@ import org.springframework.context.annotation.Configuration;
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.regions.Region;
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
+import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import com.amazonaws.services.s3.model.Bucket;
 
 
@@ -24,12 +26,6 @@ import com.amazonaws.services.s3.model.Bucket;
 @ConfigurationProperties
 public class S3 implements InitializingBean {
 	private static final Logger LOGGER = LoggerFactory.getLogger(S3.class);
-	
-	@Value("${aws_access_key_id}")
-	private String aws_access_key_id;
-	
-	@Value("${aws_secret_access_key}")
-	private String aws_secret_access_key;
 
 	@Value("${aws_s3_region}")
 	private String regionName;
@@ -56,12 +52,13 @@ public class S3 implements InitializingBean {
 		conf.setProtocol(Protocol.HTTPS);
 		conf.setMaxConnections(3 * ClientConfiguration.DEFAULT_MAX_CONNECTIONS);
 		conf.setUseTcpKeepAlive(true);
-		LOGGER.info("connect with S3, access_key = {}, secret_access_key={}, region = {}.", aws_access_key_id, aws_secret_access_key, regionName);
-		BasicAWSCredentials credentials = new BasicAWSCredentials(aws_access_key_id, aws_secret_access_key);
-		Region region = Region.getRegion(Regions.fromName(regionName));
-
-		s3 = new AmazonS3Client(credentials, conf);
-		s3.setRegion(region);
+		LOGGER.info("connect with S3,region = {}.", regionName);
+		
+		s3 = AmazonS3ClientBuilder.standard()
+                .withCredentials(DefaultAWSCredentialsProviderChain.getInstance())
+                .withClientConfiguration(conf)
+                .withRegion(regionName)
+                .build();
 		
 		// 查看都有哪些桶
 		List<Bucket> buckets = s3.listBuckets();
@@ -74,15 +71,6 @@ public class S3 implements InitializingBean {
 	public AmazonS3Template getS3Template(){
 		return new AmazonS3Template(s3);
 	}
-	
-	public void setAws_access_key_id(String aws_access_key_id) {
-		this.aws_access_key_id = aws_access_key_id;
-	}
-	
-	public void setAws_secret_access_key(String aws_secret_access_key) {
-		this.aws_secret_access_key = aws_secret_access_key;
-	}
-	
 	public void setRegion(String region) {
 		this.regionName = region;
 	}

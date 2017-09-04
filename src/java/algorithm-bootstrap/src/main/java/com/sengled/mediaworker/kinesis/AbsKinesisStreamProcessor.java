@@ -13,7 +13,9 @@ import org.springframework.context.event.ContextClosedEvent;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
+import com.amazonaws.auth.AWSCredentialsProvider;
 import com.amazonaws.auth.BasicAWSCredentials;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.internal.StaticCredentialsProvider;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
@@ -53,9 +55,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     }    
     
     public KinesisClientLibConfiguration createKclConfig(){
-        BasicAWSCredentials credentials = getBasicAWSCredentials();
-        StaticCredentialsProvider provider = new StaticCredentialsProvider(credentials);
-        
+        AWSCredentialsProvider provider = DefaultAWSCredentialsProviderChain.getInstance();
         String streamName = getStreamName();
         String workerId = String.valueOf(getWorkerIdPrefix() + "_" + UUID.randomUUID());
         String applicationName = "amazon-kinesis-"+getStreamName();
