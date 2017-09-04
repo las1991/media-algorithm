@@ -13,8 +13,8 @@ import org.springframework.context.event.ContextClosedEvent;
 
 import com.amazonaws.ClientConfiguration;
 import com.amazonaws.Protocol;
-import com.amazonaws.auth.BasicAWSCredentials;
-import com.amazonaws.internal.StaticCredentialsProvider;
+import com.amazonaws.auth.AWSCredentialsProvider;
+import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.InitialPositionInStream;
 import com.amazonaws.services.kinesis.clientlibrary.lib.worker.KinesisClientLibConfiguration;
@@ -31,7 +31,6 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     public abstract String getStreamName();
     public abstract String getWorkerIdPrefix();
     public abstract String getRegion();
-    public abstract BasicAWSCredentials getBasicAWSCredentials();
     public abstract IRecordProcessorFactory getRecordProcessorFactory();
     
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -53,9 +52,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     }    
     
     public KinesisClientLibConfiguration createKclConfig(){
-        BasicAWSCredentials credentials = getBasicAWSCredentials();
-        StaticCredentialsProvider provider = new StaticCredentialsProvider(credentials);
-        
+        AWSCredentialsProvider provider = DefaultAWSCredentialsProviderChain.getInstance();
         String streamName = getStreamName();
         String workerId = String.valueOf(getWorkerIdPrefix() + "_" + UUID.randomUUID());
         String applicationName = "amazon-kinesis-"+getStreamName();

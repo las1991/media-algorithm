@@ -26,12 +26,6 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
     @Value("${AWS_SERVICE_NAME_PREFIX}_${aws_kinesis_stream_algorithm}")
     private String streamName;
     
-    @Value("${AWS_KINESIS_KEY}")
-    private String accessKey;
-    
-    @Value("${AWS_KINESIS_SECRET}")
-    private String secretKey;
-    
     @Value("${AWS_KINESIS_REGION}")
     private String region;
     
@@ -56,11 +50,6 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
 		return privateIp;
 	}
 	
-    @Override
-    public BasicAWSCredentials getBasicAWSCredentials() {
-        return new BasicAWSCredentials(accessKey, secretKey);
-    }
-    
     @Override
     public String getRegion() {
         return region;
