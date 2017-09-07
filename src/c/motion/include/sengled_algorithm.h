@@ -11,12 +11,12 @@ extern "C" {
 /**
  * Standard information.
  **/
-#define  SLS_LOG_INFO                         0x0001
+#define  SLS_LOG_DEBUG                         0x0001
 
 /**
  * Stuff which is only useful for algorithm developers.
  **/
-#define  SLS_LOG_DEBUG                        0x0002
+#define  SLS_LOG_INFO                        0x0002
 
 /**
  * Something somehow does not look correct
