@@ -7,6 +7,7 @@
 
 #include "log.h"
 #include "nal_decoder.h"
+#include "detect_sps_pps.h"
 void (*pp_log_callback)(int level, char* ptr) = NULL;
 
 static int log_convert(int level)
@@ -384,12 +385,16 @@ void SplitNalBuffer(const char* data_buffer, int data_size, char* data[], int* s
         data[1] = ptr - 4;
         av_log(NULL, AV_LOG_DEBUG, "data1 = %d %d %d %d\n", data[1][0], data[1][1], data[1][2], data[1][3]);
         size[1] = data_size - spspps_len - (i_frame_len + 4);
+
+        analyse_from_pkt("xxxxx", data[0], size[0]);
+        find_base_pframe("xxxxx", data[1], size[1]);
         goto end;
     }
     data[1] = ptr - 4;
     size[1] = p_frame_len1 + 4;
     av_log(NULL, AV_LOG_DEBUG, "data1 = %d %d %d %d\n", data[1][0], data[1][1], data[1][2], data[1][3]);
     av_log(NULL, AV_LOG_DEBUG, "ptr = %d %d %d %d\n", ptr[-4], ptr[-3], ptr[-2], ptr[-1]);
+    
     /*ptr = ptr + p_frame_len1 + 4;
 
     p_frame_len2 = find_frame_location(ptr, data_size - spspps_len - (i_frame_len + 4) - (p_frame_len1 + 4));
@@ -450,7 +455,10 @@ int DecodeNal(char* data_buffer, int len, const char* token, YUVFrame2* yuv_fram
             {
                 av_free_packet(&decodectx->pkt);
                 av_frame_free(&frame);
-                goto failed;
+                if(i == 0)
+                    goto failed;
+                if(i == 1)
+                    break;
             }
 
             yuv_frame->size[i] = decodectx->width * decodectx->height * 3 / 2;

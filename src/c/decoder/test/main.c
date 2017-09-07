@@ -35,12 +35,14 @@ void debugCore()
 
 int main(int argc, char* argv[])
 {
-    YUVFrame outdata;
+    YUVFrame2 outdata;
    //outdata.data = malloc(100*1024);
     //char dst_jpg[100*1024];
     int dst_size;
     //char h264_data[] = "/home/pang/git/media-algorithm-v3/python/decode/176_144_1490260801604";
-    char h264_data[] = "data";
+    //char h264_data[] = "data";
+    char h264_data[1024] = {0};
+    sprintf(h264_data, "%s", argv[1]);
     char token[] = "ABCDEFG";
     FILE* fp = NULL;
     int file_size;
@@ -56,6 +58,7 @@ int main(int argc, char* argv[])
     printf("open data file ok\n");
     fseek(fp, 0, SEEK_END);
     file_size = ftell(fp);
+    printf("file size = %d\n", file_size);
     fseek(fp, 0, SEEK_SET);
     data_buffer = (uint8_t *) malloc(file_size);
     //metadata_len = file_size;
@@ -81,10 +84,19 @@ int main(int argc, char* argv[])
         number++;
         sprintf(jpg_name, "%s%s_%d.yuv", jpg, token, number);
         fp = fopen(jpg_name, "wr");
-        fwrite(outdata.data, 1, outdata.size, fp);
+        fwrite(outdata.data[0], 1, outdata.size[0], fp);
         fclose(fp);
         
+        if(outdata.size[1] != 0){
+            number++;
+            sprintf(jpg_name, "%s%s_%d.yuv", jpg, token, number);
+            fp = fopen(jpg_name, "wr");
+            fwrite(outdata.data[1], 1, outdata.size[1], fp);
+            fclose(fp);
+        }
+        
         Destroy(&outdata);
+        sleep(100);
     }
 
     return 0;
