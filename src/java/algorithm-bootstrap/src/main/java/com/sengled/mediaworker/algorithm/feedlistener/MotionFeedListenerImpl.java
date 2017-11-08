@@ -102,7 +102,7 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 
 		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.zone_id);
 		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
-		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,zone.zone_id.intValue()+"");
+		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,context.getFileExpiresHours(),zone.zone_id.intValue()+"");
 		eventBus.post(event);
 		context.setLastMotionTimestamp(copyUtcDate.getTime());
 	}

@@ -26,6 +26,8 @@ public class AlgorithmResult {
     @JSONField(name="timestamp")
     private String timeStamp;
 
+    private int fileExpiresHours;
+    
     private String bigImage;
 
     private String smallImage;
@@ -36,6 +38,14 @@ public class AlgorithmResult {
 
     
     
+    public int getFileExpiresHours() {
+        return fileExpiresHours;
+    }
+
+    public void setFileExpiresHours(int fileExpiresHours) {
+        this.fileExpiresHours = fileExpiresHours;
+    }
+
     public String getStreamId() {
         return streamId;
     }

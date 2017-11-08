@@ -2,3 +2,13 @@
 基于 kinesis 的算法服务
 增加处理时间及等待处理时间的数据采集
 数据延时丢弃时间改为30sec
+
+================2017-11-08=========
+1.增加启动程序时删除kinesis checkpoint 功能
+使用方法：
+    export  KINESIS_CHECKPOINT_ALL_DELETE=yes
+    bin/start-all.sh -daemon 
+
+2.增加S3存储图片过期tag
+
+3.推送SQS 增加字段 fileExpiresHours

@@ -34,7 +34,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
     private long maxDelayedTimeMsce;
     
 	@Override
-	public void feedResultHandle(StreamingContext context,final YUVImage yuvImage, final byte[] copyNalData,MotionFeedResult motionFeedResult) throws Exception{
+	public void feedResultHandle(StreamingContext context,final YUVImage yuvImage, final byte[] copyNalData,final MotionFeedResult motionFeedResult) throws Exception{
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
 		
 		ObjectConfig objectConfig = context.getConfig().getObjectConfig();
@@ -57,6 +57,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
 		
 		YUVImage copyYuvImage = new YUVImage(yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getYUVData());		
 		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
-		objectRecognitionImpl.submit(token,objectConfig,copyUtcDate,copyYuvImage,copyNalData,motionFeedResult);		
+		int fileExpiresHours = context.getFileExpiresHours();
+		objectRecognitionImpl.submit(token,objectConfig,copyUtcDate,copyYuvImage,copyNalData,fileExpiresHours,motionFeedResult);		
 	}
 }

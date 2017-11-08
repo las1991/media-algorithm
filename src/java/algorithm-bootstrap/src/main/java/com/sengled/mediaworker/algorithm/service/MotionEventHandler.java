@@ -1,7 +1,9 @@
 package com.sengled.mediaworker.algorithm.service;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -15,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
+import com.amazonaws.services.s3.model.Tag;
 import com.google.common.eventbus.Subscribe;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
@@ -23,6 +26,7 @@ import com.sengled.mediaworker.algorithm.exception.SqsRuntimeException;
 import com.sengled.mediaworker.algorithm.service.dto.AlgorithmResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionInnerDto;
 import com.sengled.mediaworker.s3.AmazonS3Template;
+import com.sengled.mediaworker.s3.StorageProperties;
 import com.sengled.mediaworker.sqs.SQSTemplate;
 
 @Component
@@ -32,9 +36,13 @@ public class MotionEventHandler implements InitializingBean {
 
 	@Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
 	private String queue;
+	
 	@Value("${aws_screenshot_bucket}")
 	private String bucketName;
 
+    @Autowired
+    StorageProperties storageProperties;
+    
 	@Autowired
 	private SQSTemplate sqsTemplate;
 	@Autowired
@@ -77,13 +85,13 @@ public class MotionEventHandler implements InitializingBean {
 		byte[] jpgData = event.getJpgData();
 		String token = event.getToken();
 		String zoneId = event.getZoneId();
-		String imageS3Path = token + "_motion_" + utcDateTime.getTime() + ".jpg";
+		String imageS3Path = token + "_motion_" + utcDateTime.getTime() +"_" +event.getFileExpiresHours()+".jpg";
+		Tag tag = storageProperties.getTag(event.getFileExpiresDays()+"");
 		Exception ex = null;
 		try {
-			saveS3(imageS3Path, jpgData);
+			saveS3(imageS3Path, jpgData,Arrays.asList(tag));
 			recordCounter.addAndGetS3SuccessfulCount(1);
-			//saveDynamodb(utcDateTime, token, imageS3Path, zoneId);
-			putSqs(utcDateTime, token, zoneId,imageS3Path);
+			putSqs(utcDateTime, token, zoneId,imageS3Path,event.getFileExpiresHours());
 			recordCounter.addAndGetSqsSuccessfulCount(1);
 		} catch (S3RuntimeException e) {
 			ex = e;
@@ -100,10 +108,10 @@ public class MotionEventHandler implements InitializingBean {
 		LOGGER.info("Token:{},feedEvent finished",event.getToken());
 	}
 
-	private void saveS3(String imageS3Path,byte[] jpgData) throws S3RuntimeException{
+	private void saveS3(String imageS3Path,byte[] jpgData,List<Tag> tagList) throws S3RuntimeException{
 		LOGGER.info("imageS3Path:" + imageS3Path);
 		try {
-			amazonS3Template.putObject(bucketName, imageS3Path, jpgData);
+			amazonS3Template.putObject(bucketName, imageS3Path, jpgData, tagList);
 		} catch (Exception e) {
 			throw new S3RuntimeException(e.getMessage(),e);
 		}
@@ -123,7 +131,7 @@ public class MotionEventHandler implements InitializingBean {
 		}
 	}
 	*/
-	private void putSqs(Date utcDateTime,String token,String zoneId,String imageS3Path) throws SqsRuntimeException{
+	private void putSqs(Date utcDateTime,String token,String zoneId,String imageS3Path,int fileExpiresHours) throws SqsRuntimeException{
 		LOGGER.info("Token:{},putSqs: zoneId:{},imageS3Path:{} utcDate:{}",token,zoneId,imageS3Path,utcDateTime);
 		AlgorithmResult result = new AlgorithmResult();
 		result.setEventType(AlgorithmResult.SLS_EVENT_TYPE_MOTION);
@@ -133,6 +141,7 @@ public class MotionEventHandler implements InitializingBean {
 		result.setSmallImage(imageS3Path);
 		result.setTimeStamp(DateFormatUtils.format(utcDateTime, "yyyy-MM-dd HH:mm:ss"));
 		result.setZoneId(Long.valueOf(zoneId));
+		result.setFileExpiresHours(fileExpiresHours);
 		try {
 			sqsTemplate.publish(queue, JSON.toJSONString(result));
 		} catch (Exception e) {

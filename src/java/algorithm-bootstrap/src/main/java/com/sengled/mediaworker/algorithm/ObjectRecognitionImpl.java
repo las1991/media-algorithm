@@ -114,7 +114,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 	
 	@Override
-	public void submit(String token,ObjectConfig oc, Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr) {
+	public void submit(final String token,final ObjectConfig oc, final Date utcDate, final YUVImage yuvImage, final byte[] nalData,int fileExpiresHours, MotionFeedResult mfr) {
 		//hash token 提交到指定线程队列中
 		int hashCode = Math.abs(token.hashCode());
 		int threadIndex = hashCode % threadNum;
@@ -126,7 +126,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			thread.submit(new Callable<Void>() {
 				@Override
 				public Void call() throws Exception {
-						handle(token,oc,utcDate,yuvImage,nalData,mfr);
+						handle(token,oc,utcDate,yuvImage,nalData,fileExpiresHours,mfr);
 					return null;
 				}
 			});
@@ -136,7 +136,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 	}
 	
-	private void handle(String token, ObjectConfig oc,Date utcDate, YUVImage yuvImage, byte[] nalData, MotionFeedResult mfr)throws Exception{
+	private void handle(final String token,final ObjectConfig oc,final Date utcDate, final YUVImage yuvImage,final  byte[] nalData,final int fileExpiresHours,final  MotionFeedResult mfr)throws Exception{
 		LOGGER.debug("Run objectRecognition. token:{},ObjectConfig:{},MotionFeedResult:{}",token,oc,mfr);
 		if(oc ==null || utcDate==null || yuvImage==null || nalData==null || mfr == null){
 			LOGGER.error("parameter error.");
@@ -203,8 +203,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			}
 		}
 		if( null != matchResult && ! matchResult.isEmpty() ){
-			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,objectContext.getUtcDateTime());
-			eventBus.post(event );
+			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
+			eventBus.post( event );
 			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());	
 		}
 	}

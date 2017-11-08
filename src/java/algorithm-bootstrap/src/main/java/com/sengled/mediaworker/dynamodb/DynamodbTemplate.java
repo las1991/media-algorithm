@@ -42,6 +42,12 @@ public class DynamodbTemplate implements InitializingBean{
 		Table table = dynamoDB.getTable(tableName);
 		table.putItem(item);
 	}
+	public void deleteTable(String tableName){
+	    Table table = dynamoDB.getTable(tableName);
+	    if( null != table ){
+	        table.delete();
+	    }
+	}
 	public  DynamoDB getDynamoDB(){
 		return dynamoDB;
 	}

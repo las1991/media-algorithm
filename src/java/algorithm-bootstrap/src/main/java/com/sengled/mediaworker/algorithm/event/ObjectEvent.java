@@ -11,13 +11,15 @@ public class ObjectEvent {
 	private Multimap<Integer, Object> result;
 	private byte[] jpgData;
 	private Date utcDate;
+	private int fileExpiresHours;
 
-	public ObjectEvent(String token, Multimap<Integer, Object> result, byte[] jpgData, Date utcDate) {
+	public ObjectEvent(String token, Multimap<Integer, Object> result, byte[] jpgData,int fileExpiresHours, Date utcDate) {
 		super();
 		this.token = token;
 		this.result = result;
 		this.jpgData = jpgData;
 		this.utcDate = utcDate;
+		this.fileExpiresHours = fileExpiresHours;
 	}
 
 	@Override
@@ -56,5 +58,12 @@ public class ObjectEvent {
 	public void setUtcDate(Date utcDate) {
 		this.utcDate = utcDate;
 	}
+
+    public int getFileExpiresHours() {
+        return fileExpiresHours;
+    }
+    public int getFileExpiresDays() {
+        return   fileExpiresHours % 24 == 0 ? (fileExpiresHours / 24) : (fileExpiresHours / 24 + 1);
+    }
 
 }

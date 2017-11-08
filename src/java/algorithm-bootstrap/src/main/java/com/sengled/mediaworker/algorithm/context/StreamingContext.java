@@ -200,7 +200,13 @@ public class StreamingContext extends Context{
 	public void setConfig(FrameConfig config) {
 		this.config = config;
 	}
-
+	public int getFileExpiresHours(){
+	    if( null == config ){
+	        LOGGER.error("[{}] config is null.",token);
+	        return 31 * 24;
+	    }
+	    return config.getFileExpiresHours();
+	}
 
 	@Override
 	public String toString() {

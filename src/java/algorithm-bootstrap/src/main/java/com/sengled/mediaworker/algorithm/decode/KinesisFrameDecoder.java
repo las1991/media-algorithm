@@ -73,8 +73,8 @@ public class KinesisFrameDecoder {
     public static class FrameConfig{
     	@JSONField(name="action")
     	private String action;
-    	
-    	@JSONField(name="utcDateTime")
+
+        @JSONField(name="utcDateTime")
     	private String utcDateTime;
     	
     	@JSONField(name="motion")
@@ -83,6 +83,8 @@ public class KinesisFrameDecoder {
     	@JSONField(name="object")
     	private ObjectConfig objectConfig;
     	
+    	@JSONField(name="fileExpires")
+    	private int fileExpiresHours;
     	
     	public MotionConfig getBaseConfig(){
     		if( null != motionConfig){
@@ -103,7 +105,14 @@ public class KinesisFrameDecoder {
     		}
     		return null;
     	}
-    	
+        
+        public void setFileExpiresHours(int fileExpiresHours) {
+            this.fileExpiresHours = fileExpiresHours;
+        }
+
+        public int getFileExpiresHours() {
+            return fileExpiresHours;
+        }
 		public String getAction() {
 			return action;
 		}
@@ -128,11 +137,13 @@ public class KinesisFrameDecoder {
 		public void setObjectConfig(ObjectConfig objectConfig) {
 			this.objectConfig = objectConfig;
 		}
-		@Override
-		public String toString() {
-			return "FrameConfig [action=" + action + ", utcDateTime=" + utcDateTime + ", motionConfig=" + motionConfig
-					+ ", objectConfig=" + objectConfig + "]";
-		}
+
+        @Override
+        public String toString() {
+            return "FrameConfig [action=" + action + ", utcDateTime=" + utcDateTime + ", motionConfig=" + motionConfig
+                    + ", objectConfig=" + objectConfig + ", fileExpiresHours=" + fileExpiresHours + "]";
+        }
+		
     	
     }
     public static class MotionConfig{

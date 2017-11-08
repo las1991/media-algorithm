@@ -4,6 +4,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -27,10 +28,12 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
     public static final int REQUEST_TIMEOUT = 20 * 1000;
     public static final int CLIENT_EXECUTION_TIMEOUT = 70 * 1000;
     public static final int CONNECTION_TIMEOUT = 10 * 1000;
+    public static final String APPLICATION_NAME_PREFIX = "amazon-kinesis-";
     
     public abstract String getStreamName();
     public abstract String getWorkerIdPrefix();
     public abstract String getRegion();
+    public abstract void   deleteCheckPosition(String applicationName);
     public abstract IRecordProcessorFactory getRecordProcessorFactory();
     
     private ExecutorService executor = Executors.newSingleThreadExecutor();
@@ -55,7 +58,7 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
         AWSCredentialsProvider provider = DefaultAWSCredentialsProviderChain.getInstance();
         String streamName = getStreamName();
         String workerId = String.valueOf(getWorkerIdPrefix() + "_" + UUID.randomUUID());
-        String applicationName = "amazon-kinesis-"+getStreamName();
+        String applicationName = APPLICATION_NAME_PREFIX + getStreamName();
         LOGGER.info("streamName:{},applicationName:{}",streamName,applicationName);
         return new KinesisClientLibConfiguration(applicationName, streamName, provider, workerId)
                 .withRegionName(getRegion())
@@ -72,10 +75,18 @@ public abstract class AbsKinesisStreamProcessor implements ApplicationListener<A
         executor.submit(worker);
         this.worker = worker;
     }
-    
+    private void deleteAllCheckpoint(){
+        String applicationName = APPLICATION_NAME_PREFIX + getStreamName();
+        deleteCheckPosition(applicationName);
+    }
     @Override
     public void onApplicationEvent(ApplicationEvent event) {
         if(event instanceof ApplicationReadyEvent){
+            String isDelete = System.getProperty("kinesis.checkpoint.delete");
+            if(StringUtils.equals(isDelete, "yes")){
+                LOGGER.info("Property kinesis.checkpoint.delete:{}",isDelete);
+                deleteAllCheckpoint();
+            }
             LOGGER.info("Start kinesisStream Processos");
             start();
         }

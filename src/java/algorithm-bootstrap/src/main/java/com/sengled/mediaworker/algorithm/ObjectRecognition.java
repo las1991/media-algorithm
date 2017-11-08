@@ -9,5 +9,5 @@ import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
 public interface ObjectRecognition {
 
-	void  submit(final String token,final ObjectConfig config,final Date utcDate,final YUVImage yuvImage,final byte[] nalData,final MotionFeedResult mfr);
+	void  submit(final String token,final ObjectConfig config,final Date utcDate,final YUVImage yuvImage,final byte[] nalData,final int fileExpiresHours,final MotionFeedResult mfr);
 }

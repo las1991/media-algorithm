@@ -9,8 +9,8 @@ import org.springframework.context.ApplicationEvent;
 import org.springframework.context.event.ContextClosedEvent;
 
 import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.kinesis.clientlibrary.interfaces.v2.IRecordProcessorFactory;
+import com.sengled.mediaworker.dynamodb.DynamodbTemplate;
 import com.sengled.mediaworker.kinesis.AbsKinesisStreamProcessor;
 /**
  * ScreenShot KinesisStream Processor
@@ -31,6 +31,9 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
     
     @Value("${PRIVATE_IPV4}")
     private String privateIp;
+    
+    @Autowired
+    DynamodbTemplate dynamodbTemplate;
     
     @Autowired
     private RecordProcessorFactory recordProcessorFactory;
@@ -86,4 +89,14 @@ public class AlgorithmKinesisStreamProcessor  extends AbsKinesisStreamProcessor{
         		.withRequestTimeout(requestTimeout)
         		.withSocketTimeout(socketTimeout);
 	}
+
+    @Override
+    public void deleteCheckPosition(String applicationName) {
+        LOGGER.info("Delete Kinesis All CheckPosition. Dynamodb table name:{}",applicationName);
+        try {
+            dynamodbTemplate.deleteTable(applicationName);
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(),e);
+        }
+    }
 }

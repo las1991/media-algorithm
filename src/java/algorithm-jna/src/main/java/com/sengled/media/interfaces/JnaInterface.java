@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.media.interfaces.exceptions.DecodeException;
@@ -17,12 +18,10 @@ import com.sengled.media.interfaces.exceptions.FeedException;
 import com.sengled.media.jna.jpg_encoder.JPGFrame;
 import com.sengled.media.jna.jpg_encoder.Jpg_encoderLibrary;
 import com.sengled.media.jna.nal_decoder.Nal_decoderLibrary;
-import com.sengled.media.jna.nal_decoder.YUVFrame;
 import com.sengled.media.jna.nal_decoder.YUVFrame2;
 import com.sengled.media.jna.sengled_algorithm_base.Sengled_algorithm_baseLibrary;
 import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result;
 import com.sengled.media.jni.JNIFunction;
-import com.sun.jna.Memory;
 import com.sun.jna.Pointer;
 
 public class JnaInterface implements Function{
