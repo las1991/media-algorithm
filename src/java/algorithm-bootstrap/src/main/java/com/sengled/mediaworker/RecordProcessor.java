@@ -44,7 +44,7 @@ public class RecordProcessor implements IRecordProcessor {
     // Checkpointing interval
     private static final long CHECKPOINT_INTERVAL_MILLIS = 1 * 60 * 1000; // 1 minute
     //max BehindLatest
-    private static final long MAX_BEHINDLASTEST_MILLIS = 30 * 1000; // 30 sec
+    private static final long MAX_BEHINDLASTEST_MILLIS = 5 * 60 * 1000; // 5 minute
     //max execute time
     private static final long MAX_EXECUTE_MILLIS = 20 * 1000;//20 sec
     

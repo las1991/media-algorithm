@@ -100,7 +100,7 @@ public class StreamingContext extends Context{
 		if(utcDate !=null){
 			long delayedTime = contextUpdateTimestamp - utcDate.getTime();
 			if( delayedTime >= maxDelayedTimeMsce){
-				LOGGER.info("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,maxDelayedTimeMsce);
+				LOGGER.warn("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,maxDelayedTimeMsce);
 				expire = true;
 				recordCounter.addAndGetDataDelayedCount(1);
 			}

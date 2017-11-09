@@ -51,7 +51,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
 		recordCounter.addAndGetObjectMotionCount(1);
 		if(delayTime > maxDelayedTimeMsce){
 			recordCounter.addAndGetObjectDataDelayedCount(1);
-			LOGGER.info("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
+			LOGGER.warn("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
 			return;
 		}
 		
