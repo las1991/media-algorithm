@@ -179,7 +179,7 @@ public class RecordProcessor implements IRecordProcessor {
 		final Multimap<String, Frame> dataMap = ArrayListMultimap.create();
 		long currentTime = System.currentTimeMillis();
 		for (Record record : records) {
-			String token = getToken(record.getPartitionKey());
+			String token = record.getPartitionKey();
 	    	int remaining =  record.getData().remaining();
 			if ( remaining <= 0) {
 				LOGGER.warn("record data size is null. skip...");
@@ -203,7 +203,7 @@ public class RecordProcessor implements IRecordProcessor {
 				LOGGER.error(e.getMessage(),e);
 				continue;
 			}
-			dataMap.put(getToken(record.getPartitionKey()), frame);
+			dataMap.put(record.getPartitionKey(), frame);
 		}
 		return dataMap;
 	}
