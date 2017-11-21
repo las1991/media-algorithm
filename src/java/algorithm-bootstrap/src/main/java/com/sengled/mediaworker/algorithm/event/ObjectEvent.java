@@ -2,6 +2,8 @@ package com.sengled.mediaworker.algorithm.event;
 
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
+
 import com.google.common.collect.Multimap;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
 
@@ -13,9 +15,9 @@ public class ObjectEvent {
 	private Date utcDate;
 	private int fileExpiresHours;
 
-	public ObjectEvent(String token, Multimap<Integer, Object> result, byte[] jpgData,int fileExpiresHours, Date utcDate) {
+	public ObjectEvent(String partitionKey, Multimap<Integer, Object> result, byte[] jpgData,int fileExpiresHours, Date utcDate) {
 		super();
-		this.token = token;
+		this.token = getToken(partitionKey);
 		this.result = result;
 		this.jpgData = jpgData;
 		this.utcDate = utcDate;
@@ -64,6 +66,14 @@ public class ObjectEvent {
     }
     public int getFileExpiresDays() {
         return   fileExpiresHours % 24 == 0 ? (fileExpiresHours / 24) : (fileExpiresHours / 24 + 1);
+    }
+    
+    private String getToken(String partitionKey){
+    	String token =  partitionKey.split(",")[0];
+    	if(StringUtils.isNotBlank(token)){
+    		return token;
+    	}
+    	return partitionKey;
     }
 
 }

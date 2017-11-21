@@ -2,6 +2,8 @@ package com.sengled.mediaworker.algorithm.event;
 
 import java.util.Date;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * motion 事件
  *
@@ -14,8 +16,8 @@ public class MotionEvent {
     private String zoneId;
     private int fileExpiresHours;
 
-    public MotionEvent(String token, Date utcDate, byte[] jpgData, int fileExpiresHours, String zoneId) {
-        this.token = token;
+    public MotionEvent(String partitionKey, Date utcDate, byte[] jpgData, int fileExpiresHours, String zoneId) {
+        this.token = getToken(partitionKey);
         this.utcDate = utcDate;
         this.jpgData = jpgData;
         this.fileExpiresHours = fileExpiresHours;
@@ -70,4 +72,11 @@ public class MotionEvent {
         return "MotionEvent [token=" + token + ", utcDate=" + utcDate + ", zoneId=" + zoneId + "]";
     }
 
+    private String getToken(String partitionKey){
+    	String token =  partitionKey.split(",")[0];
+    	if(StringUtils.isNotBlank(token)){
+    		return token;
+    	}
+    	return partitionKey;
+    }
 }
