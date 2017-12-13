@@ -183,6 +183,10 @@ err:
     if(context)
         avcodec_free_context(&context);
     if(decodectx->fmt){
+        if(decodectx->fmt->pb) {
+            av_freep(&decodectx->fmt->pb->buffer);
+            av_freep(&decodectx->fmt->pb);
+        }
         avformat_close_input(&(decodectx->fmt));
         decodectx->fmt = NULL;
     }
@@ -258,6 +262,10 @@ err:
     if(context)
         avcodec_free_context(&context);
     if(decodectx->fmt){
+        if(decodectx->fmt->pb) {
+            av_freep(&decodectx->fmt->pb->buffer);
+            av_freep(&decodectx->fmt->pb);
+        }
         avformat_close_input(&(decodectx->fmt));
         decodectx->fmt = NULL;
     }
@@ -321,7 +329,7 @@ static int DestroyVideoDecodeCtx(VideoDecodeCtx** opaque)
         av_free(decodectx->nal_data_ptr);
         decodectx->nal_data_ptr = NULL;
     }
-    if(decodectx->fmt->pb) {
+    if(decodectx->fmt && decodectx->fmt->pb) {
         av_freep(&decodectx->fmt->pb->buffer);
         av_freep(&decodectx->fmt->pb);
     }
@@ -371,7 +379,7 @@ int DecodeNal(char* data_buffer, int data_size, const char* token, YUVFrame2* yu
     memset(yuv_frame, 0, sizeof(YUVFrame2));
     VideoDecodeCtx* decodectx = (VideoDecodeCtx* )av_mallocz(sizeof(VideoDecodeCtx));
     decodectx->params = av_mallocz(sizeof(InputParams));
-    memcpy(decodectx->params->token, token, strlen(token));
+    memcpy(decodectx->params->token, token, sizeof(decodectx->params->token));
 
     decodectx->nal_data_len = data_size;
     decodectx->nal_data = av_mallocz(data_size);
