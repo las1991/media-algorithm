@@ -137,7 +137,6 @@ static int CreateDecoderCtxAVIO(VideoDecodeCtx* decodectx)
         av_log(NULL, AV_LOG_ERROR, "avio alloc context failed! token = %s\n", decodectx->params->token);
         goto err;
     }
-
     decodectx->fmt->pb = nal_ioc;
 
     if(avformat_open_input(&(decodectx->fmt), NULL, NULL, NULL) < 0){
@@ -182,11 +181,11 @@ static int CreateDecoderCtxAVIO(VideoDecodeCtx* decodectx)
 err:
     if(context)
         avcodec_free_context(&context);
+    if(nal_ioc){
+        av_freep(&nal_ioc->buffer);
+        av_freep(&nal_ioc);
+    }
     if(decodectx->fmt){
-        if(decodectx->fmt->pb) {
-            av_freep(&decodectx->fmt->pb->buffer);
-            av_freep(&decodectx->fmt->pb);
-        }
         avformat_close_input(&(decodectx->fmt));
         decodectx->fmt = NULL;
     }
@@ -348,10 +347,10 @@ static int DestroyVideoDecodeCtx(VideoDecodeCtx** opaque)
             avcodec_close(ic->streams[i]->codec);
         avformat_close_input(&(decodectx->fmt));
     }
+    av_log(NULL, AV_LOG_DEBUG, "destroy video decoder ok, token = %s", decodectx->params->token);
     if(decodectx->params){
        av_free(decodectx->params);
     }
-    av_log(NULL, AV_LOG_DEBUG, "destroy video decoder ok, token = %s", decodectx->params->token);
     av_free(decodectx);
     decodectx = NULL;
     return 0;
@@ -456,8 +455,7 @@ failed:
 int Destroy(YUVFrame2* yuv_frame)
 {
     int i = 0;
-    for(; i < 2; i++)
-    {
+    for(; i < 2; i++){
         if(yuv_frame->data[i])
             av_free(yuv_frame->data[i]);
     }
