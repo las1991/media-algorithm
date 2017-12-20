@@ -11,6 +11,7 @@ phases:
   build:
     commands:
       - echo "Build begin with [`date`]"
+      - sh build-date.sh
       - sh build-cproject.sh
       - export LANG=en_US.utf8
       - mvn install
