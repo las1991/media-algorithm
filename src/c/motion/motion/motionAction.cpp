@@ -375,7 +375,7 @@ void mMotionAction(rvResource* rv,algorithm_result *result)
 
     Mat grayimg(rv->frame_height,rv->frame_width,CV_8U, rv->srcFrame.data);	
     Mat gradframe,dstmat;
-    if ( grayimg.cols != MINMUM_FRAME_WIDTH && grayimg.rows != MINMUM_FRAME_HEIGHT )
+    if ( grayimg.cols != MINMUM_FRAME_WIDTH || grayimg.rows != MINMUM_FRAME_HEIGHT )
     {
         resize(grayimg,dstmat,Size(MINMUM_FRAME_WIDTH,MINMUM_FRAME_HEIGHT));
         dstmat.copyTo(gradframe);

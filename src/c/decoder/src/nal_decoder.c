@@ -137,7 +137,6 @@ static int CreateDecoderCtxAVIO(VideoDecodeCtx* decodectx)
         av_log(NULL, AV_LOG_ERROR, "avio alloc context failed! token = %s\n", decodectx->params->token);
         goto err;
     }
-
     decodectx->fmt->pb = nal_ioc;
 
     if(avformat_open_input(&(decodectx->fmt), NULL, NULL, NULL) < 0){
@@ -182,6 +181,10 @@ static int CreateDecoderCtxAVIO(VideoDecodeCtx* decodectx)
 err:
     if(context)
         avcodec_free_context(&context);
+    if(nal_ioc){
+        av_freep(&nal_ioc->buffer);
+        av_freep(&nal_ioc);
+    }
     if(decodectx->fmt){
         avformat_close_input(&(decodectx->fmt));
         decodectx->fmt = NULL;
@@ -258,6 +261,10 @@ err:
     if(context)
         avcodec_free_context(&context);
     if(decodectx->fmt){
+        if(decodectx->fmt->pb) {
+            av_freep(&decodectx->fmt->pb->buffer);
+            av_freep(&decodectx->fmt->pb);
+        }
         avformat_close_input(&(decodectx->fmt));
         decodectx->fmt = NULL;
     }
@@ -321,7 +328,7 @@ static int DestroyVideoDecodeCtx(VideoDecodeCtx** opaque)
         av_free(decodectx->nal_data_ptr);
         decodectx->nal_data_ptr = NULL;
     }
-    if(decodectx->fmt->pb) {
+    if(decodectx->fmt && decodectx->fmt->pb) {
         av_freep(&decodectx->fmt->pb->buffer);
         av_freep(&decodectx->fmt->pb);
     }
@@ -340,10 +347,10 @@ static int DestroyVideoDecodeCtx(VideoDecodeCtx** opaque)
             avcodec_close(ic->streams[i]->codec);
         avformat_close_input(&(decodectx->fmt));
     }
+    av_log(NULL, AV_LOG_DEBUG, "destroy video decoder ok, token = %s", decodectx->params->token);
     if(decodectx->params){
        av_free(decodectx->params);
     }
-    av_log(NULL, AV_LOG_DEBUG, "destroy video decoder ok, token = %s", decodectx->params->token);
     av_free(decodectx);
     decodectx = NULL;
     return 0;
@@ -371,7 +378,7 @@ int DecodeNal(char* data_buffer, int data_size, const char* token, YUVFrame2* yu
     memset(yuv_frame, 0, sizeof(YUVFrame2));
     VideoDecodeCtx* decodectx = (VideoDecodeCtx* )av_mallocz(sizeof(VideoDecodeCtx));
     decodectx->params = av_mallocz(sizeof(InputParams));
-    memcpy(decodectx->params->token, token, strlen(token));
+    memcpy(decodectx->params->token, token, sizeof(decodectx->params->token));
 
     decodectx->nal_data_len = data_size;
     decodectx->nal_data = av_mallocz(data_size);
@@ -409,16 +416,23 @@ int DecodeNal(char* data_buffer, int data_size, const char* token, YUVFrame2* yu
         }
         //save_yuv(frame->data, frame->linesize, width, height);
         av_log(NULL, AV_LOG_DEBUG, "frame width = %d height = %d\n", frame->linesize[0], frame->linesize[1]);
+      
         yuv_frame->data[yuv_num] = av_mallocz(width * height * 3 / 2);
-
-        tmp_size = width * height;
         dst_ptr = yuv_frame->data[yuv_num];
-        memcpy(dst_ptr, frame->data[0], tmp_size);
-        dst_ptr += tmp_size;
-        tmp_size = tmp_size / 4;
-        memcpy(dst_ptr, frame->data[1], tmp_size);
-        dst_ptr += tmp_size;
-        memcpy(dst_ptr, frame->data[2], tmp_size);
+
+        int nYUVBufsize = 0;
+        for(i = 0; i < height; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[0] + i * frame->linesize[0], width); 
+            nYUVBufsize += width;   
+        }
+        for(i = 0; i < height / 2; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[1] + i * frame->linesize[1], width / 2); 
+            nYUVBufsize += width / 2;   
+        }
+        for(i = 0; i < height / 2; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[2] + i * frame->linesize[2], width / 2); 
+            nYUVBufsize += width / 2;   
+        }
         yuv_frame->size[yuv_num] = width * height * 3 / 2;
         av_free_packet(pkt);
         yuv_num ++;
@@ -448,8 +462,7 @@ failed:
 int Destroy(YUVFrame2* yuv_frame)
 {
     int i = 0;
-    for(; i < 2; i++)
-    {
+    for(; i < 2; i++){
         if(yuv_frame->data[i])
             av_free(yuv_frame->data[i]);
     }
