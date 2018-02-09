@@ -416,16 +416,23 @@ int DecodeNal(char* data_buffer, int data_size, const char* token, YUVFrame2* yu
         }
         //save_yuv(frame->data, frame->linesize, width, height);
         av_log(NULL, AV_LOG_DEBUG, "frame width = %d height = %d\n", frame->linesize[0], frame->linesize[1]);
+      
         yuv_frame->data[yuv_num] = av_mallocz(width * height * 3 / 2);
-
-        tmp_size = width * height;
         dst_ptr = yuv_frame->data[yuv_num];
-        memcpy(dst_ptr, frame->data[0], tmp_size);
-        dst_ptr += tmp_size;
-        tmp_size = tmp_size / 4;
-        memcpy(dst_ptr, frame->data[1], tmp_size);
-        dst_ptr += tmp_size;
-        memcpy(dst_ptr, frame->data[2], tmp_size);
+
+        int nYUVBufsize = 0;
+        for(i = 0; i < height; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[0] + i * frame->linesize[0], width); 
+            nYUVBufsize += width;   
+        }
+        for(i = 0; i < height / 2; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[1] + i * frame->linesize[1], width / 2); 
+            nYUVBufsize += width / 2;   
+        }
+        for(i = 0; i < height / 2; i++){
+            memcpy(dst_ptr + nYUVBufsize, frame->data[2] + i * frame->linesize[2], width / 2); 
+            nYUVBufsize += width / 2;   
+        }
         yuv_frame->size[yuv_num] = width * height * 3 / 2;
         av_free_packet(pkt);
         yuv_num ++;
