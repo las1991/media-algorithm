@@ -17,6 +17,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.alibaba.fastjson.JSON;
+import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.Tag;
 import com.google.common.eventbus.Subscribe;
 import com.sengled.mediaworker.RecordCounter;
@@ -113,6 +114,7 @@ public class MotionEventHandler implements InitializingBean {
 		try {
 			amazonS3Template.putObject(bucketName, imageS3Path, jpgData, tagList);
 		} catch (Exception e) {
+		    LOGGER.error(e.getMessage(),e);
 			throw new S3RuntimeException(e.getMessage(),e);
 		}
 	}

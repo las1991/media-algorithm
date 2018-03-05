@@ -9,12 +9,10 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.InvalidStateException;
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.ShutdownException;
 import com.amazonaws.services.kinesis.clientlibrary.exceptions.ThrottlingException;
@@ -46,7 +44,7 @@ public class RecordProcessor implements IRecordProcessor {
     //max BehindLatest
     private static final long MAX_BEHINDLASTEST_MILLIS = 5 * 60 * 1000; // 5 minute
     //max execute time
-    private static final long MAX_EXECUTE_MILLIS = 20 * 1000;//20 sec
+    private static final long MAX_EXECUTE_MILLIS = 60 * 1000;//60 sec
     
 	private String kinesisShardId;
 	private RecordCounter recordCounter;
@@ -205,6 +203,7 @@ public class RecordProcessor implements IRecordProcessor {
 			}
 			dataMap.put(record.getPartitionKey(), frame);
 		}
+		LOGGER.info("unpacking token size:{}", dataMap.size());
 		return dataMap;
 	}
 	

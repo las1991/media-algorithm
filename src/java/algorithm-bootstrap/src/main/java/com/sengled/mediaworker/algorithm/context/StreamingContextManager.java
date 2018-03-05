@@ -1,21 +1,18 @@
 package com.sengled.mediaworker.algorithm.context;
 
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.Enumeration;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
@@ -33,6 +30,7 @@ public class StreamingContextManager implements InitializingBean{
 	
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
 	private Timer timer;
+	private Object lockObject  = new Object();;
 	
 	@Autowired
     private RecordCounter recordCounter;
@@ -65,20 +63,23 @@ public class StreamingContextManager implements InitializingBean{
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token,String utcDateTime,FrameConfig config) throws AlgorithmIntanceCreateException{
-		StreamingContext context =  streamingContextMap.get(token);
+		StreamingContext context =  null;
 		MotionConfig baseConfig = config.getBaseConfig();
-		if (context == null) {
-			context =  newAlgorithmContext(processor,token,utcDateTime, baseConfig);
-		}else{
-			//设置  数据中的UTC时间
-			context.setUtcDateTime(utcDateTime);
-			//设置算法参数
-			context.getAlgorithm().setParameters(JSONObject.toJSONString(config.getBaseConfig()));
-			//设置 上次接收到数据的时间
-			context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
-			//设置 本次接收到数据的时间
-			context.setContextUpdateTimestamp(System.currentTimeMillis());
-		}
+		synchronized (lockObject) {
+		    context =  streamingContextMap.get(token);
+            if( null == context ){ 
+                context =  newAlgorithmContext(processor,token,utcDateTime, baseConfig);
+            }else{
+                //设置  数据中的UTC时间
+                context.setUtcDateTime(utcDateTime);
+                //设置算法参数
+                context.getAlgorithm().setParameters(JSONObject.toJSONString(baseConfig));
+                //设置 上次接收到数据的时间
+                context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
+                //设置 本次接收到数据的时间
+                context.setContextUpdateTimestamp(System.currentTimeMillis());
+            }
+        }
 		context.setConfig(config);
 		return context;
 	}
