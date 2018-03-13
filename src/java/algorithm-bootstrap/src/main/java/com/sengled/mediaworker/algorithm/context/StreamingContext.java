@@ -2,15 +2,12 @@ package com.sengled.mediaworker.algorithm.context;
 
 import java.text.ParseException;
 import java.util.Date;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.apache.commons.lang.time.DateUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sengled.media.interfaces.Algorithm;
-import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.action.Action;
@@ -41,7 +38,8 @@ public class StreamingContext extends Context{
 	//创建上下文时间
 	private Long contextCreateTimestamp;
 	//配置
-	private FrameConfig config;
+	private FrameConfig frameConfig;
+	private AlgorithmConfigWarpper config;
 
 	private boolean isReport = true;
 	private Algorithm algorithm;
@@ -193,31 +191,27 @@ public class StreamingContext extends Context{
 		return isReport;
 	}
 	
-	public FrameConfig getConfig() {
-		return config;
-	}
-
-	public void setConfig(FrameConfig config) {
-		this.config = config;
-	}
 	public int getFileExpiresHours(){
-	    if( null == config ){
-	        LOGGER.error("[{}] config is null.",token);
-	        return 31 * 24;
+	    if( null == frameConfig ){
+	        LOGGER.error("[{}] frameConfig is null.",token);
+	        return 30 * 24;
 	    }
-	    return config.getFileExpiresHours();
+	    return frameConfig.getFileExpiresHours();
 	}
 
-	@Override
-	public String toString() {
-		StringBuffer sb = new StringBuffer();
-		sb.append("Token:" + token);
-		sb.append(" utcDateTime" + utcDateTime);
-		sb.append(" lastMotionTimestamp:" + getTimestampFormat(lastMotionTimestamp));
-		sb.append(" lastTimeContextUpdateTimestamp:" + getTimestampFormat(lastTimeContextUpdateTimestamp));
-		sb.append(" contextUpdateTimestamp:" + getTimestampFormat(contextUpdateTimestamp));
-		sb.append(" contextCreateTimestamp:" + getTimestampFormat(contextCreateTimestamp));
-		sb.append(" algorithm:" + algorithm.toString());
-		return sb.toString();
-	}	
+    public AlgorithmConfigWarpper getConfig() {
+        return config;
+    }
+
+    public void setConfig(AlgorithmConfigWarpper config) {
+        this.config = config;
+    }
+
+    public FrameConfig getFrameConfig() {
+        return frameConfig;
+    }
+
+    public void setFrameConfig(FrameConfig frameConfig) {
+        this.frameConfig = frameConfig;
+    }	
 }

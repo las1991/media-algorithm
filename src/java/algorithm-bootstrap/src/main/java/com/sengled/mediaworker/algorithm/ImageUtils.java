@@ -18,17 +18,13 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-
 import javax.imageio.ImageIO;
-import javax.imageio.stream.ImageOutputStream;
-
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.google.common.collect.Multimap;
 import com.sengled.media.interfaces.YUVImage;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;

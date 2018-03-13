@@ -14,7 +14,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.http.HttpEntity;
 import org.apache.http.entity.ByteArrayEntity;
@@ -24,7 +23,6 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -32,10 +30,10 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.Data;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
 import com.sengled.mediaworker.algorithm.context.ObjectContext;
 import com.sengled.mediaworker.algorithm.context.ObjectContextManager;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Data;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.service.ObjectEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;

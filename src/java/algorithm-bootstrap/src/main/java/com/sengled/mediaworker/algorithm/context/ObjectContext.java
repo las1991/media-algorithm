@@ -1,12 +1,10 @@
 package com.sengled.mediaworker.algorithm.context;
 
 import java.util.Date;
-
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
 
 /**
  * 物体识别上下文

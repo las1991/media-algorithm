@@ -31,8 +31,18 @@
             <destName>algorithm.properties</destName>
             <outputDirectory>config</outputDirectory>
         </file>
+        <file>
+            <source>${project.basedir}/src/main/resources/config/haproxy.properties</source>
+            <destName>haproxy.properties</destName>
+            <outputDirectory>config</outputDirectory>
+        </file>
     </files>
     <fileSets>
+        <fileSet>
+            <directory>${project.basedir}/lib</directory>
+            <outputDirectory>libs</outputDirectory>
+            <fileMode>644</fileMode>
+        </fileSet>
        <fileSet>
            <directory>${project.basedir}/sbin</directory>
            <outputDirectory>bin</outputDirectory>

@@ -32,6 +32,16 @@
 	</dependencyManagement>
 
 	<dependencies>
+        
+        <dependency>
+            <groupId>com.sengled.cloud</groupId>
+            <artifactId>mediabase-api</artifactId>
+            <version>sengled-mediabase-api-4.3.12.SNAPSHOT1.jar</version>
+            <scope>system</scope>
+            <systemPath>${project.basedir}/../algorithm-assembly/lib/sengled-mediabase-api-4.3.12.SNAPSHOT1.jar</systemPath>
+        </dependency>
+        
+        
 		<!-- jna -->
 		<dependency>
 			<groupId>com.sengled.media</groupId>
@@ -161,6 +171,7 @@
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
+			 <version>1.2.44</version>
 		</dependency>
 
 		<dependency>

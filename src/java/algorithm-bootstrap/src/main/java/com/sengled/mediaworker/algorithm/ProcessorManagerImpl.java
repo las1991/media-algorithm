@@ -2,19 +2,16 @@ package com.sengled.mediaworker.algorithm;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.JnaInterface;
 import com.sengled.media.interfaces.YUVImage;
@@ -61,58 +58,66 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 		}		
 	}
 
-	public synchronized Future<?> submit(long receiveTime,String token, Collection<Frame> datas) {
+	public synchronized Future<?> submit(long receiveTime,String tokenMask, Collection<Frame> datas) {
 		return threadPool.submit(new Callable<Void>() {
 			@Override
 			public Void call() throws Exception {
-				handleDatas(receiveTime,token, datas);
+				handleDatas(receiveTime,tokenMask, datas);
 				return null;
 			}
 		});
 	}
 	
-	private  void handleDatas(final long receiveTime,final String token,final Collection<Frame> datas){
+	private  void handleDatas(final long receiveTime,final String tokenMask,final Collection<Frame> datas){
 		
-		LOGGER.debug("Token:{},handleDatas begin. datas size:{} ",token,datas.size());
+		LOGGER.debug("Token:{},handleDatas begin. datas size:{} ",tokenMask,datas.size());
 		
 		for (Frame frame : datas) {
 			long handleStartTime = System.currentTimeMillis();
 			long waitProcessCost = handleStartTime - receiveTime;
 			recordCounter.updateWaitProcessCost(waitProcessCost);
-			LOGGER.debug("Token:{},waitProcessCost:{}",token,waitProcessCost);
+			LOGGER.debug("Token:{},waitProcessCost:{}",tokenMask,waitProcessCost);
 			
-			actionHandle(token, frame);
+			actionHandle(tokenMask, frame);
 			
 			long processCost = System.currentTimeMillis() -  handleStartTime;
 			recordCounter.updateSingleDataProcessCost(processCost);
-			LOGGER.debug("Token:{} process cost:{}",token,processCost);
+			LOGGER.debug("Token:{} process cost:{}",tokenMask,processCost);
 		}
 	}
 	
-	private void actionHandle(String token,Frame frame) {
-		FrameConfig config = frame.getConfig();
-		if( null == config  ||  null == config.getBaseConfig()){
-			LOGGER.error("Token:{} FrameConfig:{}  error",token,config);
-			return;
-		}
-	
-		if(null == config.getMotionConfig() && null == config.getObjectConfig()){
-			LOGGER.info("Token:{} Motion off,Object off",token);
-			return;
-		}
+	private void actionHandle(String tokenMask,Frame frame) {
+		FrameConfig frameConfig = frame.getConfig();
+		String utcDateTime = frameConfig.getUtcDateTime();
+		String action = frameConfig.getAction();
 		
-		String utcDateTime = config.getUtcDateTime();
-		String action = config.getAction();
-		LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",token,action,utcDateTime,config);
+	    //获得上下文
+        StreamingContext context;
+        try {
+            context = streamingContextManager.findOrCreateStreamingContext(this, tokenMask, utcDateTime,frameConfig);
+        } catch (Exception e) {
+            LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
+            return;
+        }
+        
+	    //处理逻辑
+        switch (action) {
+            case "open":
+                context.setAction(context.openAction);
+                break;
+            case "exec":
+                context.setAction(context.execAction);
+                break;
+            case "close":
+                context.setAction(context.closeAction);
+                break;
+            default:
+                LOGGER.error("Token:{},action:{} not supported", tokenMask,action);
+                return;
+        }
+		LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",tokenMask,action,utcDateTime,frameConfig);
 		
-		//获得上下文
-		StreamingContext context;
-		try {
-			context = streamingContextManager.findOrCreateStreamingContext(this, token, utcDateTime,config);
-		} catch (Exception e) {
-			LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
-			return;
-		}
+
 		//过滤数据
 		try {
 			if(context.isDataExpire(maxDelayedTimeMsce)){
@@ -120,25 +125,12 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			}
 			context.reportCheck(motionIntervalTimeMsce);
 		} catch (Exception e2) {
-			LOGGER.error("Token:{}  skip...",token);
+			LOGGER.error("Token:{}  skip...",tokenMask);
 			LOGGER.error(e2.getMessage(),e2);
 			return;
 		}				
-		//处理
-		switch (action) {
-			case "open":
-				context.setAction(context.openAction);
-				break;
-			case "exec":
-				context.setAction(context.execAction);
-				break;
-			case "close":
-				context.setAction(context.closeAction);
-				break;
-			default:
-				LOGGER.error("Token:{},action:{} not supported", token,action);
-				return;
-		}
+
+		//执行处理
 		try {
 			context.feed(frame, feedListeners);
 		} catch (Exception e) {
@@ -146,7 +138,8 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 			return;
 		}
 	}
-	@Override
+
+    @Override
 	public List<YUVImage> decode(final String token,final byte[] nalData) throws DecodeException{
 		return jnaInterface.decode(token, nalData);
 	}
@@ -172,32 +165,4 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	public void shutdown(){
 		threadPool.shutdownNow();
 	}
-	
-	public static class YUVImageWrapper {
-		private Map<String, Object> configs;
-		private YUVImage yuvImage;
-
-		public YUVImageWrapper(Map<String, Object> configs, YUVImage yuvImage) {
-			super();
-			this.configs = configs;
-			this.yuvImage = yuvImage;
-		}
-
-		public Map<String, Object> getConfigs() {
-			return configs;
-		}
-
-		public void setConfigs(Map<String, Object> configs) {
-			this.configs = configs;
-		}
-
-		public YUVImage getYuvImage() {
-			return yuvImage;
-		}
-
-		public void setYuvImage(YUVImage yuvImage) {
-			this.yuvImage = yuvImage;
-		}
-	}
-
 }

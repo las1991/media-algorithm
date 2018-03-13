@@ -140,8 +140,8 @@ public class RecordProcessor implements IRecordProcessor {
 		LOGGER.debug("Multimap token2MultipleFrames size:{}",token2MultipleFrames.size());
 		
 		List<Future<?>> batchTasks = new ArrayList<>(token2MultipleFrames.size());	
-		for (final String token : token2MultipleFrames.keySet()) {
-			batchTasks.add(processorManager.submit(receiveTime,token, token2MultipleFrames.get(token)));
+		for (final String tokenMask : token2MultipleFrames.keySet()) {//tokenMask : XXXX,{random}
+			batchTasks.add(processorManager.submit(receiveTime,tokenMask, token2MultipleFrames.get(tokenMask)));
 		}
 		for (Future<?> task : batchTasks) {
 			try {
