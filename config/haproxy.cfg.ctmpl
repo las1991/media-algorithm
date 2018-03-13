@@ -41,3 +41,12 @@ listen elk-service
     mode   tcp
     {{range service "elk"}}
     server {{.Node}} {{.Address}}:6380{{end}}
+
+listen media-base-service
+    bind 127.0.0.1:31500
+    balance leastconn
+    option tcpka
+    mode   tcp
+    {{range service "media-base"}}server {{.Node}} {{.Address}}:8888
+    {{end}}
+    

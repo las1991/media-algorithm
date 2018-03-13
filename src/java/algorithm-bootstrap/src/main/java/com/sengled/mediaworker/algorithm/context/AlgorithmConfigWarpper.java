@@ -1,0 +1,187 @@
+package com.sengled.mediaworker.algorithm.context;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import com.sengled.media.algorithm.config.Actions.AlgorithmType;
+import com.sengled.media.algorithm.config.AlgorithmConfig;
+import com.sengled.media.algorithm.config.AlgorithmZone;
+
+
+public class AlgorithmConfigWarpper {
+    
+    private AlgorithmConfig  algorithmConfig;
+    
+    public AlgorithmConfigWarpper(AlgorithmConfig algorithmConfig){
+        this.algorithmConfig = algorithmConfig;
+    }
+
+    public static class MotionConfig {
+        private int sensitivity;
+
+        private List<Data> dataList;
+
+        public int getSensitivity() {
+            return sensitivity;
+        }
+
+        public void setSensitivity(int sensitivity) {
+            this.sensitivity = sensitivity;
+        }
+
+        public List<Data> getDataList() {
+            return dataList;
+        }
+
+        public void setDataList(List<Data> dataList) {
+            this.dataList = dataList;
+        }
+
+        @Override
+        public String toString() {
+            return "MotionConfig [sensitivity=" + sensitivity + ", dataList=" + dataList + "]";
+        }
+
+    }
+
+    public static class ObjectConfig {
+        private int sensitivity;
+
+        private List<Data> dataList;
+
+        public List<Data> getDataList() {
+            return dataList;
+        }
+
+        public void setDataList(List<Data> dataList) {
+            this.dataList = dataList;
+        }
+
+        public int getSensitivity() {
+            return sensitivity;
+        }
+
+        public void setSensitivity(int sensitivity) {
+            this.sensitivity = sensitivity;
+        }
+
+        @Override
+        public String toString() {
+            return "ObjectConfig [sensitivity=" + sensitivity + ", dataList=" + dataList + "]";
+        }
+
+    }
+
+    public static class Data {
+        private int id;
+
+        private String pos;
+
+        private String objectList;
+
+        public int getId() {
+            return id;
+        }
+
+        public void setId(int id) {
+            this.id = id;
+        }
+
+        public List<Integer> getPosList() {
+            String[] poss = pos.split(",");
+            if (4 != poss.length) {
+                Collections.emptyList();
+            }
+            List<Integer> posList = new ArrayList<>();
+            posList.add(Integer.valueOf(poss[0]));
+            posList.add(Integer.valueOf(poss[1]));
+            posList.add(Integer.valueOf(poss[2]));
+            posList.add(Integer.valueOf(poss[3]));
+            return posList;
+        }
+
+        public String getPos() {
+            return pos;
+        }
+
+        public void setPosFromList(List<Integer> pos) {
+            if (null == pos || pos.isEmpty()) {
+                return;
+            }
+            this.pos = pos.get(0) + "," + pos.get(1) + "," + pos.get(2) + "," + pos.get(3);
+        }
+
+        public void setPos(String pos) {
+            this.pos = pos;
+        }
+
+        public String getObjectList() {
+            return objectList;
+        }
+
+        public void setObjectList(String objectList) {
+            this.objectList = objectList;
+        }
+
+        @Override
+        public String toString() {
+            return "Data [id=" + id + ", pos=" + pos + ", objectList=" + objectList + "]";
+        }
+    }
+
+    public MotionConfig getBaseConfig() {
+        return getMotionConfig();
+    }
+
+    public ObjectConfig getObjectConfig() {
+        if( ! algorithmConfig.getActions().isEnable() ){
+            return null;
+        }
+        boolean hasObjectConfig = false;
+        List<AlgorithmType> list = algorithmConfig.getActions().getAlgorithms();
+        for (AlgorithmType algorithmType : list) {
+            if( algorithmType.equals(AlgorithmType.PERSION)){
+                hasObjectConfig = true;
+            }
+        }
+        
+        if( hasObjectConfig ){
+            ObjectConfig oc = new ObjectConfig();
+            oc.setDataList(getDataList());
+            oc.setSensitivity(algorithmConfig.getMotionSensitivity());
+            return oc;
+        }
+        
+        return null;
+    }
+
+    public MotionConfig getMotionConfig() {
+        if( ! algorithmConfig.getActions().isEnable() ){
+            return null;
+        }
+        MotionConfig motion = new MotionConfig();
+        motion.setSensitivity(algorithmConfig.getMotionSensitivity());
+        motion.setDataList(getDataList());
+        return motion;
+    }
+    
+    private List<Data> getDataList(){
+        List<AlgorithmZone> zones = algorithmConfig.getActions().getZones();
+        List<Data> dataList = new ArrayList<>();
+        for (AlgorithmZone algorithmZone : zones) {
+            Data data = new Data();
+            data.setId(Long.valueOf(algorithmZone.getZoneId()).intValue());
+            data.setObjectList("1");//1表示物体识别
+            data.setPos(algorithmZone.getRoiAreaCoordinate());
+            dataList.add(data);
+        }
+        return dataList;
+    }
+
+    @Override
+    public String toString() {
+        return "AlgorithmConfigWarpper [algorithmConfig=" + algorithmConfig + ", getBaseConfig()=" + getBaseConfig() + ", getObjectConfig()="
+                + getObjectConfig() + ", getMotionConfig()=" + getMotionConfig() + ", getDataList()=" + getDataList() + "]";
+    }
+
+}

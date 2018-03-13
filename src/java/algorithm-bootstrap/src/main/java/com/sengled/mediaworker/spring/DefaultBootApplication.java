@@ -6,7 +6,7 @@ import org.springframework.boot.context.embedded.jetty.JettyEmbeddedServletConta
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-
+import org.springframework.web.client.RestTemplate;
 import com.codahale.metrics.MetricRegistry;
 import com.sengled.mediaworker.metrics.MetricsGraphicsController;
 import com.sengled.mediaworker.metrics.osmonitor.OSMonitor;
@@ -37,8 +37,13 @@ public class DefaultBootApplication {
 	public MetricsGraphicsController metricsGraphicsController() {
 		return new MetricsGraphicsController();
 	}
-	
+	@Bean
+	public RestTemplate restTemplate(){
+	    return new RestTemplate();
+	}
 	@Bean()
 	public MetricRegistry metricRegistry() {
 		return new MetricRegistry();
-	} }
+	}
+	
+}

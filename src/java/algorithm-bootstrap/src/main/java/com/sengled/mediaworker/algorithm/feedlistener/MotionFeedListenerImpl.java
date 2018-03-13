@@ -5,21 +5,19 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.Executors;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.algorithm.ImageUtils;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.MotionConfig;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.service.MotionEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;

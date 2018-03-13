@@ -5,13 +5,11 @@ import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
-
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
 /**
  * 物体识别上下文管理
  * @author media-liwei

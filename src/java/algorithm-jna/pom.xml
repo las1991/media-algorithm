@@ -7,12 +7,12 @@
 
 	<!-- <parent> <groupId>com.sengled.media</groupId> <artifactId>sengled-media-servers</artifactId> 
 		<version>1.0.64.SNAPSHOT1</version> </parent> -->
-    <parent>
-        <groupId>com.sengled.media</groupId>
-        <artifactId>algorithm-v3</artifactId>
-        <version>3.1.2.SNAPSHOT2</version>
-        <relativePath>../../../</relativePath>
-    </parent>
+	<parent>
+		<groupId>com.sengled.media</groupId>
+		<artifactId>algorithm-v3</artifactId>
+		<version>3.1.2.SNAPSHOT2</version>
+		<relativePath>../../../</relativePath>
+	</parent>
 
 	<artifactId>sengled-algorithm-v3-jna</artifactId>
 	<name>algorithm-v3-jna</name>
@@ -20,29 +20,30 @@
 	<properties>
 	</properties>
 
-    
+
 	<dependencies>
-	
-<dependency>
-  <groupId>jmagick</groupId>
-  <artifactId>jmagick</artifactId>
-  <version>6.2.4</version>
-</dependency>
 
 		<dependency>
-		  <groupId>net.java.dev.jna</groupId>
-		  <artifactId>jna-platform</artifactId>
-		  <version>4.2.2</version>
+			<groupId>jmagick</groupId>
+			<artifactId>jmagick</artifactId>
+			<version>6.2.4</version>
+		</dependency>
+
+		<dependency>
+			<groupId>net.java.dev.jna</groupId>
+			<artifactId>jna-platform</artifactId>
+			<version>4.2.2</version>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
+			 <version>1.2.8</version>
 		</dependency>
 		<dependency>
-		  <groupId>com.nativelibs4java</groupId>
-		  <artifactId>jnaerator</artifactId>
-		  <version>0.12</version>
-		  <scope>test</scope>
+			<groupId>com.nativelibs4java</groupId>
+			<artifactId>jnaerator</artifactId>
+			<version>0.12</version>
+			<scope>test</scope>
 		</dependency>
 	</dependencies>
 
@@ -58,7 +59,7 @@
 					<exclude>**/*.xml</exclude>
 				</excludes>
 			</resource>
-			
+
 			<resource>
 				<directory>${basedir}/src/main/java</directory>
 				<excludes>
@@ -69,7 +70,7 @@
 		</resources>
 		<plugins>
 
-			
+
 		</plugins>
 	</build>
 </project>

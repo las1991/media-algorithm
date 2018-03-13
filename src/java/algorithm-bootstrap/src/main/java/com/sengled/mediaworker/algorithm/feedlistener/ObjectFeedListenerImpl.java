@@ -1,18 +1,16 @@
 package com.sengled.mediaworker.algorithm.feedlistener;
 
 import java.util.Date;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
-
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ObjectRecognition;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.ObjectConfig;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 
 /**

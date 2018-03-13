@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.ConcurrentHashMap;
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,13 +15,16 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSONObject;
+import com.sengled.media.algorithm.MediaAlgorithmService;
+import com.sengled.media.algorithm.QueryAlgorithmConfigRequest;
+import com.sengled.media.algorithm.config.AlgorithmConfig;
 import com.sengled.media.interfaces.Algorithm;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.MotionConfig;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
-import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.MotionConfig;
 
 @Component
 public class StreamingContextManager implements InitializingBean{
@@ -29,11 +33,15 @@ public class StreamingContextManager implements InitializingBean{
 	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 10 * 60 * 1000;
 	
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
+	private ConcurrentHashMap<String, AlgorithmConfigWarpper> AlgorithmConfigMap;
 	private Timer timer;
 	private Object lockObject  = new Object();;
 	
 	@Autowired
     private RecordCounter recordCounter;
+	
+	@Autowired
+	MediaAlgorithmService mediaAlgorithmService;
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -48,6 +56,7 @@ public class StreamingContextManager implements InitializingBean{
 	
 	private void initialize(){
 		streamingContextMap = new ConcurrentHashMap<>();
+		AlgorithmConfigMap   =   new ConcurrentHashMap<>();
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
@@ -62,13 +71,23 @@ public class StreamingContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String token,String utcDateTime,FrameConfig config) throws AlgorithmIntanceCreateException{
+	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String tokenMask,String utcDateTime,FrameConfig frameConfig) throws AlgorithmIntanceCreateException{
+	    
 		StreamingContext context =  null;
-		MotionConfig baseConfig = config.getBaseConfig();
+		boolean isRefresh = frameConfig.getAction().equals("open")?true:false;
+		
+		AlgorithmConfigWarpper algorithmConfig;
+		try {
+            algorithmConfig = getAlgorithmConfig(isRefresh,tokenMask);
+        } catch (Exception e) {
+            throw new AlgorithmIntanceCreateException(e);
+        }
+		MotionConfig baseConfig = algorithmConfig.getBaseConfig();
+		
 		synchronized (lockObject) {
-		    context =  streamingContextMap.get(token);
+		    context =  streamingContextMap.get(tokenMask);
             if( null == context ){ 
-                context =  newAlgorithmContext(processor,token,utcDateTime, baseConfig);
+                context =  newAlgorithmContext(processor,tokenMask,utcDateTime, baseConfig);
             }else{
                 //设置  数据中的UTC时间
                 context.setUtcDateTime(utcDateTime);
@@ -79,11 +98,34 @@ public class StreamingContextManager implements InitializingBean{
                 //设置 本次接收到数据的时间
                 context.setContextUpdateTimestamp(System.currentTimeMillis());
             }
+            context.setConfig(algorithmConfig);
+            context.setFrameConfig(frameConfig);
         }
-		context.setConfig(config);
+
 		return context;
 	}
-	public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
+	private AlgorithmConfigWarpper getAlgorithmConfig(boolean isRefresh,String tokenMask) throws Exception{
+	    AlgorithmConfigWarpper configWapper;
+        try {
+            configWapper = AlgorithmConfigMap.get(tokenMask);
+            if( null != configWapper && ! isRefresh ){
+                return configWapper;
+            }
+            QueryAlgorithmConfigRequest request = new QueryAlgorithmConfigRequest();
+            request.setToken(StringUtils.split(tokenMask, ",")[0]);
+            AlgorithmConfig algor = mediaAlgorithmService.getAlgorithmConfig(request);
+            LOGGER.info("Mediabase return AlgorithmConfig:{}",algor);
+            configWapper = new AlgorithmConfigWarpper(algor);
+            AlgorithmConfigMap.put(tokenMask, configWapper);
+            LOGGER.info("AlgorithmConfigWarpper:{}",configWapper);
+            return configWapper;
+        } catch (Exception e) {
+            LOGGER.error(e.getMessage(),e);
+            throw e;
+        }
+    }
+
+    public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
 		if(LOGGER.isDebugEnabled()){
 			LOGGER.debug("StreamingContext reload.{}",context.toString());
 		}
