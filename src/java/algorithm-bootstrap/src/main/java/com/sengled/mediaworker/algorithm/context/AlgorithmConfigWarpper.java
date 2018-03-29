@@ -130,39 +130,51 @@ public class AlgorithmConfigWarpper {
     }
 
     public MotionConfig getBaseConfig() {
-        return getMotionConfig();
-    }
-
-    public ObjectConfig getObjectConfig() {
         if( ! algorithmConfig.getActions().isEnable() ){
             return null;
         }
-        boolean hasObjectConfig = false;
-        List<AlgorithmType> list = algorithmConfig.getActions().getAlgorithms();
-        for (AlgorithmType algorithmType : list) {
-            if( algorithmType.equals(AlgorithmType.PERSION)){
-                hasObjectConfig = true;
-            }
-        }
-        
-        if( hasObjectConfig ){
+        //使用MotionConfig 做为基础配置
+        MotionConfig motion = new MotionConfig();
+        motion.setSensitivity(algorithmConfig.getMotionSensitivity());
+        motion.setDataList(getDataList());
+        return motion;
+    }
+    
+    public ObjectConfig getObjectConfig() {
+        if( isEnable(AlgorithmType.PERSION) ){
             ObjectConfig oc = new ObjectConfig();
             oc.setDataList(getDataList());
             oc.setSensitivity(algorithmConfig.getMotionSensitivity());
             return oc;
         }
-        
         return null;
     }
 
     public MotionConfig getMotionConfig() {
-        if( ! algorithmConfig.getActions().isEnable() ){
-            return null;
+        
+        if( isEnable(AlgorithmType.MOTION) ){
+            MotionConfig motion = new MotionConfig();
+            motion.setSensitivity(algorithmConfig.getMotionSensitivity());
+            motion.setDataList(getDataList());
+            return motion;
         }
-        MotionConfig motion = new MotionConfig();
-        motion.setSensitivity(algorithmConfig.getMotionSensitivity());
-        motion.setDataList(getDataList());
-        return motion;
+        return null;
+    }
+    
+
+    private boolean isEnable(AlgorithmType type){
+        if( ! algorithmConfig.getActions().isEnable() ){
+            return false;
+        }
+        
+        List<AlgorithmType> list = algorithmConfig.getActions().getAlgorithms();
+        for (AlgorithmType algorithmType : list) {
+            if( algorithmType.equals(type)){
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     private List<Data> getDataList(){

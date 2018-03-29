@@ -93,5 +93,10 @@ public class KinesisFrameDecoder {
 		public void setUtcDateTime(String utcDateTime) {
 			this.utcDateTime = utcDateTime;
 		}
+
+        @Override
+        public String toString() {
+            return "FrameConfig [action=" + action + ", utcDateTime=" + utcDateTime + ", fileExpiresHours=" + fileExpiresHours + "]";
+        }
     }
 }
