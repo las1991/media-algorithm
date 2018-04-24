@@ -305,7 +305,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			String resultObjectType = resultObject.type;     //eg: person|cat|cat|dog
 			List<Integer> objectBox = resultObject.bbox_pct;
 			//FIXME
-			if(resultObject.score < 0.8d){
+			if(resultObject.score < 0.75d){
 				continue;
 			}
 			
