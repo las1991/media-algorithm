@@ -6,6 +6,7 @@ import java.util.List;
 import com.sengled.media.algorithm.config.Actions.AlgorithmType;
 import com.sengled.media.algorithm.config.AlgorithmConfig;
 import com.sengled.media.algorithm.config.AlgorithmZone;
+import com.sengled.media.algorithm.config.MotionSensitivity;
 
 
 public class AlgorithmConfigWarpper {
@@ -128,14 +129,38 @@ public class AlgorithmConfigWarpper {
             return "Data [id=" + id + ", pos=" + pos + ", objectList=" + objectList + "]";
         }
     }
-
+    
+    public static enum SensitivityEnum {
+        HIGH(1800),
+        NORMAL(1000),
+        LOW(600);
+        
+        public static int getRealSensitivity(Integer showSensitivity) {
+            if( null == showSensitivity ) {
+                return SensitivityEnum.NORMAL.realSensitivity;
+            }
+            switch(showSensitivity) {
+                case MotionSensitivity.HIGH:
+                    return HIGH.realSensitivity;
+                case MotionSensitivity.LOW:
+                    return LOW.realSensitivity;
+                default:
+                    return NORMAL.realSensitivity;
+            }
+        }
+        private SensitivityEnum(int realSensitivity) {
+            this.realSensitivity = realSensitivity;
+        }
+        int realSensitivity;
+    }
+    
     public MotionConfig getBaseConfig() {
         if( ! algorithmConfig.getActions().isEnable() ){
             return null;
         }
         //使用MotionConfig 做为基础配置
         MotionConfig motion = new MotionConfig();
-        motion.setSensitivity(algorithmConfig.getMotionSensitivity());
+        motion.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
         motion.setDataList(getDataList());
         return motion;
     }
@@ -144,7 +169,7 @@ public class AlgorithmConfigWarpper {
         if( isEnable(AlgorithmType.PERSION) ){
             ObjectConfig oc = new ObjectConfig();
             oc.setDataList(getDataList());
-            oc.setSensitivity(algorithmConfig.getMotionSensitivity());
+            oc.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
             return oc;
         }
         return null;
@@ -154,7 +179,7 @@ public class AlgorithmConfigWarpper {
         
         if( isEnable(AlgorithmType.MOTION) ){
             MotionConfig motion = new MotionConfig();
-            motion.setSensitivity(algorithmConfig.getMotionSensitivity());
+            motion.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
             motion.setDataList(getDataList());
             return motion;
         }
