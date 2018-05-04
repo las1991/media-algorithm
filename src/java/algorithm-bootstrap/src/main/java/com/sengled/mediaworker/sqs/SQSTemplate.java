@@ -1,7 +1,6 @@
 package com.sengled.mediaworker.sqs;
 
 import static com.google.common.base.Preconditions.checkState;
-
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -9,9 +8,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
+import java.util.function.Consumer;
 import javax.annotation.PreDestroy;
-
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,7 +19,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.util.Base64Utils;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.SerializationUtils;
-
 import com.amazonaws.AmazonServiceException;
 import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
 import com.amazonaws.services.sqs.AmazonSQS;
@@ -151,6 +148,15 @@ public class SQSTemplate implements InitializingBean {
         throw new RuntimeException("Exceeded  message not sent!");
     }
 
+    public void publish(String queue,List<Serializable> message){
+        message.stream().forEach(new Consumer<Serializable>() {
+            @Override
+            public void accept(Serializable t) {
+                publish(queue, t);
+            }
+        });
+    }
+    
     public void publishOnBackend(final String queue, final Serializable message){
         executor.execute(new Runnable() {
             @Override

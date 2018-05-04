@@ -46,13 +46,14 @@ public class StorageProperties implements InitializingBean {
      * @return   eg:  expired|1
      */
     public Tag getTag(String day){
+        String defaultVal = "30";
         for ( Entry<String, String> obj : expired.entrySet()) {
             String tagKey = obj.getKey();
             if( day.equals(tagKey) ){
                 return new Tag(StorageProperties.EXPIRED_KEY, tagKey);
             }
         }
-        return null;
+        return new Tag(StorageProperties.EXPIRED_KEY, defaultVal);
     }
  
 

@@ -1,8 +1,7 @@
 package com.sengled.mediaworker.algorithm.service.dto;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
 import java.util.List;
+import com.alibaba.fastjson.annotation.JSONField;
 
 /**
  * 算法服务处理结果的实体
@@ -35,9 +34,18 @@ public class AlgorithmResult {
     @JSONField(name = "dataList")
     private List<ObjectRecognitionInnerDto> dataList;
 
+    @JSONField(serialize=false)
+    private String rangeStr;//eg:@0-10090
+    
+    
+    public String getRangeStr() {
+        return rangeStr;
+    }
 
-    
-    
+    public void setRangeStr(String rangeStr) {
+        this.rangeStr = rangeStr;
+    }
+
     public int getFileExpiresHours() {
         return fileExpiresHours;
     }
