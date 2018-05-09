@@ -23,7 +23,7 @@ public class MotionEventHandler {
     StorageProperties storageProperties;
 	
 	@Autowired
-	PutManager testMerge;
+	PutManager putManager;
 
 	/**
 	 * motion事件
@@ -38,16 +38,16 @@ public class MotionEventHandler {
         AlgorithmResult result = buildAlgorithmResult(event);
         switch(event.getFileExpiresDays() ) {
             case 1:
-                testMerge.put1(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put1(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             case 2:
-                testMerge.put2(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put2(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             case 7:
-                testMerge.put7(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put7(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             default :
-                testMerge.put30(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put30(new ImageS3Info( event.getJpgData(), tag,result));    
         }
 		LOGGER.info("Token:{},MotionEvent finished",event.getToken());
 	}
@@ -55,17 +55,16 @@ public class MotionEventHandler {
     private AlgorithmResult buildAlgorithmResult(MotionEvent event) {
         Date utcDateTime = event.getUtcDate();
         String zoneId = event.getZoneId();
-        String imageS3Path = event.getToken() + "_motion_" + utcDateTime.getTime() +"_" +event.getFileExpiresHours()+".jpg";
-
         AlgorithmResult result = new AlgorithmResult();
         result.setEventType(AlgorithmResult.SLS_EVENT_TYPE_MOTION);
         result.setDataList(Collections.<ObjectRecognitionInnerDto>emptyList());
         result.setStreamId(event.getToken());
-        result.setBigImage(imageS3Path);
-        result.setSmallImage(imageS3Path);
         result.setTimeStamp(DateFormatUtils.format(utcDateTime, "yyyy-MM-dd HH:mm:ss"));
         result.setZoneId(Long.valueOf(zoneId));
         result.setFileExpiresHours(event.getFileExpiresHours());
+        //String imageS3Path = event.getToken() + "_motion_" + utcDateTime.getTime() +"_" +event.getFileExpiresHours()+".jpg";
+        //      result.setBigImage(imageS3Path);
+        //      result.setSmallImage(imageS3Path);
         return result;
     }
 }

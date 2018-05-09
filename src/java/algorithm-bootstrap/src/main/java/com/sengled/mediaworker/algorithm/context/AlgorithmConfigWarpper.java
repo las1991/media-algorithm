@@ -131,9 +131,9 @@ public class AlgorithmConfigWarpper {
     }
     
     public static enum SensitivityEnum {
-        HIGH(1800),
-        NORMAL(1000),
-        LOW(600);
+        HIGH(1000),
+        NORMAL(250),
+        LOW(90);
         
         public static int getRealSensitivity(Integer showSensitivity) {
             if( null == showSensitivity ) {
