@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.sqs;
 
 import static com.google.common.base.Preconditions.checkState;
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -124,7 +125,7 @@ public class SQSTemplate implements InitializingBean {
         }
     }
 
-    public String publish(String queue,Serializable message){
+    public String publish(String queue,Serializable message) throws Exception{
         String encodedMessage;
         try {
             encodedMessage = Base64Utils.encodeToString(SerializationUtils.serialize(message));
@@ -145,25 +146,19 @@ public class SQSTemplate implements InitializingBean {
         } catch (AmazonServiceException e) {
             LOGGER.warn("Could not sent message to SQS queue: {}. Retrying.", url);
         }
-        throw new RuntimeException("Exceeded  message not sent!");
+        throw new  IOException("Exceeded  message not sent!");
     }
 
     public void publish(String queue,List<Serializable> message){
         message.stream().forEach(new Consumer<Serializable>() {
             @Override
             public void accept(Serializable t) {
-                publish(queue, t);
-            }
-        });
-    }
-    
-    public void publishOnBackend(final String queue, final Serializable message){
-        executor.execute(new Runnable() {
-            @Override
-            public void run() {
-                LOGGER.info("publish message to sqs, queue={},content={}", queue,message);
-                publish(queue, message);
-                LOGGER.info("publish done");
+                try {
+                    publish(queue, t);
+                } catch (Exception e) {
+                    LOGGER.error("publish msg error. msg:{}", t);
+                    LOGGER.error(e.getMessage(),e);
+                }
             }
         });
     }

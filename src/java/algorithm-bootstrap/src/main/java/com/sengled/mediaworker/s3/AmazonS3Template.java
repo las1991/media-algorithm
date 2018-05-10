@@ -4,14 +4,10 @@ import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.io.input.AutoCloseInputStream;
 import org.springframework.util.CollectionUtils;
-
 import com.amazonaws.AmazonClientException;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.model.ObjectMetadata;
@@ -20,6 +16,7 @@ import com.amazonaws.services.s3.model.PutObjectRequest;
 import com.amazonaws.services.s3.model.PutObjectResult;
 import com.amazonaws.services.s3.model.S3Object;
 import com.amazonaws.services.s3.model.Tag;
+import com.sengled.mediaworker.algorithm.exception.S3IOException;
 
 public class AmazonS3Template {
     private AmazonS3 client;
@@ -60,7 +57,7 @@ public class AmazonS3Template {
         }
     }
 
-    public PutObjectResult putObject(String bucketName, String key, byte[] bytes, List<Tag> tags) throws IOException {
+    public PutObjectResult putObject(String bucketName, String key, byte[] bytes, List<Tag> tags) throws S3IOException {
         ByteArrayInputStream data = new ByteArrayInputStream(bytes);
         try {
             ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -70,8 +67,8 @@ public class AmazonS3Template {
                 putObjectRequest.setTagging(new ObjectTagging(tags));    
             }
             return client().putObject(putObjectRequest);
-        } catch (AmazonClientException ex) {
-            throw new IOException(ex.getMessage(), ex);
+        } catch (Exception ex) {
+            throw new S3IOException(ex.getMessage(), ex);
         } finally {
             IOUtils.closeQuietly(data);
         }

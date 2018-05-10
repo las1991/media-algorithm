@@ -9,10 +9,9 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.Callable;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.function.Consumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +22,8 @@ import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSON;
 import com.amazonaws.services.s3.model.Tag;
 import com.google.common.collect.Sets;
+import com.sengled.mediaworker.RecordCounter;
+import com.sengled.mediaworker.algorithm.exception.S3IOException;
 import com.sengled.mediaworker.algorithm.service.dto.AlgorithmResult;
 import com.sengled.mediaworker.s3.AmazonS3Template;
 import com.sengled.mediaworker.sqs.SQSTemplate;
@@ -33,9 +34,9 @@ import io.netty.buffer.Unpooled;
 public class PutManager implements InitializingBean {
     private static final Logger LOGGER = LoggerFactory.getLogger(PutManager.class);
     
-    private static final int MAX_MERGE_FILE_NUM = 5;
+    private static final int MAX_MERGE_FILE_NUM = 10;
     
-    private static final int THREAD_MAXCOUNT = 150;
+    private static final int THREAD_MAXCOUNT = 30;
 
     @Value("${AWS_SERVICE_NAME_PREFIX}_${sqs.algorithm.result.queue}")
     private String queue;
@@ -49,7 +50,10 @@ public class PutManager implements InitializingBean {
     @Autowired
     private AmazonS3Template amazonS3Template;
     
-    private ThreadPoolExecutor putThreadPool;
+    @Autowired
+    private RecordCounter recordCounter;
+    
+    private ExecutorService putThreadPool;
 
     // 定时执行合并,上传S3及sqs
     Set<ImageS3Info> imageS3InfoSet1day = Sets.newConcurrentHashSet();
@@ -61,12 +65,7 @@ public class PutManager implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        ArrayBlockingQueue<Runnable> queue = new ArrayBlockingQueue<>(THREAD_MAXCOUNT * 10);
-        putThreadPool = new ThreadPoolExecutor(20
-                                        ,THREAD_MAXCOUNT
-                                        ,60L,TimeUnit.SECONDS
-                                        ,queue
-                                        ,new ThreadPoolExecutor.CallerRunsPolicy());
+        putThreadPool = Executors.newFixedThreadPool(THREAD_MAXCOUNT);
         
         timer.schedule(new TimerTask() {
             @Override
@@ -82,44 +81,55 @@ public class PutManager implements InitializingBean {
     private void mergeAndUpload(Set<ImageS3Info> images) {
         Iterator<ImageS3Info> imageIterator = images.iterator();
         ByteBuf buf = Unpooled.buffer();
-        List<AlgorithmResult> arList = new ArrayList<>();
         long offset = 0;
         int count = 0;
-        while (imageIterator.hasNext()) {
+        List<AlgorithmResult> arList = new ArrayList<>();
+        while ( imageIterator.hasNext() ) {
             ImageS3Info imageS3Info = imageIterator.next();
             imageIterator.remove();
             
-            buf.writeBytes(imageS3Info.getJpgData());
-            int size = imageS3Info.getJpgData().length;
-            AlgorithmResult result = imageS3Info.getResult();
-            result.setRangeStr("@"+offset+"-"+(offset+size));
-            arList.add(result);
-            LOGGER.info("begin:{},size:{}", offset, size);
-            
-            if (++count >= MAX_MERGE_FILE_NUM || ! imageIterator.hasNext()) {// 上传一次
+            //check
+            if( imageS3Info.getJpgData() == null  || imageS3Info.getJpgData().length <=0 || imageS3Info.getResult() == null) {
+                LOGGER.error("imageS3Info verify error.");
+                continue;
+            }
+            //write jpgData to buf
+            try {
+                buf.writeBytes(imageS3Info.getJpgData());
+                int size = imageS3Info.getJpgData().length;
+                AlgorithmResult result = imageS3Info.getResult();
+                result.setRangeStr("@"+offset+"-"+(offset+size));
+                arList.add(result);
+                offset += size;
+            } catch (Exception e) {
+                LOGGER.error("merge error." + e.getMessage(), e);
+                continue;
+            }
+
+            //async put s3,sqs
+            if (++count >= MAX_MERGE_FILE_NUM || ! imageIterator.hasNext()) {// 条件满足则上传一次（s3,sqs）
                 String filePrefix = UUID.randomUUID().toString().replace("-", "").toUpperCase();
                 String fileSuffix = ".dat";
-                List<Serializable> list = new ArrayList<>();
+                List<Serializable> AlgorithmResultJsonlist = new ArrayList<>();
                 arList.stream().forEach(new Consumer<AlgorithmResult>() {
                     @Override
                     public void accept(AlgorithmResult t) {
                         t.setBigImage(filePrefix + t.getRangeStr() + fileSuffix);
                         t.setSmallImage(t.getBigImage());
-                        list.add(JSON.toJSONString(t));
+                        AlgorithmResultJsonlist.add(JSON.toJSONString(t));
                     }
                 });
-                byte[] data = new byte[buf.readableBytes()];
-                buf.readBytes(data);
-                Tag s3tag = imageS3Info.getS3tag();
-                submit(list, filePrefix + fileSuffix, data, s3tag);
-
-                // clear
+                
+                //async put
+                byte[] imageData = new byte[buf.readableBytes()];
+                buf.readBytes(imageData);
+                submit(AlgorithmResultJsonlist, filePrefix + fileSuffix, imageData, imageS3Info.getS3tag());
+                
+                //reset buf
                 buf.clear();
                 arList.clear();
                 offset = 0;
-                continue;
             }
-            offset += size;
         }
     }
 
@@ -143,9 +153,25 @@ public class PutManager implements InitializingBean {
         putThreadPool.submit(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                LOGGER.info("put s3 sqs...");
-                amazonS3Template.putObject(bucketName, s3key, data, Arrays.asList(s3tag));
-                sqsTemplate.publish(queue, arList);
+                LOGGER.info("put s3 key:{} sqs:{}" , s3key, arList);
+                try {
+                    amazonS3Template.putObject(bucketName, s3key, data, Arrays.asList(s3tag));
+                    recordCounter.addAndGetS3SuccessfulCount(1);
+                } catch (S3IOException e) {
+                    LOGGER.error("put s3 error.",e);
+                    recordCounter.addAndGetS3FailureCount(1);
+                    return null;//上传s3失败，则退出
+                }
+                for (Serializable ar: arList) {
+                    try {
+                        sqsTemplate.publish(queue, ar);
+                        recordCounter.addAndGetSqsSuccessfulCount(1);
+                    } catch (Exception e) {
+                        LOGGER.error("put sqs error.",e);
+                        recordCounter.addAndGetSqsFailureCount(1);
+                    }
+                }
+                
                 return null;
             }
         });
