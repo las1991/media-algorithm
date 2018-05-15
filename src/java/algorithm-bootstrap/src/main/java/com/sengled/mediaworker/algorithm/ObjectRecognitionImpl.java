@@ -66,6 +66,11 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     
     @Value("${debug.image.save.path}")
     private String debugImageSavePath;
+    
+    @Value("${object.confirm.score}")
+    private Long objectConfirmScore;
+    
+    
 	@Autowired
 	IHttpClient httpclient;
 	@Autowired
@@ -305,7 +310,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 			String resultObjectType = resultObject.type;     //eg: person|cat|cat|dog
 			List<Integer> objectBox = resultObject.bbox_pct;
 			//FIXME
-			if(resultObject.score < 0.75d){
+			if(resultObject.score < objectConfirmScore){
 				continue;
 			}
 			
