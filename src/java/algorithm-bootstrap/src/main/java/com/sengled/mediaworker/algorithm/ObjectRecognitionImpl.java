@@ -68,7 +68,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     private String debugImageSavePath;
     
     @Value("${object.confirm.score}")
-    private Long objectConfirmScore;
+    private Double objectConfirmScore;
     
     
 	@Autowired
