@@ -3,18 +3,26 @@ package com.sengled.mediaworker.algorithm.context;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.sengled.media.algorithm.config.Actions.AlgorithmType;
 import com.sengled.media.algorithm.config.AlgorithmConfig;
 import com.sengled.media.algorithm.config.AlgorithmZone;
 import com.sengled.media.algorithm.config.MotionSensitivity;
 
-
 public class AlgorithmConfigWarpper {
+    private static final Logger LOGGER = LoggerFactory.getLogger(AlgorithmConfigWarpper.class);
     
+    private int highMotionSensitivity;
+    private int normalMotionSensitivity;
+    private int lowMotionSensitivity;
     private AlgorithmConfig  algorithmConfig;
     
-    public AlgorithmConfigWarpper(AlgorithmConfig algorithmConfig){
+    public AlgorithmConfigWarpper(AlgorithmConfig algorithmConfig,int highSensitivity,int normalSensitivity,int lowSensitivity){
         this.algorithmConfig = algorithmConfig;
+        this.highMotionSensitivity = highSensitivity;
+        this.normalMotionSensitivity = normalSensitivity;
+        this.lowMotionSensitivity = lowSensitivity;
     }
 
     public static class MotionConfig {
@@ -130,28 +138,23 @@ public class AlgorithmConfigWarpper {
         }
     }
     
-    public static enum SensitivityEnum {
-        HIGH(1000),
-        NORMAL(250),
-        LOW(90);
-        
-        public static int getRealSensitivity(Integer showSensitivity) {
-            if( null == showSensitivity ) {
-                return SensitivityEnum.NORMAL.realSensitivity;
-            }
-            switch(showSensitivity) {
-                case MotionSensitivity.HIGH:
-                    return HIGH.realSensitivity;
-                case MotionSensitivity.LOW:
-                    return LOW.realSensitivity;
-                default:
-                    return NORMAL.realSensitivity;
-            }
+    public  int getRealSensitivity(Integer showSensitivity) {
+        int realSensitivity = normalMotionSensitivity;
+        if( null == showSensitivity ) {
+            return realSensitivity;
         }
-        private SensitivityEnum(int realSensitivity) {
-            this.realSensitivity = realSensitivity;
+        switch(showSensitivity) {
+            case MotionSensitivity.HIGH:
+                realSensitivity =  highMotionSensitivity;
+                break;
+            case MotionSensitivity.LOW:
+                realSensitivity =  lowMotionSensitivity;
+                break;
+            default:
+                realSensitivity =  normalMotionSensitivity;
         }
-        int realSensitivity;
+        LOGGER.debug("realSensitivity value:{}",realSensitivity);
+        return realSensitivity;
     }
     
     public MotionConfig getBaseConfig() {
@@ -160,7 +163,7 @@ public class AlgorithmConfigWarpper {
         }
         //使用MotionConfig 做为基础配置
         MotionConfig motion = new MotionConfig();
-        motion.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
+        motion.setSensitivity(getRealSensitivity(algorithmConfig.getMotionSensitivity()));
         motion.setDataList(getDataList());
         return motion;
     }
@@ -169,7 +172,7 @@ public class AlgorithmConfigWarpper {
         if( isEnable(AlgorithmType.PERSION) ){
             ObjectConfig oc = new ObjectConfig();
             oc.setDataList(getDataList());
-            oc.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
+            oc.setSensitivity(getRealSensitivity(algorithmConfig.getMotionSensitivity()));
             return oc;
         }
         return null;
@@ -179,7 +182,7 @@ public class AlgorithmConfigWarpper {
         
         if( isEnable(AlgorithmType.MOTION) ){
             MotionConfig motion = new MotionConfig();
-            motion.setSensitivity(SensitivityEnum.getRealSensitivity(algorithmConfig.getMotionSensitivity()));
+            motion.setSensitivity(getRealSensitivity(algorithmConfig.getMotionSensitivity()));
             motion.setDataList(getDataList());
             return motion;
         }
