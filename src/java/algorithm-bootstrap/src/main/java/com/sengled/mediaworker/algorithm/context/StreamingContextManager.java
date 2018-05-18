@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.algorithm.MediaAlgorithmService;
@@ -32,6 +33,13 @@ public class StreamingContextManager implements InitializingBean{
 	
 	private static final long CONTEXT_EXPIRE_TIME_MILLIS = 10 * 60 * 1000;
 	
+    @Value("${motion.sensitivity.high}")
+    private int motionHigh;
+    @Value("${motion.sensitivity.normal}")
+    private int motionNormal;
+    @Value("${motion.sensitivity.low}")
+    private int motionLow;
+	    
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
 	private ConcurrentHashMap<String, AlgorithmConfigWarpper> AlgorithmConfigMap;
 	private Timer timer;
@@ -74,7 +82,7 @@ public class StreamingContextManager implements InitializingBean{
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String tokenMask,String utcDateTime,FrameConfig frameConfig) throws AlgorithmIntanceCreateException{
 	    
 		StreamingContext context =  null;
-		boolean isRefresh = frameConfig.getAction().equals("open")?true:false;
+		boolean isRefresh = frameConfig.getAction().equals("open");
 		
 		AlgorithmConfigWarpper algorithmConfig;
 		try {
@@ -115,7 +123,7 @@ public class StreamingContextManager implements InitializingBean{
             request.setToken(StringUtils.split(tokenMask, ",")[0]);
             AlgorithmConfig algor = mediaAlgorithmService.getAlgorithmConfig(request);
             LOGGER.info("Mediabase return AlgorithmConfig:{}",algor);
-            configWapper = new AlgorithmConfigWarpper(algor);
+            configWapper = new AlgorithmConfigWarpper(algor,motionHigh,motionNormal,motionLow);
             AlgorithmConfigMap.put(tokenMask, configWapper);
             LOGGER.info("AlgorithmConfigWarpper:{}",configWapper);
             return configWapper;

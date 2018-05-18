@@ -35,7 +35,7 @@ public class ObjectEventHandler {
 	@Subscribe
 	public void feedEvent(ObjectEvent event) {
 	    
-	    LOGGER.info("Get MotionEvent:{}",event);
+	    LOGGER.info("Get ObjectEvent:{}",event);
 	    Tag tag = storageProperties.getTag(event.getFileExpiresDays()+"");
 	       
 	    AlgorithmResult result = buildAlgorithmResult(event);
