@@ -97,6 +97,7 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
             context = streamingContextManager.findOrCreateStreamingContext(this, tokenMask, utcDateTime,frameConfig);
         } catch (Exception e) {
             LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
+            LOGGER.error("tokenMask:{},utcDateTime:{},frameConfig:{}", tokenMask, utcDateTime, frameConfig);
             return;
         }
         

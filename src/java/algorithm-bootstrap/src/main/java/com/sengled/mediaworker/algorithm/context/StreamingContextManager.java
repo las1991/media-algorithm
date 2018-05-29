@@ -113,24 +113,22 @@ public class StreamingContextManager implements InitializingBean{
 		return context;
 	}
 	private AlgorithmConfigWarpper getAlgorithmConfig(boolean isRefresh,String tokenMask) throws Exception{
-	    AlgorithmConfigWarpper configWapper;
-        try {
-            configWapper = AlgorithmConfigMap.get(tokenMask);
-            if( null != configWapper && ! isRefresh ){
-                return configWapper;
-            }
-            QueryAlgorithmConfigRequest request = new QueryAlgorithmConfigRequest();
-            request.setToken(StringUtils.split(tokenMask, ",")[0]);
-            AlgorithmConfig algor = mediaAlgorithmService.getAlgorithmConfig(request);
-            LOGGER.info("Mediabase return AlgorithmConfig:{}",algor);
-            configWapper = new AlgorithmConfigWarpper(algor,motionHigh,motionNormal,motionLow);
-            AlgorithmConfigMap.put(tokenMask, configWapper);
-            LOGGER.info("AlgorithmConfigWarpper:{}",configWapper);
+	    AlgorithmConfigWarpper configWapper =  AlgorithmConfigMap.get(tokenMask);
+        if( null != configWapper && ! isRefresh ){
             return configWapper;
-        } catch (Exception e) {
-            LOGGER.error(e.getMessage(),e);
-            throw e;
         }
+        QueryAlgorithmConfigRequest request = new QueryAlgorithmConfigRequest();
+        request.setToken(StringUtils.split(tokenMask, ",")[0]);
+        AlgorithmConfig algor = mediaAlgorithmService.getAlgorithmConfig(request);
+        if( null == algor ) {
+            LOGGER.error("getAlgorithmConfig error. tokenMask:{} ", tokenMask);
+            throw new Exception("getAlgorithmConfig return null");
+        }
+        LOGGER.info("Mediabase return AlgorithmConfig:{}, tokenMask:{}",algor, tokenMask);
+        configWapper = new AlgorithmConfigWarpper(algor,motionHigh,motionNormal,motionLow);
+        AlgorithmConfigMap.put(tokenMask, configWapper);
+        LOGGER.info("AlgorithmConfigWarpper:{} tokenMask:{}",configWapper , tokenMask);
+        return configWapper;
     }
 
     public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
