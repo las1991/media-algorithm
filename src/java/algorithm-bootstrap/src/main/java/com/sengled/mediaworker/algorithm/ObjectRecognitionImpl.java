@@ -1,5 +1,6 @@
 package com.sengled.mediaworker.algorithm;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -15,14 +16,17 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.HttpEntity;
-import org.apache.http.entity.ByteArrayEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpMethod;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestTemplate;
+import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
@@ -39,9 +43,7 @@ import com.sengled.mediaworker.algorithm.service.ObjectEventHandler;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
-import com.sengled.mediaworker.httpclient.HttpResponseResult;
-import com.sengled.mediaworker.httpclient.IHttpClient;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.TargetObject;
 
 @Component
 public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean{
@@ -72,7 +74,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     
     
 	@Autowired
-	IHttpClient httpclient;
+	RestTemplate restTemplate;
+	
 	@Autowired
 	ProcessorManager  processorManager;
 	@Autowired
@@ -151,34 +154,35 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 
 		long startTime = System.currentTimeMillis();
-		HttpEntity putEntity = new ByteArrayEntity(nalData);
-		HttpResponseResult result = httpclient.put(objectRecognitionUrl, putEntity);
-		
+        RequestEntity<byte[]> requestEntity = new RequestEntity<>(nalData, HttpMethod.PUT, new URI(objectRecognitionUrl));
+        ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+        
+
 		
 		long objectCost = System.currentTimeMillis() - startTime;
 		recordCounter.updateObjectSingleDataProcessCost(objectCost);
 		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
 		
 		//请求Object服务
-		if ( ! result.responseOk() || StringUtils.isBlank(result.getBody())) {
-			LOGGER.error("object recognition HttpResponseResult{}", result);
-			recordCounter.addAndGetObjectErrorCount(1);
-			return ;
-		}
-
+        if( null == response || !response.getStatusCode().is2xxSuccessful()  || StringUtils.isBlank(response.getBody())) {
+            LOGGER.error("access object url:{}, error",objectRecognitionUrl);
+            recordCounter.addAndGetObjectErrorCount(1);
+            return;
+        }
 		//FIXME debug
-        LOGGER.info("Token:{},httpclient result:{}",token,result);
+        LOGGER.info("Token:{},httpclient result:{}",token,response.getBody());
 				
 		//Object 响应结果
-		JSONObject objectResponseBodyJson = JSONObject.parseObject(result.getBody());
-		if (null == objectResponseBodyJson || objectResponseBodyJson.getJSONArray("objects").isEmpty()) {
+		JSONObject parseObj = JSONObject.parseObject(response.getBody());
+				
+		if (null == parseObj || parseObj.getJSONArray("objects").isEmpty()) {
 			LOGGER.info("object recognition NORESULT.");
 			return ;
 		}
 		
 		//Object 响应结果 匹配zoneinfo 匹配motion 
-		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(objectResponseBodyJson, ObjectRecognitionResult.class);
-		Multimap<Integer, Object>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
+		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(parseObj, ObjectRecognitionResult.class);
+		Multimap<Integer, TargetObject>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
 		LOGGER.info("Token:{},ObjectRecognition  Cost:{}", token,(System.currentTimeMillis() - startTime));
 		
 		byte[] jpgData = null;
@@ -230,14 +234,14 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 *            Motion结果
 	 * @return
 	 */
-	public Multimap<Integer, Object>  match(String token,YUVImage yuvImage, ObjectRecognitionResult objectRecognitionResult, ObjectConfig objectConfig,MotionFeedResult motionFeedResult) {
+	public Multimap<Integer, TargetObject>  match(String token,YUVImage yuvImage, ObjectRecognitionResult objectRecognitionResult, ObjectConfig objectConfig,MotionFeedResult motionFeedResult) {
 	
 		LOGGER.debug("Token:{},Match objectConfig:{},ObjectRecognitionResult:{},MotionFeedResult:{}", token,
 				JSONObject.toJSON(objectConfig), JSONObject.toJSON(objectRecognitionResult),
 				JSONObject.toJSON(motionFeedResult));
 		
-		Multimap<Integer, Object> objectsResult = step1Filter(objectRecognitionResult, objectConfig);
-		Multimap<Integer, Object> objectMatchResult = step2Filter(motionFeedResult, objectsResult);
+		Multimap<Integer, TargetObject> objectsResult = step1Filter(objectRecognitionResult, objectConfig);
+		Multimap<Integer, TargetObject> objectMatchResult = step2Filter(motionFeedResult, objectsResult);
 		LOGGER.info("Match result:{}",objectMatchResult);
 		return objectMatchResult;	
 	}
@@ -248,26 +252,26 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 * @param objectsResult
 	 * @return
 	 */
-	private Multimap<Integer, Object> step2Filter(MotionFeedResult motionFeedResult,Multimap<Integer, Object> objectsResult) {
+	private Multimap<Integer, TargetObject> step2Filter(MotionFeedResult motionFeedResult,Multimap<Integer, TargetObject> objectsResult) {
 
-		Multimap<Integer, Object> result = ArrayListMultimap.create();
+		Multimap<Integer, TargetObject> result = ArrayListMultimap.create();
 		
 		Multimap<Integer, List<Integer>> motionZoneidToBox = ArrayListMultimap.create();
-		for (ZoneInfo motion : motionFeedResult.motion) {
-			for (List<Integer> box : motion.boxs) {
-				motionZoneidToBox.put(motion.zone_id, box);
+		for (ZoneInfo motion : motionFeedResult.getMotion()) {
+			for (List<Integer> box : motion.getBoxs()) {
+				motionZoneidToBox.put(motion.getZone_id(), box);
 			}
 		}
 
-		Map<Integer, Collection<Object>> objectZoneidToBox = objectsResult.asMap();
-		Set<Object> hasObjSet = new HashSet<>();
-		for (Entry<Integer, Collection<Object>> objectZoneidToBoxSet : objectZoneidToBox.entrySet()) {// zone
+		Map<Integer, Collection<TargetObject>> objectZoneidToBox = objectsResult.asMap();
+		Set<TargetObject> hasObjSet = new HashSet<>();
+		for (Entry<Integer, Collection<TargetObject>> objectZoneidToBoxSet : objectZoneidToBox.entrySet()) {// zone
 			int zoneid = objectZoneidToBoxSet.getKey();
 
-			Collection<Object> objectList = objectZoneidToBoxSet.getValue();
+			Collection<TargetObject> objectList = objectZoneidToBoxSet.getValue();
 			Collection<List<Integer>> motionList = motionZoneidToBox.get(zoneid);
-			for (Object object : objectList) {
-				List<Integer> objectBox = object.bbox_pct;
+			for (TargetObject object : objectList) {
+				List<Integer> objectBox = object.getBbox_pct();
 				int areaSum = 0;
 				for (List<Integer> motionBox : motionList) {
 					int area = ImageUtils.area(objectBox, motionBox);
@@ -277,7 +281,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 					if (areaPercentObject >= objectAndMotionIntersectionPct && areaPercentMotion>= objectAndMotionIntersectionPct) {
 					//if (areaPercentObject >= objectAndMotionIntersectionPct || areaPercentMotion>= objectAndMotionIntersectionPct) {
 					//if (areaPercentObject >= objectAndMotionIntersectionPct ) {
-						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.type);
+						LOGGER.debug("step2Filter zoneid:{} object:{}", zoneid, object.getType());
 						if( ! hasObjSet.contains(object)){
 							result.put(zoneid,  object);
 							hasObjSet.add(object);
@@ -304,13 +308,13 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	 * @param objectConfig
 	 * @return  Multimap<Integer, Object> zoneid->Object
 	 */
-	private Multimap<Integer, Object> step1Filter(ObjectRecognitionResult objectRecognitionResult,ObjectConfig objectConfig) {
-		Multimap<Integer, Object> finalObjectsResult = ArrayListMultimap.create();//zoneid->Object
-		for (Object resultObject : objectRecognitionResult.objects) {
-			String resultObjectType = resultObject.type;     //eg: person|cat|cat|dog
-			List<Integer> objectBox = resultObject.bbox_pct;
+	private Multimap<Integer, TargetObject> step1Filter(ObjectRecognitionResult objectRecognitionResult,ObjectConfig objectConfig) {
+		Multimap<Integer, TargetObject> finalObjectsResult = ArrayListMultimap.create();//zoneid->Object
+		for (TargetObject resultObject : objectRecognitionResult.getObjects()) {
+			String resultObjectType = resultObject.getType();     //eg: person|cat|cat|dog
+			List<Integer> objectBox = resultObject.getBbox_pct();
 			//FIXME
-			if(resultObject.score < objectConfirmScore){
+			if(resultObject.getScore() < objectConfirmScore){
 				continue;
 			}
 			

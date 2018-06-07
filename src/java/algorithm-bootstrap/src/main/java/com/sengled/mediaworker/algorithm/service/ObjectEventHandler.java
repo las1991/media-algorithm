@@ -18,7 +18,7 @@ import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.service.PutManager.ImageS3Info;
 import com.sengled.mediaworker.algorithm.service.dto.AlgorithmResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionInnerDto;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.TargetObject;
 import com.sengled.mediaworker.s3.StorageProperties;
 
 @Component
@@ -29,7 +29,7 @@ public class ObjectEventHandler {
     StorageProperties storageProperties;
     
     @Autowired
-    PutManager testMerge;
+    PutManager putManager;
     
 
 	@Subscribe
@@ -41,16 +41,16 @@ public class ObjectEventHandler {
 	    AlgorithmResult result = buildAlgorithmResult(event);
 	    switch(event.getFileExpiresDays() ) {
             case 1:
-                testMerge.put1(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put1(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             case 2:
-                testMerge.put2(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put2(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             case 7:
-                testMerge.put7(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put7(new ImageS3Info( event.getJpgData(), tag,result));    
                 break;
             default :
-                testMerge.put30(new ImageS3Info( event.getJpgData(), tag,result));    
+                putManager.put30(new ImageS3Info( event.getJpgData(), tag,result));    
         }
 	        LOGGER.info("Token:{},ObjectEvent finished",event.getToken());
 	}
@@ -61,13 +61,13 @@ public class ObjectEventHandler {
 	    AlgorithmResult result;
         result = new AlgorithmResult();
         List<ObjectRecognitionInnerDto> dataList = new ArrayList<>();
-        Map<Integer, Collection<Object>> zoneToObjectMap = event.getResult().asMap();
-        for (Entry<Integer, Collection<Object>> entry : zoneToObjectMap.entrySet()) {
+        Map<Integer, Collection<TargetObject>> zoneToObjectMap = event.getResult().asMap();
+        for (Entry<Integer, Collection<TargetObject>> entry : zoneToObjectMap.entrySet()) {
             int zoneid = entry.getKey();
-            for (Object object : entry.getValue()) {
-                String pos = object.bbox_pct.get(0) + ","+object.bbox_pct.get(1)+","+object.bbox_pct.get(2)+","+object.bbox_pct.get(3);
-                int targetType = ObjectType.findByName(object.type).value;
-                ObjectRecognitionInnerDto orid = new ObjectRecognitionInnerDto(Long.valueOf(zoneid),pos , targetType, object.score);
+            for (TargetObject object : entry.getValue()) {
+                String pos = object.getBbox_pct().get(0) + ","+object.getBbox_pct().get(1)+","+object.getBbox_pct().get(2)+","+object.getBbox_pct().get(3);
+                int targetType = ObjectType.findByName(object.getType()).value;
+                ObjectRecognitionInnerDto orid = new ObjectRecognitionInnerDto(Long.valueOf(zoneid),pos , targetType, object.getScore());
                 dataList.add(orid);
             }
         }

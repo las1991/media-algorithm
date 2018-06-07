@@ -5,17 +5,17 @@ import java.util.Date;
 import org.apache.commons.lang.StringUtils;
 
 import com.google.common.collect.Multimap;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.TargetObject;
 
 public class ObjectEvent {
 
 	private String token;
-	private Multimap<Integer, Object> result;
+	private Multimap<Integer, TargetObject> result;
 	private byte[] jpgData;
 	private Date utcDate;
 	private int fileExpiresHours;
 
-	public ObjectEvent(String partitionKey, Multimap<Integer, Object> result, byte[] jpgData,int fileExpiresHours, Date utcDate) {
+	public ObjectEvent(String partitionKey, Multimap<Integer, TargetObject> result, byte[] jpgData,int fileExpiresHours, Date utcDate) {
 		super();
 		this.token = getToken(partitionKey);
 		this.result = result;
@@ -37,11 +37,11 @@ public class ObjectEvent {
 		this.token = token;
 	}
 
-	public Multimap<Integer, Object> getResult() {
+	public Multimap<Integer, TargetObject> getResult() {
 		return result;
 	}
 
-	public void setResult(Multimap<Integer, Object> result) {
+	public void setResult(Multimap<Integer, TargetObject> result) {
 		this.result = result;
 	}
 

@@ -12,31 +12,70 @@ import com.alibaba.fastjson.annotation.JSONField;
 public class ObjectRecognitionResult {
 
 	@JSONField(name = "objects")
-    public List<Object> objects;
+    private List<TargetObject> objects;
 	
-	public static class Object{
+	public static class TargetObject{
 		@JSONField(name = "bbox_pct")
-		public List<Integer> bbox_pct;
+		private List<Integer> bbox_pct;
 		
 		@JSONField(name = "type")
-		public String type;
+		private String type;
 		
 		@JSONField(name = "score")
-		public double score;
+		private double score;
 
-		@Override
-		public String toString() {
-			return "Object [bbox_pct=" + bbox_pct + ", type=" + type + ", score=" + score + "]";
-		}
+		@JSONField(name = "frame")
+		private int frame = 0;
+
+        public List<Integer> getBbox_pct() {
+            return bbox_pct;
+        }
+
+        public void setBbox_pct(List<Integer> bbox_pct) {
+            this.bbox_pct = bbox_pct;
+        }
+
+        public String getType() {
+            return type;
+        }
+
+        public void setType(String type) {
+            this.type = type;
+        }
+
+        public double getScore() {
+            return score;
+        }
+
+        public void setScore(double score) {
+            this.score = score;
+        }
+
+        public int getFrame() {
+            return frame;
+        }
+
+        public void setFrame(int frame) {
+            this.frame = frame;
+        }
+
+        @Override
+        public String toString() {
+            return "Object [bbox_pct=" + bbox_pct + ", type=" + type + ", score=" + score + ", frame=" + frame + "]";
+        }
+		
 	}
 
+ 
 	@Override
-	public String toString() {
-		return "ObjectRecognitionResult [objects=" + objects  + "]";
-	}
-	public List<String> getObjectBoxPct(){
+    public String toString() {
+        return "ObjectRecognitionResult [objects=" + objects + "]";
+    }
+
+
+    public List<String> getObjectBoxPct(){
 		List<String> box = new ArrayList<>();
-		for(Object object : objects){
+		for(TargetObject object : objects){
 			if(null == object.bbox_pct){
 				continue;
 			}
@@ -48,4 +87,15 @@ public class ObjectRecognitionResult {
 		}
 		return box;
 	}
+
+
+    public List<TargetObject> getObjects() {
+        return objects;
+    }
+
+
+    public void setObjects(List<TargetObject> objects) {
+        this.objects = objects;
+    }
+    
 }

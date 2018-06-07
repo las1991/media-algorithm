@@ -28,7 +28,7 @@ import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectCo
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
-import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.Object;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.TargetObject;
 
 public class ImageUtils {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ImageUtils.class);
@@ -144,7 +144,7 @@ public class ImageUtils {
 	 * @param motionFeedResult
 	 */
 	public static byte[] draw(String token,Date utcDate, byte[] jpgData, YUVImage yuvImage, ObjectConfig objectConfig,
-			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, Object> matchResult,
+			MotionFeedResult motionFeedResult,ObjectRecognitionResult objectRecognitionResult, Multimap<Integer, TargetObject> matchResult,
 			String path) {
 		try {
 			List<List<Integer>> objectConfigPos = new ArrayList<>();
@@ -155,24 +155,24 @@ public class ImageUtils {
 				objectConfigPos.add(resultPos);
 			}
 			List<List<Integer>> motionFeedResultPos = new ArrayList<>();
-			for (ZoneInfo zi : motionFeedResult.motion) {
-				for (List<Integer> z : zi.boxs) {
+			for (ZoneInfo zi : motionFeedResult.getMotion()) {
+				for (List<Integer> z : zi.getBoxs()) {
 					List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), z);
 					motionFeedResultPos.add(posStr);
 				}
 			}
 			List<List<Integer>> objectResultPos = new ArrayList<>();
-			for ( Object object : objectRecognitionResult.objects) {
-				List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.bbox_pct);
+			for ( TargetObject object : objectRecognitionResult.getObjects()) {
+				List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.getBbox_pct());
 				objectResultPos.add(posStr	);
 			}
 			
 			List<List<Integer>> matchResultPos = new ArrayList<>();
-			Map<Integer, Collection<Object>> map = matchResult.asMap();
-			for (Entry<Integer, Collection<Object>> entry : map.entrySet()) {
-				Collection<Object> objects = entry.getValue();
-				for (Object object : objects) {
-					List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.bbox_pct);
+			Map<Integer, Collection<TargetObject>> map = matchResult.asMap();
+			for (Entry<Integer, Collection<TargetObject>> entry : map.entrySet()) {
+				Collection<TargetObject> objects = entry.getValue();
+				for (TargetObject object : objects) {
+					List<Integer> posStr = convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), object.getBbox_pct());
 					matchResultPos.add(posStr);
 				}
 			}

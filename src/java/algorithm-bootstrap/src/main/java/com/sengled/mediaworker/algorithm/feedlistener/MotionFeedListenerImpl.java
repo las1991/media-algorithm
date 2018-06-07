@@ -74,15 +74,15 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 			LOGGER.debug("Token:{} get Motion.But isReport is false.",token);
 			return;
 		}
-		ZoneInfo  zone = motionFeedResult.motion.get(0);
+		ZoneInfo  zone = motionFeedResult.getMotion().get(0);
 		byte[] jpgData;
 		try {
 			jpgData = processorManagerImpl.encode(context.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
 			//FIXME 对图像进行motion画框操作{
 			if(LOGGER.isDebugEnabled()){
 				List<List<Integer>> boxs = new ArrayList<List<Integer>>();
-				for (ZoneInfo zoneInfo : motionFeedResult.motion) {
-					for (List<Integer> list : zoneInfo.boxs) {
+				for (ZoneInfo zoneInfo : motionFeedResult.getMotion()) {
+					for (List<Integer> list : zoneInfo.getBoxs()) {
 						List<Integer> posStr = ImageUtils.convertPctToPixel(yuvImage.getWidth(), yuvImage.getHeight(), list);
 						boxs.add(posStr);
 					}
@@ -98,9 +98,9 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 			return;
 		}
 
-		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.zone_id);
+		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.getZone_id());
 		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
-		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,context.getFileExpiresHours(),zone.zone_id.intValue()+"");
+		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,context.getFileExpiresHours(),zone.getZone_id().intValue()+"");
 		eventBus.post(event);
 		context.setLastMotionTimestamp(copyUtcDate.getTime());
 	}
