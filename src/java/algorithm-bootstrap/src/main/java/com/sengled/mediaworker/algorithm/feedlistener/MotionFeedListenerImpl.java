@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +58,10 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		eventBus.register(motionEventHandler);
 	}
 
-	@Override
-	public void feedResultHandle(StreamingContext context, YUVImage yuvImage, byte[] nalData,MotionFeedResult motionFeedResult) throws Exception {
+	private void feedResultHandle(StreamingContext context, 
+	                              final YUVImage yuvImage, 
+	                              final byte[] nalData,
+	                              final MotionFeedResult motionFeedResult) throws Exception {
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
 		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
@@ -104,4 +107,14 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		eventBus.post(event);
 		context.setLastMotionTimestamp(copyUtcDate.getTime());
 	}
+
+    @Override
+    public void feedResultHandle(StreamingContext context,
+                            final byte[] nalData,
+                            final Map<Integer, YUVImage> yuvImageResultMap,
+                            final Map<Integer, MotionFeedResult> motionFeedResultMap) throws Exception {
+         int  frameIndex = motionFeedResultMap.keySet().stream().findFirst().get();
+        feedResultHandle(context, yuvImageResultMap.get(frameIndex), nalData, motionFeedResultMap.get(frameIndex));
+        
+    }
 }

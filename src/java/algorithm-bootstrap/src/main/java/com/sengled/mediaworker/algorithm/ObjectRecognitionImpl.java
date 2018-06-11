@@ -1,6 +1,7 @@
 package com.sengled.mediaworker.algorithm;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -15,7 +16,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -26,10 +26,10 @@ import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
-import com.alibaba.fastjson.JSONArray;
 import com.alibaba.fastjson.JSONObject;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Multiset;
 import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
@@ -44,6 +44,7 @@ import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult;
 import com.sengled.mediaworker.algorithm.service.dto.MotionFeedResult.ZoneInfo;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult;
 import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResult.TargetObject;
+import com.sengled.mediaworker.algorithm.service.dto.ObjectRecognitionResultWrapper;
 
 @Component
 public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean{
@@ -118,103 +119,129 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		}
 	}
 
-	
-	@Override
-	public void submit(final String token,final ObjectConfig oc, final Date utcDate, final YUVImage yuvImage, final byte[] nalData,int fileExpiresHours, MotionFeedResult mfr) {
-		//hash token 提交到指定线程队列中
-		int hashCode = Math.abs(token.hashCode());
-		int threadIndex = hashCode % threadNum;
-		LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
-		
-		
-		ExecutorService thread = executors.get(threadIndex);
-		try {
-			thread.submit(new Callable<Void>() {
-				@Override
-				public Void call() throws Exception {
-						handle(token,oc,utcDate,yuvImage,nalData,fileExpiresHours,mfr);
-					return null;
-				}
-			});
-		} catch (Exception e) {
-			LOGGER.error("ThreadPool AbortPolicy");
-			LOGGER.error(e.getMessage(),e);
-		}
-	}
-	
-	private void handle(final String token,final ObjectConfig oc,final Date utcDate, final YUVImage yuvImage,final  byte[] nalData,final int fileExpiresHours,final  MotionFeedResult mfr)throws Exception{
-		LOGGER.debug("Run objectRecognition. token:{},ObjectConfig:{},MotionFeedResult:{}",token,oc,mfr);
-		if(oc ==null || utcDate==null || yuvImage==null || nalData==null || mfr == null){
-			LOGGER.error("parameter error.");
-			return;
-		}
-		ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,oc);
-		if (objectContext.isSkip(objectIntervalTimeMsce)) {
-			return;
-		}
 
-		long startTime = System.currentTimeMillis();
-        RequestEntity<byte[]> requestEntity = new RequestEntity<>(nalData, HttpMethod.PUT, new URI(objectRecognitionUrl));
-        ResponseEntity<String> response = restTemplate.exchange(requestEntity, String.class);
+    @Override
+    public void submit(final String token, 
+            final ObjectConfig finalObjectConfig, 
+            final Date finalUtcDate, 
+            final Map<Integer, YUVImage> finalYUVmageMap, 
+            final byte[] nalData,
+            final int finalFileExpiresHours, 
+            final Map<Integer, MotionFeedResult> finalMotionFeedResultMap) {
+        //hash token 提交到指定线程队列中
+        int hashCode = Math.abs(token.hashCode());
+        int threadIndex = hashCode % threadNum;
+        LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
         
+        
+        ExecutorService thread = executors.get(threadIndex);
+        try {
+            thread.submit(new Callable<Void>() {
+                @Override
+                public Void call() throws Exception {
+                        handle2(token,finalObjectConfig,finalUtcDate,finalYUVmageMap,nalData,finalFileExpiresHours,finalMotionFeedResultMap);
+                    return null;
+                }
+            });
+        } catch (Exception e) {
+            LOGGER.error("ThreadPool AbortPolicy");
+            LOGGER.error(e.getMessage(),e);
+        }
+    }
+	
 
-		
-		long objectCost = System.currentTimeMillis() - startTime;
-		recordCounter.updateObjectSingleDataProcessCost(objectCost);
-		LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
-		
-		//请求Object服务
-        if( null == response || !response.getStatusCode().is2xxSuccessful()  || StringUtils.isBlank(response.getBody())) {
-            LOGGER.error("access object url:{}, error",objectRecognitionUrl);
-            recordCounter.addAndGetObjectErrorCount(1);
+    private void handle2(final String token, final ObjectConfig objectConfig, final Date copyUtcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
+            int fileExpiresHours, Map<Integer, MotionFeedResult> motionFeedResultMap) throws Exception {
+        ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,copyUtcDate,objectConfig);
+        if (objectContext.isSkip(objectIntervalTimeMsce)) {
             return;
         }
-		//FIXME debug
-        LOGGER.info("Token:{},httpclient result:{}",token,response.getBody());
-				
-		//Object 响应结果
-		JSONObject parseObj = JSONObject.parseObject(response.getBody());
-				
-		if (null == parseObj || parseObj.getJSONArray("objects").isEmpty()) {
-			LOGGER.info("object recognition NORESULT.");
-			return ;
+        
+       //请求物体识别
+        final ObjectRecognitionResult objectResult  = requestObjectService(token,objectRecognitionUrl,nalData);
+         
+        ObjectRecognitionResultWrapper wrapper = new ObjectRecognitionResultWrapper(objectResult);
+        
+        Multiset<Integer> frameIndexSet = wrapper.getMultiMap().keys();
+        
+        boolean happendEvent = false; 
+        for (Integer frameIndex : frameIndexSet) {
+            if( happendEvent ){
+                break;
+            }
+            //物体识别 与 移动检测 匹配
+            YUVImage yuvImage =  copyYUVmageMap.get(frameIndex);
+            MotionFeedResult mfr =  motionFeedResultMap.get(frameIndex);
+            ObjectRecognitionResult objectRecognitionResult = wrapper.getObjectRecognitionResult(frameIndex);
+            Multimap<Integer, TargetObject>  matchResult = match(token, yuvImage, objectRecognitionResult, objectConfig, mfr);
+            if( null != matchResult ){
+                happendEvent = true;
+                postObjectEvent(token, objectConfig, copyUtcDate, fileExpiresHours, objectContext, objectResult, yuvImage, mfr, matchResult);
+            }   
+        }
+    }
+    
+    private void postObjectEvent(final String token, final ObjectConfig objectConfig, final Date copyUtcDate, int fileExpiresHours,
+        ObjectContext objectContext, final ObjectRecognitionResult objectResult, YUVImage yuvImage, MotionFeedResult mfr,
+        Multimap<Integer, TargetObject> matchResult) {
+        //decode to jpg
+        byte[] jpgData = encodeJpg(token, yuvImage);
+          
+        //DEBUG 画矩形框
+        if (LOGGER.isDebugEnabled()) {
+            byte[] drawJpg = drawGraphical(token, objectConfig, copyUtcDate, yuvImage, mfr, objectResult, matchResult, jpgData);
+            jpgData = drawJpg != null ? drawJpg:jpgData;
+        }
+          
+        //post event
+        if( null != matchResult && ! matchResult.isEmpty() ){
+            ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
+            eventBus.post( event );
+            objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime()); 
+        }
+    }
+    
+    private byte[] encodeJpg(final String token, final YUVImage yuvImage) {
+		try {
+			return  processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+		} catch (EncodeException e) {
+			LOGGER.error(e.getMessage(),e);
+			return null;
 		}
-		
-		//Object 响应结果 匹配zoneinfo 匹配motion 
-		ObjectRecognitionResult objectResult = JSONObject.toJavaObject(parseObj, ObjectRecognitionResult.class);
-		Multimap<Integer, TargetObject>  matchResult = match(token, yuvImage, objectResult, oc, mfr);
-		LOGGER.info("Token:{},ObjectRecognition  Cost:{}", token,(System.currentTimeMillis() - startTime));
-		
-		byte[] jpgData = null;
-		if( null != matchResult && ! matchResult.isEmpty() ){
-			try {
-				jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-			} catch (EncodeException e) {
-				LOGGER.error(e.getMessage(),e);
-				return;
-			}
-		}else{
-			LOGGER.info("Token:{},Object Match Result is NULL",token);
-		}
-		
-		//FIXME 画矩形框
-		if (LOGGER.isDebugEnabled()) {
-			try {
-				if( null == jpgData){
-					jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
-				}
-				jpgData = ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult,debugImageSavePath);
-			} catch (Exception e) {
-				LOGGER.error(e.getMessage(),e);
-				return;
-			}
-		}
-		if( null != matchResult && ! matchResult.isEmpty() ){
-			ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
-			eventBus.post( event );
-			objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime());	
-		}
-	}
+    }
+
+    private ObjectRecognitionResult requestObjectService(String token,String objectRecognitionUrl2, byte[] nalData) throws URISyntaxException {
+        long startTime = System.currentTimeMillis();
+        RequestEntity<byte[]> requestEntity = new RequestEntity<>(nalData, HttpMethod.PUT, new URI(objectRecognitionUrl));
+        ResponseEntity<ObjectRecognitionResult> response = restTemplate.exchange(requestEntity, ObjectRecognitionResult.class);
+        long objectCost = System.currentTimeMillis() - startTime;
+        recordCounter.updateObjectSingleDataProcessCost(objectCost);
+        LOGGER.info("Process ObjectPut finished.Cost:{}",objectCost);
+        
+        //请求Object服务
+        if( null == response || !response.getStatusCode().is2xxSuccessful() ) {
+            LOGGER.error("Token:{},access object url:{}, error",token,objectRecognitionUrl);
+            recordCounter.addAndGetObjectErrorCount(1);
+            return null;
+        }
+        LOGGER.info("Token:{},access object result:{}",token,response.getBody());
+        
+        return response.getBody();
+    }
+
+    private byte[] drawGraphical(final String token, final ObjectConfig oc, final Date utcDate, final YUVImage yuvImage, final MotionFeedResult mfr,
+            ObjectRecognitionResult objectResult, Multimap<Integer, TargetObject> matchResult, byte[] jpgData) {
+        try {
+        	if( null == jpgData){
+        		jpgData = processorManager.encode(token, yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+        	}
+        	jpgData = ImageUtils.draw(token, utcDate,jpgData, yuvImage, oc, mfr, objectResult,matchResult,debugImageSavePath);
+        } catch (Exception e) {
+        	LOGGER.error(e.getMessage(),e);
+        	return null;
+        }
+        return jpgData;
+    }
 	
 
 	/**
@@ -313,7 +340,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 		for (TargetObject resultObject : objectRecognitionResult.getObjects()) {
 			String resultObjectType = resultObject.getType();     //eg: person|cat|cat|dog
 			List<Integer> objectBox = resultObject.getBbox_pct();
-			//FIXME
 			if(resultObject.getScore() < objectConfirmScore){
 				continue;
 			}
