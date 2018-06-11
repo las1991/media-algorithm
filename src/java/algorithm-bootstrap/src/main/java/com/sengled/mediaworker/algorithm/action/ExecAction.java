@@ -1,14 +1,11 @@
 package com.sengled.mediaworker.algorithm.action;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-
-import org.apache.commons.lang.StringUtils;
+import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.util.CollectionUtils;
-
-import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
@@ -32,25 +29,33 @@ public class ExecAction extends Action {
 		    return;
 		}
 		LOGGER.debug("[{}] decode result size:{}",token,yuvImageList.size());
+		
+		final Map<Integer,MotionFeedResult>  motionFeedResultMap = new HashMap<>();//<frameIndex,feedResult>
+		final Map<Integer,YUVImage>  yuvImageResultMap = new HashMap<>();//<freameIndex,YumImage>
+		int frameIndex = 0;
 		for (YUVImage yuvImage : yuvImageList) {
 		    LOGGER.debug("Token:{},Feed ,parameters:{},yuvImage size:{}", token, context.getAlgorithm().getParametersJson(),yuvImage.getYUVData().length);
 		    long startTime = System.currentTimeMillis();
-	        String text = processor.feed(context.getAlgorithm(), yuvImage);
-	        LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),text.trim());
-	        if(StringUtils.isNotBlank(text.trim())){
-	            MotionFeedResult motionFeedResult = JSONObject.parseObject(text.trim(), MotionFeedResult.class);
-	            if(motionFeedResult ==null || !motionFeedResult.verify()){
-	                LOGGER.info("Token:{},Feed result NORESULT. feed result:{} ",token,text);
-	                continue;
-	            }
-	            for(FeedListener listener : listeners){
-	                try {
-	                    listener.feedResultHandle(context,yuvImage,frame.getNalData(),motionFeedResult);
-	                } catch (Exception e) {
-	                    LOGGER.error(e.getMessage(),e);
-	                }
+		    MotionFeedResult motionFeedResult = processor.feed(context.getAlgorithm(), yuvImage,MotionFeedResult.class);
+	        LOGGER.debug("Token:{},Feed cost:{} msec  result:{}",token,(System.currentTimeMillis() - startTime),motionFeedResult);
+	        
+	        if(motionFeedResult ==null || !motionFeedResult.verify()){
+                LOGGER.info("Token:{},Feed result NORESULT. feed result:{} ",token, motionFeedResult);
+                continue;
+            }
+	        motionFeedResultMap.put(frameIndex,motionFeedResult);
+            yuvImageResultMap.put(frameIndex, yuvImage);
+            frameIndex++;
+        }
+		
+		if( ! CollectionUtils.isEmpty(motionFeedResultMap) ){
+	        for(FeedListener listener : listeners){
+	            try {
+	                listener.feedResultHandle(context,frame.getNalData(),yuvImageResultMap,motionFeedResultMap);
+	            } catch (Exception e) {
+	                LOGGER.error(e.getMessage(),e);
 	            }
 	        }
-        }
+		}
 	}
 }

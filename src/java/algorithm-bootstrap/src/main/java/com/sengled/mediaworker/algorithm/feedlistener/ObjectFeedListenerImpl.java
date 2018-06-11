@@ -1,11 +1,14 @@
 package com.sengled.mediaworker.algorithm.feedlistener;
 
 import java.util.Date;
+import java.util.Map;
+import java.util.Map.Entry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import com.google.common.collect.Maps;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ObjectRecognition;
@@ -31,31 +34,42 @@ public class ObjectFeedListenerImpl implements FeedListener {
     @Value("${max.delayed.time.msce}")
     private long maxDelayedTimeMsce;
     
-	@Override
-	public void feedResultHandle(StreamingContext context,final YUVImage yuvImage, final byte[] copyNalData,final MotionFeedResult motionFeedResult) throws Exception{
-		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
-		
-		ObjectConfig objectConfig = context.getConfig().getObjectConfig();
-		String token = context.getToken();
-		Date utcDate = context.getUtcDateTime();
 
-		if (null == objectConfig) {
-			LOGGER.info("Token:{},objectConfig is null config:{}", token, context.getConfig());
-			return;
-		}
 
-		long delayTime = System.currentTimeMillis() - utcDate.getTime();
-		recordCounter.updateObjectReceiveDelay(delayTime);
-		recordCounter.addAndGetObjectMotionCount(1);
-		if(delayTime > maxDelayedTimeMsce){
-			recordCounter.addAndGetObjectDataDelayedCount(1);
-			LOGGER.warn("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
-			return;
-		}
-		
-		YUVImage copyYuvImage = new YUVImage(yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getYUVData());		
-		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
-		int fileExpiresHours = context.getFileExpiresHours();
-		objectRecognitionImpl.submit(token,objectConfig,copyUtcDate,copyYuvImage,copyNalData,fileExpiresHours,motionFeedResult);		
-	}
+    @Override
+    public void feedResultHandle(StreamingContext context, 
+                                 final byte[] nalData, 
+                                 final Map<Integer, YUVImage> yuvImageResultMap,
+                                 final Map<Integer, MotionFeedResult> motionFeedResultMap) {
+        final ObjectConfig objectConfig = context.getConfig().getObjectConfig();
+        String token = context.getToken();
+        Date utcDate = context.getUtcDateTime();
+
+        if (null == objectConfig) {
+            LOGGER.info("Token:{},objectConfig is null config:{}", token, context.getConfig());
+            return;
+        }
+
+        long delayTime = System.currentTimeMillis() - utcDate.getTime();
+        recordCounter.updateObjectReceiveDelay(delayTime);
+        recordCounter.addAndGetObjectMotionCount(1);
+        if(delayTime > maxDelayedTimeMsce){
+            recordCounter.addAndGetObjectDataDelayedCount(1);
+            LOGGER.warn("Token:{} UTC Delay :{}  > maxDelayedTimeMsce:{}  skip.",token,delayTime,maxDelayedTimeMsce);
+            return;
+        }
+        
+        Map<Integer, YUVImage> copyYUVmageMap =  Maps.newConcurrentMap();
+        
+        for( Entry<Integer, YUVImage> entry : yuvImageResultMap.entrySet()) {
+            YUVImage yuvImage = entry.getValue();
+            copyYUVmageMap.put(entry.getKey(), new YUVImage(yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getYUVData()));
+        }
+ 
+        final Date finalUtcDate = new Date(context.getUtcDateTime().getTime());
+        final int fileExpiresHours = context.getFileExpiresHours();
+        
+        
+        objectRecognitionImpl.submit(token, objectConfig, finalUtcDate, copyYUVmageMap, nalData, fileExpiresHours, motionFeedResultMap); 
+    }
 }
