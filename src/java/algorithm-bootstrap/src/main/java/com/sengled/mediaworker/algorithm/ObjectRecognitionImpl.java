@@ -150,9 +150,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     }
 	
 
-    private void handle2(final String token, final ObjectConfig objectConfig, final Date copyUtcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
+    private void handle2(final String token, final ObjectConfig objectConfig, final Date utcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
             int fileExpiresHours, Map<Integer, MotionFeedResult> motionFeedResultMap) throws Exception {
-        ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,copyUtcDate,objectConfig);
+        ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,objectConfig);
         if (objectContext.isSkip(objectIntervalTimeMsce)) {
             return;
         }
@@ -164,19 +164,17 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
         
         Multiset<Integer> frameIndexSet = wrapper.getMultiMap().keys();
         
-        boolean happendEvent = false; 
         for (Integer frameIndex : frameIndexSet) {
-            if( happendEvent ){
-                break;
-            }
             //物体识别 与 移动检测 匹配
             YUVImage yuvImage =  copyYUVmageMap.get(frameIndex);
             MotionFeedResult mfr =  motionFeedResultMap.get(frameIndex);
             ObjectRecognitionResult objectRecognitionResult = wrapper.getObjectRecognitionResult(frameIndex);
             Multimap<Integer, TargetObject>  matchResult = match(token, yuvImage, objectRecognitionResult, objectConfig, mfr);
-            if( null != matchResult ){
-                happendEvent = true;
-                postObjectEvent(token, objectConfig, copyUtcDate, fileExpiresHours, objectContext, objectResult, yuvImage, mfr, matchResult);
+            if( null != matchResult && ! matchResult.isEmpty() ){
+                postObjectEvent(token, objectConfig, utcDate, fileExpiresHours, objectContext, objectResult, yuvImage, mfr, matchResult);
+                LOGGER.info("[{}], Object matchResult :{} frameIndex:{},",token, matchResult,frameIndex);
+                LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",token, objectConfig,utcDate, motionFeedResultMap);
+                break;
             }   
         }
     }
@@ -194,11 +192,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
         }
           
         //post event
-        if( null != matchResult && ! matchResult.isEmpty() ){
-            ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
-            eventBus.post( event );
-            objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime()); 
-        }
+        ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
+        eventBus.post( event );
+        objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime()); 
     }
     
     private byte[] encodeJpg(final String token, final YUVImage yuvImage) {
