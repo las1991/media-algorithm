@@ -32,16 +32,16 @@
 	</dependencyManagement>
 
 	<dependencies>
-        
-        <dependency>
-            <groupId>com.sengled.cloud</groupId>
-            <artifactId>mediabase-api</artifactId>
-            <version>sengled-mediabase-api-4.4.6</version>
-            <scope>system</scope>
-            <systemPath>${project.basedir}/../algorithm-assembly/lib/sengled-mediabase-api-4.4.6.jar</systemPath>
-        </dependency>
-        
-        
+
+		<dependency>
+			<groupId>com.sengled.cloud</groupId>
+			<artifactId>mediabase-api</artifactId>
+			<version>sengled-mediabase-api-4.5.8</version>
+			<scope>system</scope>
+			<systemPath>${project.basedir}/../algorithm-assembly/lib/sengled-mediabase-api-4.5.8.jar</systemPath>
+		</dependency>
+
+
 		<!-- jna -->
 		<dependency>
 			<groupId>com.sengled.media</groupId>
@@ -76,11 +76,6 @@
 					<artifactId>*</artifactId>
 				</exclusion>
 			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-redis</artifactId>
-			<version>${spring-boot.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.eclipse.jetty</groupId>
@@ -130,11 +125,16 @@
 		</dependency>
 
 
+		<dependency>
+			<groupId>org.springframework.cloud</groupId>
+			<artifactId>spring-cloud-starter-consul-all</artifactId>
+			<version>1.3.3.RELEASE</version>
+		</dependency>
 
 		<dependency>
 			<groupId>com.amazonaws</groupId>
 			<artifactId>aws-java-sdk-kinesis</artifactId>
-			<version>1.11.165</version>
+			<version>1.11.315</version>
 			<exclusions>
 				<exclusion>
 					<groupId>commons-logging</groupId>
@@ -153,7 +153,13 @@
 			<artifactId>aws-java-sdk-s3</artifactId>
 			<version>1.11.165</version>
 		</dependency>
-		
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.dataformat</groupId>
+			<artifactId>jackson-dataformat-cbor</artifactId>
+			<version>2.8.10</version>
+		</dependency>
+
 		<!-- Google-Guava-EventBus -->
 		<dependency>
 			<groupId>com.google.guava</groupId>
@@ -171,7 +177,7 @@
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
-			 <version>1.2.44</version>
+			<version>1.2.44</version>
 		</dependency>
 
 		<dependency>

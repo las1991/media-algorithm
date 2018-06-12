@@ -1,10 +1,7 @@
 package com.sengled.mediaworker;
 import java.sql.Timestamp;
-
 import org.springframework.boot.SpringApplication;
-
-import com.sengled.mediaworker.dynamodb.Dynamodb;
-import com.sengled.mediaworker.dynamodb.DynamodbInit;
+import com.sengled.media.MediaBaseClustConfiguration;
 import com.sengled.mediaworker.s3.S3;
 import com.sengled.mediaworker.spring.DefaultBootApplication;
 import com.sengled.mediaworker.sqs.SQSTemplate;
@@ -23,6 +20,7 @@ public class AlgorithmServer {
 		                                    AlgorithmKinesisStreamProcessor.class,
 											S3.class,
 											SQSTemplate.class,
+											MediaBaseClustConfiguration.class
 											//Dynamodb.class
 											//DynamodbInit.class
 

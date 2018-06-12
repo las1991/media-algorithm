@@ -159,7 +159,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
         
        //请求物体识别
         final ObjectRecognitionResult objectResult  = requestObjectService(token,objectRecognitionUrl,nalData);
-         
+        if( null == objectResult ){
+            return;
+        }
         ObjectRecognitionResultWrapper wrapper = new ObjectRecognitionResultWrapper(objectResult);
         
         Multiset<Integer> frameIndexSet = wrapper.getMultiMap().keys();
