@@ -16,11 +16,11 @@ public class AlgorithmServer {
 					"Not Found Env property '-Dspring.config.location', please use -Dspring.config.location=classpath:/config/application.properties,file:/etc/sengled/sengled.properties");
 		}
 		SpringApplication.run(new Object[] {
+                                            MediaBaseClustConfiguration.class,
 		                                    DefaultBootApplication.class,
 		                                    AlgorithmKinesisStreamProcessor.class,
 											S3.class,
 											SQSTemplate.class,
-											MediaBaseClustConfiguration.class
 											//Dynamodb.class
 											//DynamodbInit.class
 
