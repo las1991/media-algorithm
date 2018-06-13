@@ -1,6 +1,7 @@
 package com.sengled.mediaworker;
 import java.sql.Timestamp;
 import org.springframework.boot.SpringApplication;
+import com.sengled.inception.InceptionClustConfiguration;
 import com.sengled.media.MediaBaseClustConfiguration;
 import com.sengled.mediaworker.s3.S3;
 import com.sengled.mediaworker.spring.DefaultBootApplication;
@@ -17,6 +18,7 @@ public class AlgorithmServer {
 		}
 		SpringApplication.run(new Object[] {
                                             MediaBaseClustConfiguration.class,
+                                            InceptionClustConfiguration.class,
 		                                    DefaultBootApplication.class,
 		                                    AlgorithmKinesisStreamProcessor.class,
 											S3.class,
