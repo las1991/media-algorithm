@@ -24,6 +24,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.RequestEntity;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.client.ClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
 import com.alibaba.fastjson.JSONObject;
@@ -73,21 +74,25 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     @Value("${object.confirm.score}")
     private Double objectConfirmScore;
     
+    @Autowired
+    private ClientHttpRequestFactory clientHttpRequestFactory;
     
 	@Autowired
-	RestTemplate restTemplate;
+	private ProcessorManager  processorManager;
 	
-	@Autowired
-	ProcessorManager  processorManager;
 	@Autowired
 	private ObjectEventHandler objectEventHandler;
-	@Autowired
-	RecordCounter recordCounter;
-	@Autowired
-	ObjectContextManager objectContextManager;
-
 	
+	@Autowired
+	private RecordCounter recordCounter;
+	
+	@Autowired
+	private ObjectContextManager objectContextManager;
+	
+	private RestTemplate restTemplate;
+
 	private List<ExecutorService> executors;
+	
 	private AsyncEventBus eventBus;
 	
 	
@@ -104,6 +109,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	private void initialize() {
 		LOGGER.info("ObjectRecognition init. EVENT_BUS_THREAD_COUNT:{}",EVENT_BUS_THREAD_COUNT);
+		
+		restTemplate = new RestTemplate(clientHttpRequestFactory);
 		try {
 			executors = new ArrayList<ExecutorService>(threadNum);
 			for (int i=0;i<threadNum;i++) {
@@ -151,14 +158,20 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 
     private void handle2(final String token, final ObjectConfig objectConfig, final Date utcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
-            int fileExpiresHours, Map<Integer, MotionFeedResult> motionFeedResultMap) throws Exception {
+            int fileExpiresHours, Map<Integer, MotionFeedResult> motionFeedResultMap) {
         ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,objectConfig);
         if (objectContext.isSkip(objectIntervalTimeMsce)) {
             return;
         }
         
        //请求物体识别
-        final ObjectRecognitionResult objectResult  = requestObjectService(token,objectRecognitionUrl,nalData);
+        ObjectRecognitionResult objectResult = null;
+        try {
+            objectResult = requestObjectService(token,objectRecognitionUrl,nalData);
+        } catch (Exception e) {
+            LOGGER.error("RequestObjectService Exception "+e.getMessage(),e);
+            LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",token, objectConfig,utcDate, motionFeedResultMap);
+        }
         if( null == objectResult ){
             return;
         }
