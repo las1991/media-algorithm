@@ -36,9 +36,9 @@
 		<dependency>
 			<groupId>com.sengled.cloud</groupId>
 			<artifactId>mediabase-api</artifactId>
-			<version>sengled-mediabase-api-4.5.8</version>
+			<version>sengled-mediabase-api-4.5.9</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/../algorithm-assembly/lib/sengled-mediabase-api-4.5.8.jar</systemPath>
+			<systemPath>${project.basedir}/../algorithm-assembly/lib/sengled-mediabase-api-4.5.9.jar</systemPath>
 		</dependency>
 
 

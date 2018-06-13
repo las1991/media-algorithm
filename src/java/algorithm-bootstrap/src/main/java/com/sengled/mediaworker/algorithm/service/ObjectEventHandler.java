@@ -13,6 +13,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.model.Tag;
 import com.google.common.eventbus.Subscribe;
+import com.sengled.inception.InceptionClient;
+import com.sengled.inception.MessageBuilder;
+import com.sengled.inception.downmessage.NotifyAlgorithmEvent.AlgorithmEventNames;
+import com.sengled.media.device.GetDeviceRequest;
+import com.sengled.media.device.MediaDeviceService;
 import com.sengled.mediaworker.algorithm.ObjectType;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.service.PutManager.ImageS3Info;
@@ -31,13 +36,16 @@ public class ObjectEventHandler {
     @Autowired
     PutManager putManager;
     
-
+    @Autowired
+    InceptionClient  inceptionClient; 
+    
+    @Autowired
+    MediaDeviceService mediaDeviceService;
 	@Subscribe
 	public void feedEvent(ObjectEvent event) {
-	    
 	    LOGGER.info("Get ObjectEvent:{}",event);
+	    
 	    Tag tag = storageProperties.getTag(event.getFileExpiresDays()+"");
-	       
 	    AlgorithmResult result = buildAlgorithmResult(event);
 	    switch(event.getFileExpiresDays() ) {
             case 1:
@@ -52,7 +60,14 @@ public class ObjectEventHandler {
             default :
                 putManager.put30(new ImageS3Info( event.getJpgData(), tag,result));    
         }
-	        LOGGER.info("Token:{},ObjectEvent finished",event.getToken());
+	    LOGGER.info("Token:{},ObjectEvent finished",event.getToken());
+	    	    
+        //调用inception 通知snap 硬件
+        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
+        .withEventName(AlgorithmEventNames.HUMAN)
+        .withTime(event.getUtcDate())
+        .send(inceptionClient);
+        LOGGER.info("Token:{},call inception finished",event.getToken());
 	}
 
 	private AlgorithmResult buildAlgorithmResult(ObjectEvent event) {
