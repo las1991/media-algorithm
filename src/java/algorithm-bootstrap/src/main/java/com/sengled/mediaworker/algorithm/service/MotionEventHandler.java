@@ -9,6 +9,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.model.Tag;
 import com.google.common.eventbus.Subscribe;
+import com.sengled.inception.InceptionClient;
+import com.sengled.inception.MessageBuilder;
+import com.sengled.inception.downmessage.NotifyAlgorithmEvent.AlgorithmEventNames;
+import com.sengled.media.device.GetDeviceRequest;
+import com.sengled.media.device.MediaDeviceService;
 import com.sengled.mediaworker.algorithm.event.MotionEvent;
 import com.sengled.mediaworker.algorithm.service.PutManager.ImageS3Info;
 import com.sengled.mediaworker.algorithm.service.dto.AlgorithmResult;
@@ -24,6 +29,12 @@ public class MotionEventHandler {
 	
 	@Autowired
 	PutManager putManager;
+	
+    @Autowired
+    MediaDeviceService mediaDeviceService;
+    
+    @Autowired
+    InceptionClient  inceptionClient; 
 
 	/**
 	 * motion事件
@@ -50,6 +61,13 @@ public class MotionEventHandler {
                 putManager.put30(new ImageS3Info( event.getJpgData(), tag,result));    
         }
 		LOGGER.info("Token:{},MotionEvent finished",event.getToken());
+		
+        //调用inception 通知snap 硬件
+        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
+        .withEventName(AlgorithmEventNames.MOTION)
+        .withTime(event.getUtcDate())
+        .send(inceptionClient);
+        LOGGER.info("Token:{},take motion call inception finished",event.getToken());
 	}
 
     private AlgorithmResult buildAlgorithmResult(MotionEvent event) {

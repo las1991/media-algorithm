@@ -29,7 +29,7 @@ public class KinesisFrameDecoder {
         try {
         	String configString = new String(jsonBytes, "UTF-8");
         	LOGGER.debug("configString:{}",configString);
-        	FrameConfig frameConfig = JSONObject.parseObject(configString, FrameConfig.class);
+        	final FrameConfig frameConfig = JSONObject.parseObject(configString, FrameConfig.class);
 			return new Frame(frameConfig, dataBytes);
 		} catch (UnsupportedEncodingException e) {
 			LOGGER.error("Frame decode error.");
@@ -39,8 +39,8 @@ public class KinesisFrameDecoder {
     
     public static class Frame {
     	
-    	private FrameConfig config;
-        private byte[] nalData;
+    	private final FrameConfig config;
+        private final byte[] nalData;
         
         public Frame( FrameConfig config, byte[] dataBytes) {
         	this.config = config;
@@ -51,16 +51,8 @@ public class KinesisFrameDecoder {
 			return nalData;
 		}
 
-		public void setNalData(byte[] yuvData) {
-			this.nalData = yuvData;
-		}
-
 		public FrameConfig getConfig() {
 			return config;
-		}
-
-		public void setConfig(FrameConfig config) {
-			this.config = config;
 		}
 		
     }

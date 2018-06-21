@@ -16,7 +16,7 @@ public class ObjectContext extends Context {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectContext.class);
 
 
-	private String token;
+	private final String token;
 	private Long lastObjectTimestamp;
 	private Date utcDateTime;
 	private ObjectConfig objectConfig;
@@ -60,10 +60,6 @@ public class ObjectContext extends Context {
 
 	public String getToken() {
 		return token;
-	}
-
-	public void setToken(String token) {
-		this.token = token;
 	}
 
 	public Long getLastObjectTimestamp() {

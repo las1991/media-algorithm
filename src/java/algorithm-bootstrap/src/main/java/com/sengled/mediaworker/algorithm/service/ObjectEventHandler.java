@@ -67,7 +67,7 @@ public class ObjectEventHandler {
         .withEventName(AlgorithmEventNames.HUMAN)
         .withTime(event.getUtcDate())
         .send(inceptionClient);
-        LOGGER.info("Token:{},call inception finished",event.getToken());
+        LOGGER.info("Token:{},take human call inception finished",event.getToken());
 	}
 
 	private AlgorithmResult buildAlgorithmResult(ObjectEvent event) {
