@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.amazonaws.services.s3.model.Tag;
 import com.google.common.eventbus.Subscribe;
+import com.sengled.media.device.MediaDeviceService;
 import com.sengled.mediaworker.algorithm.ObjectType;
 import com.sengled.mediaworker.algorithm.event.ObjectEvent;
 import com.sengled.mediaworker.algorithm.service.PutManager.ImageS3Info;
