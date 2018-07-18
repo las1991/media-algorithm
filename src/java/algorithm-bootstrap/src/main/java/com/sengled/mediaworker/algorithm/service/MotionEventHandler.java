@@ -33,8 +33,8 @@ public class MotionEventHandler {
     @Autowired
     MediaDeviceService mediaDeviceService;
     
-    @Autowired
-    InceptionClient  inceptionClient; 
+//    @Autowired
+//    InceptionClient  inceptionClient; 
 
 	/**
 	 * motion事件
@@ -63,11 +63,11 @@ public class MotionEventHandler {
 		LOGGER.info("Token:{},MotionEvent finished",event.getToken());
 		
         //调用inception 通知snap 硬件
-        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
-        .withEventName(AlgorithmEventNames.MOTION)
-        .withTime(event.getUtcDate())
-        .send(inceptionClient);
-        LOGGER.info("Token:{},take motion call inception finished",event.getToken());
+//        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
+//        .withEventName(AlgorithmEventNames.MOTION)
+//        .withTime(event.getUtcDate())
+//        .send(inceptionClient);
+//        LOGGER.info("Token:{},take motion call inception finished",event.getToken());
 	}
 
     private AlgorithmResult buildAlgorithmResult(MotionEvent event) {

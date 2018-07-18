@@ -36,9 +36,9 @@ public class ObjectEventHandler {
     @Autowired
     PutManager putManager;
     
-    @Autowired
-    InceptionClient  inceptionClient; 
-    
+//    @Autowired
+//    InceptionClient  inceptionClient; 
+//    
     @Autowired
     MediaDeviceService mediaDeviceService;
 	@Subscribe
@@ -63,11 +63,11 @@ public class ObjectEventHandler {
 	    LOGGER.info("Token:{},ObjectEvent finished",event.getToken());
 	    	    
         //调用inception 通知snap 硬件
-        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
-        .withEventName(AlgorithmEventNames.HUMAN)
-        .withTime(event.getUtcDate())
-        .send(inceptionClient);
-        LOGGER.info("Token:{},take human call inception finished",event.getToken());
+//        MessageBuilder.algorithmEvent(mediaDeviceService.getDeviceProfile(new GetDeviceRequest(event.getToken())))
+//        .withEventName(AlgorithmEventNames.HUMAN)
+//        .withTime(event.getUtcDate())
+//        .send(inceptionClient);
+//        LOGGER.info("Token:{},take human call inception finished",event.getToken());
 	}
 
 	private AlgorithmResult buildAlgorithmResult(ObjectEvent event) {
