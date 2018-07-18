@@ -1,0 +1,14 @@
+---
+os: linux
+version: 1.0
+appService: media-algorithm-v3
+exec:
+  - name: media-algorithm-v3-8888
+    type: http
+    value: http://127.0.0.1:8888
+    interval: 15
+    timeout: 60
+    pending: 120
+    healthy_threshold: 3
+    unhealthy_threshold: 3
+    failback: curl http://127.0.0.1:5000/service/media-algorithm-v3?action=restart

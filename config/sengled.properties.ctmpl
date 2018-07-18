@@ -3,22 +3,20 @@ PUBLIC_IPV4=$PUBLIC_IPV4
 PRIVATE_IPV4=$PRIVATE_IPV4
 
 #aws s3 key
-aws_s3_region=
-aws_screenshot_bucket=
-
-
-AWS_SERVICE_NAME_PREFIX=
+aws_s3_region={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/aws_s3_region"}}
+aws_screenshot_bucket={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/aws_screenshot_bucket"}}
+AWS_SERVICE_NAME_PREFIX={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SERVICE_NAME_PREFIX"}}
 
 # kinesis
-AWS_KINESIS_REGION=
+AWS_KINESIS_REGION={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_KINESIS_REGION"}}
 
 # dynamodb
-AWS_DYNAMO_REGION=
+AWS_DYNAMO_REGION={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_DYNAMO_REGION"}}
 
 # sqs
-AWS_SQS_REGION=
+AWS_SQS_REGION={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/AWS_SQS_REGION"}}
 
 # object recognition services
-OBJECT.RECOGNITION.HOST=
-OBJECT.RECOGNITION.PORT=
-OBJECT.RECOGNITION.PATH=
+OBJECT.RECOGNITION.HOST={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/OBJECT.RECOGNITION.HOST"}}
+OBJECT.RECOGNITION.PORT={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/OBJECT.RECOGNITION.PORT"}}
+OBJECT.RECOGNITION.PATH={{key "deploy/deployGroup/DEPLOY_GROUP_NAME/config/OBJECT.RECOGNITION.PATH"}}
