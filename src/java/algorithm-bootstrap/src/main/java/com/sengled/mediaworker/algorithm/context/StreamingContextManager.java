@@ -15,6 +15,7 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
 import com.alibaba.fastjson.JSONObject;
 import com.sengled.media.algorithm.MediaAlgorithmService;
 import com.sengled.media.algorithm.QueryAlgorithmConfigRequest;
@@ -41,7 +42,6 @@ public class StreamingContextManager implements InitializingBean{
     private int motionLow;
 	    
 	private ConcurrentHashMap<String, StreamingContext> streamingContextMap;
-	private ConcurrentHashMap<String, AlgorithmConfigWarpper> AlgorithmConfigMap;
 	private Timer timer;
 	private Object lockObject  = new Object();;
 	
@@ -64,7 +64,6 @@ public class StreamingContextManager implements InitializingBean{
 	
 	private void initialize(){
 		streamingContextMap = new ConcurrentHashMap<>();
-		AlgorithmConfigMap   =   new ConcurrentHashMap<>();
 		timer = new Timer();
 		timer.schedule(new TimerTask() {
 			@Override
@@ -83,50 +82,46 @@ public class StreamingContextManager implements InitializingBean{
 	    
 		StreamingContext context =  null;
 		boolean isRefresh = frameConfig.getAction().equals("open");
-		
-		AlgorithmConfigWarpper algorithmConfig;
-		try {
-            algorithmConfig = getAlgorithmConfig(isRefresh,tokenMask);
-        } catch (Exception e) {
-            throw new AlgorithmIntanceCreateException(e);
-        }
-		MotionConfig baseConfig = algorithmConfig.getBaseConfig();
-		
+		AlgorithmConfigWarpper algorithmConfig = null;
 		synchronized (lockObject) {
 		    context =  streamingContextMap.get(tokenMask);
-            if( null == context ){ 
-                context =  newAlgorithmContext(processor,tokenMask,utcDateTime, baseConfig);
+		    if( null == context ||  isRefresh ){
+	            try {
+                    algorithmConfig = getAlgorithmConfig(tokenMask);
+                } catch (Exception e) {
+                    throw new AlgorithmIntanceCreateException(e);
+                }
+	        }
+		    
+            if( null == context ){
+                context =  newAlgorithmContext(processor,tokenMask,utcDateTime, algorithmConfig.getBaseConfig());
+                context.setConfig(algorithmConfig);
             }else{
+                
+                if( isRefresh ){
+                    //设置算法参数
+                    context.getAlgorithm().setParameters(JSONObject.toJSONString(algorithmConfig.getBaseConfig()));
+                    context.setConfig(algorithmConfig);
+                }
                 //设置  数据中的UTC时间
                 context.setUtcDateTime(utcDateTime);
-                //设置算法参数
-                context.getAlgorithm().setParameters(JSONObject.toJSONString(baseConfig));
                 //设置 上次接收到数据的时间
                 context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
                 //设置 本次接收到数据的时间
                 context.setContextUpdateTimestamp(System.currentTimeMillis());
             }
-            context.setConfig(algorithmConfig);
             context.setFrameConfig(frameConfig);
         }
 
 		return context;
 	}
-	private AlgorithmConfigWarpper getAlgorithmConfig(boolean isRefresh,String tokenMask) throws Exception{
-	    AlgorithmConfigWarpper configWapper =  AlgorithmConfigMap.get(tokenMask);
-        if( null != configWapper && ! isRefresh ){
-            return configWapper;
-        }
+	private AlgorithmConfigWarpper getAlgorithmConfig(String tokenMask) throws Exception{
         QueryAlgorithmConfigRequest request = new QueryAlgorithmConfigRequest();
         request.setToken(StringUtils.split(tokenMask, ",")[0]);
         AlgorithmConfig algor = mediaAlgorithmService.getAlgorithmConfig(request);
-        if( null == algor ) {
-            LOGGER.error("getAlgorithmConfig error. tokenMask:{} ", tokenMask);
-            throw new Exception("getAlgorithmConfig return null");
-        }
         LOGGER.info("Mediabase return AlgorithmConfig:{}, tokenMask:{}",algor, tokenMask);
-        configWapper = new AlgorithmConfigWarpper(algor,motionHigh,motionNormal,motionLow);
-        AlgorithmConfigMap.put(tokenMask, configWapper);
+        Assert.notNull(algor,"getAlgorithmConfig return null");
+        AlgorithmConfigWarpper configWapper = new AlgorithmConfigWarpper(algor,motionHigh,motionNormal,motionLow);
         LOGGER.info("AlgorithmConfigWarpper:{} tokenMask:{}",configWapper , tokenMask);
         return configWapper;
     }
