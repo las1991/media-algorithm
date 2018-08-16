@@ -156,7 +156,7 @@ public class StreamingContextManager implements InitializingBean{
 	    AlgorithmConfigWarpper algorithmConfig = getAlgorithmConfig(tokenMask);
 		String algorithmModelId = processor.newAlgorithmModel(tokenMask);
 		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(algorithmConfig.getBaseConfig()));
-		StreamingContext context =  new StreamingContext(tokenMask, utcDateTime,algorithm, processor,recordCounter,this);
+		StreamingContext context =  new StreamingContext(tokenMask, utcDateTime,algorithm, processor,recordCounter,algorithmConfig,this);
 		streamingContextMap.put(tokenMask, context);
 		return context;
 	}

@@ -55,12 +55,14 @@ public class StreamingContext extends Context{
 					Algorithm algorithm,
 					ProcessorManager processorManager,
 					RecordCounter recordCounter,
+					AlgorithmConfigWarpper config,
 					StreamingContextManager streamingContextManager
 					) {
 		this.tokenMask = tokenMask;
 		this.algorithm = algorithm;
 		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
+	    this.config = config;
 		this.streamingContextManager = streamingContextManager;
 		this.recordCounter = recordCounter;
 		this.contextCreateTimestamp = System.currentTimeMillis();
