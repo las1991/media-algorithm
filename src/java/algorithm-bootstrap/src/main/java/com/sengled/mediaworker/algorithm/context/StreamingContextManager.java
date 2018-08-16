@@ -78,25 +78,23 @@ public class StreamingContextManager implements InitializingBean{
 	}
 	
 	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String tokenMask,String utcDateTime,FrameConfig frameConfig) throws Exception{
-	    
-		StreamingContext context =  null;
+	    StreamingContext  context = null;
 		String action = frameConfig.getAction();
 		synchronized (lockObject) {
+		    context = streamingContextMap.get(tokenMask);
+		    
 		    if( "open".equalsIgnoreCase(action) ){
-		        context = streamingContextMap.get(tokenMask);
 	            if( null != context ){
 	                close(context);
 	            }
 	            context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
 	            context.setAction(context.openAction);
 	        }else if( "exec".equalsIgnoreCase(action) ){
-	            context = streamingContextMap.get(tokenMask);
 	            if( null == context ){
 	                context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
 	            }
                 context.setAction(context.execAction);
 	        }else if( "close".equalsIgnoreCase(action) ){
-	            context = streamingContextMap.get(tokenMask);
 	            if( null != context ){
 	                close(context);
 	                context = null;
