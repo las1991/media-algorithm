@@ -93,8 +93,8 @@ public class StreamingContextManager implements InitializingBean{
 	            StreamingContext sc = streamingContextMap.get(tokenMask);
 	            if( null == sc ){
 	                context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
-	                context.setAction(context.execAction);
 	            }
+                context.setAction(context.execAction);
 	        }else if( "close".equalsIgnoreCase(action) ){
 	            StreamingContext sc = streamingContextMap.get(tokenMask);
 	            if( null != sc ){
