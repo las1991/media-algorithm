@@ -11,7 +11,6 @@ import com.sengled.media.interfaces.Algorithm;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.action.Action;
-import com.sengled.mediaworker.algorithm.action.CloseAction;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
 import com.sengled.mediaworker.algorithm.action.OpenAction;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
@@ -26,7 +25,7 @@ import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 public class StreamingContext extends Context{
 	private static final Logger LOGGER = LoggerFactory.getLogger(StreamingContext.class);
 
-	private String token;
+	private String tokenMask;
 	//接收kinesis数据中的utc时间
 	private String utcDateTime;
 	//保存最后一次Motion的时间
@@ -50,16 +49,15 @@ public class StreamingContext extends Context{
 	
 	public final Action openAction = new OpenAction();
 	public final Action execAction = new ExecAction();
-	public final Action closeAction = new CloseAction();
 	
-	StreamingContext(String token, 
+	StreamingContext(String tokenMask, 
 					String utcDateTime,
 					Algorithm algorithm,
 					ProcessorManager processorManager,
 					RecordCounter recordCounter,
 					StreamingContextManager streamingContextManager
 					) {
-		this.token = token;
+		this.tokenMask = tokenMask;
 		this.algorithm = algorithm;
 		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
@@ -68,7 +66,7 @@ public class StreamingContext extends Context{
 		this.contextCreateTimestamp = System.currentTimeMillis();
 		this.contextUpdateTimestamp = contextCreateTimestamp;
 		this.lastMotionTimestamp = null;
-		LOGGER.info("Token:{},Model:{},Create StreamingContext", token);
+		LOGGER.info("Token:{},Model:{},Create StreamingContext", tokenMask);
 	}
 
 	public void feed(final Frame frame,final FeedListener[] listeners) throws Exception {
@@ -85,7 +83,7 @@ public class StreamingContext extends Context{
 		try {
 			return DateUtils.parseDate(utcDateTime, UTC_DATE_FORMAT);
 		} catch (ParseException e) {
-			LOGGER.error("Token:{},parseDate failed.",token);
+			LOGGER.error("Token:{},parseDate failed.",tokenMask);
 			LOGGER.error(e.getMessage(), e);
 		}
 		return null;
@@ -98,7 +96,7 @@ public class StreamingContext extends Context{
 		if(utcDate !=null){
 			long delayedTime = contextUpdateTimestamp - utcDate.getTime();
 			if( delayedTime >= maxDelayedTimeMsce){
-				LOGGER.warn("Token:{},utcDate:{},intervalTime:{} >= {} skip.",token,utcDate,delayedTime,maxDelayedTimeMsce);
+				LOGGER.warn("Token:{},utcDate:{},intervalTime:{} >= {} skip.",tokenMask,utcDate,delayedTime,maxDelayedTimeMsce);
 				expire = true;
 				recordCounter.addAndGetDataDelayedCount(1);
 			}
@@ -111,17 +109,17 @@ public class StreamingContext extends Context{
 			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
 			
 			if(sinceLastMotion <= motionIntervalTimeMsce){
-				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec isReport=false.",token,sinceLastMotion,motionIntervalTimeMsce);
+				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec isReport=false.",tokenMask,sinceLastMotion,motionIntervalTimeMsce);
 				isReport = false;
 			}else{
 				lastMotionTimestamp = null;
-				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",token,sinceLastMotion,motionIntervalTimeMsce);
+				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",tokenMask,sinceLastMotion,motionIntervalTimeMsce);
 				isReport = true;
 			}
 		}
 	}
 	public String getToken() {
-		return token;
+		return tokenMask;
 	}
 
 	public Algorithm getAlgorithm() {
@@ -193,7 +191,7 @@ public class StreamingContext extends Context{
 	
 	public int getFileExpiresHours(){
 	    if( null == frameConfig ){
-	        LOGGER.error("[{}] frameConfig is null.",token);
+	        LOGGER.error("[{}] frameConfig is null.",tokenMask);
 	        return 30 * 24;
 	    }
 	    return frameConfig.getFileExpiresHours();
