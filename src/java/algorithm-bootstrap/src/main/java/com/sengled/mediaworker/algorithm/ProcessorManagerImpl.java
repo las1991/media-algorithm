@@ -95,31 +95,19 @@ public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	    //获得上下文
         StreamingContext context;
         try {
-            context = streamingContextManager.findOrCreateStreamingContext(this, tokenMask, utcDateTime,frameConfig);
+            context = streamingContextManager.findOrCreateStreamingContext(this, tokenMask, utcDateTime, frameConfig);
         } catch (Exception e) {
             LOGGER.error("findOrCreateStreamingContext failed."+e.getMessage(),e);
             LOGGER.error("tokenMask:{},utcDateTime:{},frameConfig:{}", tokenMask, utcDateTime, frameConfig);
             return;
         }
-        
-	    //处理逻辑
-        switch (action) {
-            case "open":
-                context.setAction(context.openAction);
-                break;
-            case "exec":
-                context.setAction(context.execAction);
-                break;
-            case "close":
-                context.setAction(context.closeAction);
-                break;
-            default:
-                LOGGER.error("Token:{},action:{} not supported", tokenMask,action);
-                return;
-        }
+
 		LOGGER.debug("Token:{},Received config.[ action:{},utcDateTime:{},modelConfig:{} ]",tokenMask,action,utcDateTime,frameConfig);
 		
 
+		if(  null == context ){
+		    return;
+		}
 		//过滤数据
 		try {
 			if(context.isDataExpire(maxDelayedTimeMsce)){

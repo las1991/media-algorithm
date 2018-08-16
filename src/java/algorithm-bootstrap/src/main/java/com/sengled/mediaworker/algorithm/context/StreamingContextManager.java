@@ -25,7 +25,6 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
-import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.MotionConfig;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 
 @Component
@@ -78,40 +77,44 @@ public class StreamingContextManager implements InitializingBean{
 		}, 10 * 60 * 1000, CONTEXT_EXPIRE_TIME_MILLIS);
 	}
 	
-	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String tokenMask,String utcDateTime,FrameConfig frameConfig) throws AlgorithmIntanceCreateException{
+	public StreamingContext findOrCreateStreamingContext(ProcessorManager processor,String tokenMask,String utcDateTime,FrameConfig frameConfig) throws Exception{
 	    
 		StreamingContext context =  null;
-		boolean isRefresh = frameConfig.getAction().equals("open");
-		AlgorithmConfigWarpper algorithmConfig = null;
+		String action = frameConfig.getAction();
 		synchronized (lockObject) {
-		    context =  streamingContextMap.get(tokenMask);
-		    if( null == context ||  isRefresh ){
-	            try {
-                    algorithmConfig = getAlgorithmConfig(tokenMask);
-                } catch (Exception e) {
-                    throw new AlgorithmIntanceCreateException(e);
-                }
+		    if( "open".equalsIgnoreCase(action) ){
+	            StreamingContext sc = streamingContextMap.get(tokenMask);
+	            if( null != sc ){
+	                close(sc);
+	            }
+	            context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
+	            context.setAction(context.openAction);
+	        }else if( "exec".equalsIgnoreCase(action) ){
+	            StreamingContext sc = streamingContextMap.get(tokenMask);
+	            if( null == sc ){
+	                context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
+	                context.setAction(context.execAction);
+	            }
+	        }else if( "close".equalsIgnoreCase(action) ){
+	            StreamingContext sc = streamingContextMap.get(tokenMask);
+	            if( null != sc ){
+	                close(sc);
+	            }
 	        }
-		    
-            if( null == context ){
-                context =  newAlgorithmContext(processor,tokenMask,utcDateTime, algorithmConfig.getBaseConfig());
-                context.setConfig(algorithmConfig);
-            }else{
-                
-                if( isRefresh ){
-                    //设置算法参数
-                    context.getAlgorithm().setParameters(JSONObject.toJSONString(algorithmConfig.getBaseConfig()));
-                    context.setConfig(algorithmConfig);
-                }
-                //设置  数据中的UTC时间
-                context.setUtcDateTime(utcDateTime);
-                //设置 上次接收到数据的时间
-                context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
-                //设置 本次接收到数据的时间
-                context.setContextUpdateTimestamp(System.currentTimeMillis());
-            }
-            context.setFrameConfig(frameConfig);
-        }
+		}
+		
+		if( null != context ){
+	        //设置  数据中的UTC时间
+	        context.setUtcDateTime(utcDateTime);
+	        //设置 上次接收到数据的时间
+	        context.setLastTimeContextUpdateTimestamp(context.getContextUpdateTimestamp());
+	        //设置 本次接收到数据的时间
+	        context.setContextUpdateTimestamp(System.currentTimeMillis());
+	        
+	        context.setFrameConfig(frameConfig);
+	        
+		}
+
 
 		return context;
 	}
@@ -149,11 +152,12 @@ public class StreamingContextManager implements InitializingBean{
 		streamingContextMap.remove(context.getToken());	
 	}
 	
-	public StreamingContext newAlgorithmContext(ProcessorManager processor,String token,String utcDateTime, MotionConfig newModelConfig) throws AlgorithmIntanceCreateException {
-		String algorithmModelId = processor.newAlgorithmModel(token);
-		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(newModelConfig));
-		StreamingContext context =  new StreamingContext(token, utcDateTime,algorithm, processor,recordCounter,this);
-		streamingContextMap.put(token, context);
+	public StreamingContext newAlgorithmContext(ProcessorManager processor,String tokenMask,String utcDateTime) throws Exception {
+	    AlgorithmConfigWarpper algorithmConfig = getAlgorithmConfig(tokenMask);
+		String algorithmModelId = processor.newAlgorithmModel(tokenMask);
+		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(algorithmConfig.getBaseConfig()));
+		StreamingContext context =  new StreamingContext(tokenMask, utcDateTime,algorithm, processor,recordCounter,this);
+		streamingContextMap.put(tokenMask, context);
 		return context;
 	}
 	private void cleanExpiredContext() {
