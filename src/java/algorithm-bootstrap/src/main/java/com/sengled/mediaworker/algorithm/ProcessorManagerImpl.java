@@ -31,9 +31,6 @@ import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
 @Component
 public class ProcessorManagerImpl implements InitializingBean,ProcessorManager{
 	private static final Logger LOGGER = LoggerFactory.getLogger(ProcessorManagerImpl.class);
-	
-    @Value("${motion.interval.time.msce}")
-    private Long motionIntervalTimeMsce;
     
     @Value("${max.delayed.time.msce}")
     private Long maxDelayedTimeMsce;

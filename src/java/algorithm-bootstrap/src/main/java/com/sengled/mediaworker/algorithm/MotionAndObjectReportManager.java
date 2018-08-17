@@ -14,7 +14,7 @@ public class MotionAndObjectReportManager {
             .initialCapacity(1)
             .build();
     
-    private static Cache<String, String> tokenObject60sFlag = CacheBuilder.newBuilder() //触发一次motion 保存60秒
+    private static Cache<String, String> tokenObject60sFlag = CacheBuilder.newBuilder() //触发一次object 保存60秒
             .expireAfterWrite(OBJECT_REPORT_INTERVAL_SECOND, TimeUnit.SECONDS)
             .initialCapacity(1)
             .build();
