@@ -65,9 +65,6 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	@Value("http://${OBJECT.RECOGNITION.HOST}:${OBJECT.RECOGNITION.PORT}${OBJECT.RECOGNITION.PATH}")
 	private String objectRecognitionUrl;
-	
-    @Value("${object.interval.time.msce}")
-    private Long objectIntervalTimeMsce;
     
     @Value("${debug.image.save.path}")
     private String debugImageSavePath;
