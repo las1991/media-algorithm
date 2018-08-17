@@ -73,7 +73,8 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		}
 		
         if( ! MotionAndObjectReportManager.isAllowMotionReport(token) ){
-            LOGGER.info("[{}] skip.  motion lasttime report is :{}",token, MotionAndObjectReportManager.getMotionRportTime(token));
+            LOGGER.info("[{}], skip. motion lasttime report is :{}",token, MotionAndObjectReportManager.getMotionRportTime(token));
+            return;
         }
 		
 		ZoneInfo  zone = motionFeedResult.getMotion().get(0);
