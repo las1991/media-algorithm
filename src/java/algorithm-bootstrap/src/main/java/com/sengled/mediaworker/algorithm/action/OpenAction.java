@@ -12,7 +12,7 @@ public class OpenAction extends Action{
 	
 	@Override
 	public void feed(StreamingContext context, final Frame frame,final FeedListener[] listeners) throws Exception {
-		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getToken());
+		LOGGER.debug("Token:{},OpenAction feed.StreamingContext reload.",context.getTokenMask());
 		
 		StreamingContextManager manager = context.getStreamingContextManager();
 		Long contextCreateTimestamp = context.getContextCreateTimestamp();
