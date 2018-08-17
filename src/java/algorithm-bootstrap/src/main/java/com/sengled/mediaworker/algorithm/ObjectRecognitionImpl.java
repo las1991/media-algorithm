@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -128,7 +129,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 
 
     @Override
-    public void submit(final String token, 
+    public void submit(final String tokenMask, 
             final ObjectConfig finalObjectConfig, 
             final Date finalUtcDate, 
             final Map<Integer, YUVImage> finalYUVmageMap, 
@@ -136,9 +137,9 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
             final int finalFileExpiresHours, 
             final Map<Integer, MotionFeedResult> finalMotionFeedResultMap) {
         //hash token 提交到指定线程队列中
-        int hashCode = Math.abs(token.hashCode());
+        int hashCode = Math.abs(tokenMask.hashCode());
         int threadIndex = hashCode % threadNum;
-        LOGGER.debug("Token:{} submit objectRecognition threadPool. threadIndex:{}",token,threadIndex);
+        LOGGER.debug("tokenMask:{} submit objectRecognition threadPool. threadIndex:{}",tokenMask,threadIndex);
         
         
         ExecutorService thread = executors.get(threadIndex);
@@ -146,7 +147,7 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
             thread.submit(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
-                        handle2(token,finalObjectConfig,finalUtcDate,finalYUVmageMap,nalData,finalFileExpiresHours,finalMotionFeedResultMap);
+                        handle2(tokenMask,finalObjectConfig,finalUtcDate,finalYUVmageMap,nalData,finalFileExpiresHours,finalMotionFeedResultMap);
                     return null;
                 }
             });
@@ -157,20 +158,17 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
     }
 	
 
-    private void handle2(final String token, final ObjectConfig objectConfig, final Date utcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
+    private void handle2(final String tokenMask, final ObjectConfig objectConfig, final Date utcDate, final Map<Integer, YUVImage> copyYUVmageMap, final byte[] nalData,
             int fileExpiresHours, Map<Integer, MotionFeedResult> motionFeedResultMap) {
-        ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(token,utcDate,objectConfig);
-        if (objectContext.isSkip(objectIntervalTimeMsce)) {
-            return;
-        }
+        ObjectContext objectContext = objectContextManager.findOrCreateStreamingContext(tokenMask,utcDate,objectConfig);
         
        //请求物体识别
         ObjectRecognitionResult objectResult = null;
         try {
-            objectResult = requestObjectService(token,objectRecognitionUrl,nalData);
+            objectResult = requestObjectService(tokenMask,objectRecognitionUrl,nalData);
         } catch (Exception e) {
             LOGGER.error("RequestObjectService Exception "+e.getMessage(),e);
-            LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",token, objectConfig,utcDate, motionFeedResultMap);
+            LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",tokenMask, objectConfig,utcDate, motionFeedResultMap);
         }
         if( null == objectResult ){
             return;
@@ -184,32 +182,32 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
             YUVImage yuvImage =  copyYUVmageMap.get(frameIndex);
             MotionFeedResult mfr =  motionFeedResultMap.get(frameIndex);
             ObjectRecognitionResult objectRecognitionResult = wrapper.getObjectRecognitionResult(frameIndex);
-            Multimap<Integer, TargetObject>  matchResult = match(token, yuvImage, objectRecognitionResult, objectConfig, mfr);
+            Multimap<Integer, TargetObject>  matchResult = match(tokenMask, yuvImage, objectRecognitionResult, objectConfig, mfr);
             if( null != matchResult && ! matchResult.isEmpty() ){
-                postObjectEvent(token, objectConfig, utcDate, fileExpiresHours, objectContext, objectResult, yuvImage, mfr, matchResult);
-                LOGGER.info("[{}], Object matchResult :{} frameIndex:{},",token, matchResult,frameIndex);
-                LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",token, objectConfig,utcDate, motionFeedResultMap);
+                postObjectEvent(tokenMask, objectConfig, utcDate, fileExpiresHours, objectContext, objectResult, yuvImage, mfr, matchResult);
+                LOGGER.info("[{}], Object matchResult :{} frameIndex:{},",tokenMask, matchResult,frameIndex);
+                LOGGER.info("[{}], ObjectConfig:{} utcDate:{},fileExpiresHours:{},motionFeedResultMap:{}",tokenMask, objectConfig,utcDate, motionFeedResultMap);
                 break;
             }   
         }
     }
     
-    private void postObjectEvent(final String token, final ObjectConfig objectConfig, final Date copyUtcDate, int fileExpiresHours,
+    private void postObjectEvent(final String tokenMask, final ObjectConfig objectConfig, final Date copyUtcDate, int fileExpiresHours,
         ObjectContext objectContext, final ObjectRecognitionResult objectResult, YUVImage yuvImage, MotionFeedResult mfr,
         Multimap<Integer, TargetObject> matchResult) {
         //decode to jpg
-        byte[] jpgData = encodeJpg(token, yuvImage);
+        byte[] jpgData = encodeJpg(tokenMask, yuvImage);
           
         //DEBUG 画矩形框
         if (LOGGER.isDebugEnabled()) {
-            byte[] drawJpg = drawGraphical(token, objectConfig, copyUtcDate, yuvImage, mfr, objectResult, matchResult, jpgData);
+            byte[] drawJpg = drawGraphical(tokenMask, objectConfig, copyUtcDate, yuvImage, mfr, objectResult, matchResult, jpgData);
             jpgData = drawJpg != null ? drawJpg:jpgData;
         }
           
         //post event
-        ObjectEvent event = new ObjectEvent(token,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
+        ObjectEvent event = new ObjectEvent(tokenMask,matchResult,jpgData,fileExpiresHours,objectContext.getUtcDateTime());
         eventBus.post( event );
-        objectContext.setLastObjectTimestamp(objectContext.getUtcDateTime().getTime()); 
+        MotionAndObjectReportManager.markObjectEvent(tokenMask.split(",")[0], DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
     }
     
     private byte[] encodeJpg(final String token, final YUVImage yuvImage) {

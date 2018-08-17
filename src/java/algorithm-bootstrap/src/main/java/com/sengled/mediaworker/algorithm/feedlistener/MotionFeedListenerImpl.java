@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
+import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -16,6 +17,7 @@ import com.google.common.eventbus.AsyncEventBus;
 import com.sengled.media.interfaces.YUVImage;
 import com.sengled.media.interfaces.exceptions.EncodeException;
 import com.sengled.mediaworker.algorithm.ImageUtils;
+import com.sengled.mediaworker.algorithm.MotionAndObjectReportManager;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.MotionConfig;
 import com.sengled.mediaworker.algorithm.context.StreamingContext;
@@ -65,22 +67,22 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 		LOGGER.debug("Begin feedResultHandle. StreamingContext:{},motionFeedResult:{}",context,motionFeedResult);
 		
 		MotionConfig motionConfig =  context.getConfig().getMotionConfig();
+		String tokenMask =  context.getTokenMask();
+		String token = context.getToken();
+		
 		if(null == motionConfig){
-			LOGGER.info("Token:{},motionConfig is null. config:{}",context.getToken(),context.getConfig());
+			LOGGER.info("[{}], skip. motionConfig is null. config:{}",context.getToken(),context.getConfig());
 			return;
 		}
 		
-		context.reportCheck(motionIntervalTimeMsce);
+        if( ! MotionAndObjectReportManager.isAllowMotionReport(token) ){
+            LOGGER.info("[{}] skip.  motion lasttime report is :{}",token, MotionAndObjectReportManager.getMotionRportTime(token));
+        }
 		
-		String token =  context.getToken();
-		if( ! context.isReport() ){
-			LOGGER.debug("Token:{} get Motion.But isReport is false.",token);
-			return;
-		}
 		ZoneInfo  zone = motionFeedResult.getMotion().get(0);
 		byte[] jpgData;
 		try {
-			jpgData = processorManagerImpl.encode(context.getToken(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
+			jpgData = processorManagerImpl.encode(context.getTokenMask(), yuvImage.getYUVData(), yuvImage.getWidth(), yuvImage.getHeight(), yuvImage.getWidth(), yuvImage.getHeight());
 			//FIXME 对图像进行motion画框操作{
 			if(LOGGER.isDebugEnabled()){
 				List<List<Integer>> boxs = new ArrayList<List<Integer>>();
@@ -101,11 +103,11 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 			return;
 		}
 
-		LOGGER.info("Token:{},Get motion. zoneId:{},",token,zone.getZone_id());
+		LOGGER.info("tokenMask:{},Get motion. zoneId:{},",tokenMask,zone.getZone_id());
 		Date copyUtcDate = new Date(context.getUtcDateTime().getTime());
-		MotionEvent event = new MotionEvent(token,copyUtcDate,jpgData,context.getFileExpiresHours(),zone.getZone_id().intValue()+"");
+		MotionEvent event = new MotionEvent(tokenMask,copyUtcDate,jpgData,context.getFileExpiresHours(),zone.getZone_id().intValue()+"");
 		eventBus.post(event);
-		context.setLastMotionTimestamp(copyUtcDate.getTime());
+		MotionAndObjectReportManager.markMotionEvent(context.getToken(), DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
 	}
 
     @Override
@@ -114,7 +116,6 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
                             final Map<Integer, YUVImage> yuvImageResultMap,
                             final Map<Integer, MotionFeedResult> motionFeedResultMap) throws Exception {
          int  frameIndex = motionFeedResultMap.keySet().stream().findFirst().get();
-        feedResultHandle(context, yuvImageResultMap.get(frameIndex), nalData, motionFeedResultMap.get(frameIndex));
-        
+         feedResultHandle(context, yuvImageResultMap.get(frameIndex), nalData, motionFeedResultMap.get(frameIndex));
     }
 }

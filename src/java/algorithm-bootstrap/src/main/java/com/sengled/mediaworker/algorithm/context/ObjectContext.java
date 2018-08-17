@@ -1,7 +1,6 @@
 package com.sengled.mediaworker.algorithm.context;
 
 import java.util.Date;
-import org.apache.commons.lang.time.DateFormatUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectConfig;
@@ -15,9 +14,7 @@ import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.ObjectCo
 public class ObjectContext extends Context {
 	private static final Logger LOGGER = LoggerFactory.getLogger(ObjectContext.class);
 
-
 	private final String token;
-	private Long lastObjectTimestamp;
 	private Date utcDateTime;
 	private ObjectConfig objectConfig;
 	//接收到数据的时间
@@ -26,31 +23,6 @@ public class ObjectContext extends Context {
 
 	public ObjectContext(String token){
 		this.token = token;
-	}
-	
-	public void setLastObjectTimestamp(Long lastObjectTimestamp) {
-		this.lastObjectTimestamp = lastObjectTimestamp;
-	}
-
-	public boolean isSkip(long objectIntervalTimeMsce) {
-		boolean skip = false;
-		Date utcDateTime = getUtcDateTime();
-		LOGGER.info("isSkip lastObjectTimestamp:{},utcDateTime:{}",lastObjectTimestamp,DateFormatUtils.format(utcDateTime, UTC_DATE_FORMAT[0]));
-		if (lastObjectTimestamp != null && utcDateTime != null) {
-			long sinceLastMotion = (utcDateTime.getTime() - lastObjectTimestamp.longValue());
-
-			if (sinceLastMotion <= objectIntervalTimeMsce) {
-				LOGGER.info("Token:{},Since last time object:{} msec <= {} msec isSkip=true.", token,
-						sinceLastMotion, objectIntervalTimeMsce);
-				skip = true;
-			} else {
-				lastObjectTimestamp = null;
-				LOGGER.info("Token:{},Since last time object:{} msec > {} msec .isSkip=false.", token, sinceLastMotion,
-						objectIntervalTimeMsce);
-				skip = false;
-			}
-		}
-		return skip;
 	}
 
 	public Date getUtcDateTime() {
@@ -61,11 +33,7 @@ public class ObjectContext extends Context {
 	public String getToken() {
 		return token;
 	}
-
-	public Long getLastObjectTimestamp() {
-		return lastObjectTimestamp;
-	}
-
+	
 	public void setUtcDateTime(Date utcDateTime) {
 		this.utcDateTime = utcDateTime;
 	}

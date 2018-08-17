@@ -28,8 +28,6 @@ public class StreamingContext extends Context{
 	private String tokenMask;
 	//接收kinesis数据中的utc时间
 	private String utcDateTime;
-	//保存最后一次Motion的时间
-	private Long lastMotionTimestamp;
 	//上次 接收到数据的时间
 	private Long lastTimeContextUpdateTimestamp;
 	//接收到数据的时间
@@ -40,7 +38,6 @@ public class StreamingContext extends Context{
 	private FrameConfig frameConfig;
 	private AlgorithmConfigWarpper config;
 
-	private boolean isReport = true;
 	private Algorithm algorithm;
 	private Action action;
 	private ProcessorManager processorManager;
@@ -55,17 +52,18 @@ public class StreamingContext extends Context{
 					Algorithm algorithm,
 					ProcessorManager processorManager,
 					RecordCounter recordCounter,
+					AlgorithmConfigWarpper config,
 					StreamingContextManager streamingContextManager
 					) {
 		this.tokenMask = tokenMask;
 		this.algorithm = algorithm;
 		this.utcDateTime = utcDateTime;
 		this.processorManager = processorManager;
+	    this.config = config;
 		this.streamingContextManager = streamingContextManager;
 		this.recordCounter = recordCounter;
 		this.contextCreateTimestamp = System.currentTimeMillis();
 		this.contextUpdateTimestamp = contextCreateTimestamp;
-		this.lastMotionTimestamp = null;
 		LOGGER.info("Token:{},Model:{},Create StreamingContext", tokenMask);
 	}
 
@@ -103,24 +101,14 @@ public class StreamingContext extends Context{
 		}
 		return expire;
 	}
-	public void reportCheck(Long motionIntervalTimeMsce){
-		Date utcDateTime = getUtcDateTime();
-		if(lastMotionTimestamp !=null && utcDateTime !=null){
-			long sinceLastMotion = (utcDateTime.getTime() - lastMotionTimestamp.longValue());
-			
-			if(sinceLastMotion <= motionIntervalTimeMsce){
-				LOGGER.info("Token:{},Since last time motion:{} msec <= {} msec isReport=false.",tokenMask,sinceLastMotion,motionIntervalTimeMsce);
-				isReport = false;
-			}else{
-				lastMotionTimestamp = null;
-				LOGGER.info("Token:{},Since last time motion:{} msec > {} msec .isReport=true.",tokenMask,sinceLastMotion,motionIntervalTimeMsce);
-				isReport = true;
-			}
-		}
-	}
-	public String getToken() {
+
+	public String getTokenMask() {
 		return tokenMask;
 	}
+	
+    public String getToken() {
+        return tokenMask.split(",")[0];
+    }
 
 	public Algorithm getAlgorithm() {
 		return algorithm;
@@ -165,13 +153,6 @@ public class StreamingContext extends Context{
 	public void setLastTimeContextUpdateTimestamp(Long lastTimeContextUpdateTimestamp) {
 		this.lastTimeContextUpdateTimestamp = lastTimeContextUpdateTimestamp;
 	}
-
-	public Long getLastMotionTimestamp() {
-		return lastMotionTimestamp;
-	}
-	public void setLastMotionTimestamp(Long lastMotionTimestamp) {
-		this.lastMotionTimestamp = lastMotionTimestamp;
-	}
 	
 	public String getTimestampFormat(Long timestamp) {
 		if(null == timestamp){
@@ -183,10 +164,6 @@ public class StreamingContext extends Context{
 			LOGGER.error(e.getMessage(),e);
 		}
 		return "";
-	}
-	
-	public boolean isReport(){
-		return isReport;
 	}
 	
 	public int getFileExpiresHours(){
