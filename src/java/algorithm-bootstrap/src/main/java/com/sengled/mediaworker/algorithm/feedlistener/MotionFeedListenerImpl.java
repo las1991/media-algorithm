@@ -41,9 +41,6 @@ public class MotionFeedListenerImpl implements FeedListener,InitializingBean{
 	@Autowired
 	ProcessorManager processorManagerImpl;
 	
-	@Value("${motion.interval.time.msce}")
-    private Long motionIntervalTimeMsce;
-	
 	@Override
 	public void afterPropertiesSet() throws Exception {
 		try {
