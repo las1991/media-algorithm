@@ -20,7 +20,7 @@ public class ExecAction extends Action {
 	@Override
 	public void feed(StreamingContext context, final Frame frame,final FeedListener[] listeners) throws Exception {
 
-		final String token = context.getToken();
+		final String token = context.getTokenMask();
 		ProcessorManager processor = context.getProcessorManager();
 		
 		final List<YUVImage> yuvImageList = processor.decode(token, frame.getNalData());
