@@ -50,7 +50,7 @@ public class ObjectFeedListenerImpl implements FeedListener {
             return;
         }
         if( ! MotionAndObjectReportManager.isAllowObjectReport(token) ){
-            LOGGER.info("[{}] skip. object lasttime report is :{}",tokenMask, MotionAndObjectReportManager.getObjectRportTime(token));
+            LOGGER.info("[{}] skip. object lasttime report is :{}",token, MotionAndObjectReportManager.getObjectRportTime(token));
         }
 
         long delayTime = System.currentTimeMillis() - utcDate.getTime();
