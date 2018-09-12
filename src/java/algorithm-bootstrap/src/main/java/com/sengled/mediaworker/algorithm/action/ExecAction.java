@@ -41,6 +41,9 @@ public class ExecAction extends Action {
 	        
 	        if(motionFeedResult ==null || !motionFeedResult.verify()){
                 LOGGER.info("Token:{},Feed result NORESULT. feed result:{} ",token, motionFeedResult);
+                if( null != context.getAlgorithm() ){
+                    LOGGER.info("Token:{}, Algorithm:{} ",token, context.getAlgorithm().getParametersJson());    
+                }
                 continue;
             }
 	        motionFeedResultMap.put(frameIndex,motionFeedResult);
