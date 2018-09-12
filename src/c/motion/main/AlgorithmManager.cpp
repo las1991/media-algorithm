@@ -59,14 +59,14 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         pjson = cJSON_Parse(json_message);
         if( pjson == NULL )
         {
-            rv->plog->log_print(SLS_LOG_ERROR,"parse json error");
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json error msg = %s", json_message);
             error_code = -1;
             break;
         }
         cJSON *psensi = cJSON_GetObjectItem(pjson,"sensitivity");
         if( psensi == NULL || psensi->valueint <= 0 )
         {
-            rv->plog->log_print(SLS_LOG_ERROR,"parse json sensitivity error");
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json sensitivity error msg = %s", json_message);
             error_code = -1;
             break;
         }
@@ -76,14 +76,14 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
         cJSON *pparam_array= cJSON_GetObjectItem(pjson,"dataList");
         if(pparam_array == NULL || cJSON_Array != pparam_array->type)
         {
-            rv->plog->log_print(SLS_LOG_ERROR,"parse json dataList error");
+            rv->plog->log_print(SLS_LOG_ERROR,"parse json dataList error msg = %s", json_message);
             error_code = -1;
             break;
         } 
         int size = cJSON_GetArraySize(pparam_array);
         if(size > 3 )
         {
-            rv->plog->log_print(SLS_LOG_ERROR,"params number overflow");
+            rv->plog->log_print(SLS_LOG_ERROR,"params number overflow msg = %s", json_message);
             error_code = -1;
             break;
         }
@@ -101,7 +101,7 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
             cJSON *subitem = item->child;
             if(subitem == NULL || subitem->next == NULL )
             {
-                rv->plog->log_print(SLS_LOG_ERROR,"parse dataList element error");
+                rv->plog->log_print(SLS_LOG_ERROR,"parse dataList element error msg = %s", json_message);
                 error_code = -1;
                 break;
             }
@@ -109,7 +109,7 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
             cJSON *pid = cJSON_GetObjectItem(item,"id");
             if( pid == NULL )
             {
-                rv->plog->log_print(SLS_LOG_ERROR,"parse json id error");
+                rv->plog->log_print(SLS_LOG_ERROR,"parse json id error msg = %s", json_message);
                 break;
             }
 
@@ -119,7 +119,7 @@ int CopyAlgorithmParams( rvResource *rv, void *algorithm_param )
             cJSON *ppos = cJSON_GetObjectItem(item,"pos");
             if( ppos == NULL )
             {
-                rv->plog->log_print(SLS_LOG_ERROR,"parse json pos error");
+                rv->plog->log_print(SLS_LOG_ERROR,"parse json pos error msg = %s", json_message);
                 break;
             }
 
@@ -184,7 +184,7 @@ void DispatchAlgorithm( rvResource *rv,void *frame,int frame_width,int frame_hei
 
     if( CopyAlgorithmParams(rv,algorithm_param) == -1 )
     {
-        rv->plog->log_print(SLS_LOG_ERROR,"params error,return !!!!!");
+        rv->plog->log_print(SLS_LOG_ERROR,"params error,return !!!!! msg = %s", algorithm_param);
         return;
     }
     LocalPrint(rv);
