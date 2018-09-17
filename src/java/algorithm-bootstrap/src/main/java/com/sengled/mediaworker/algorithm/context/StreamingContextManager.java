@@ -26,6 +26,7 @@ import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
+import com.sengled.mediaworker.algorithm.context.AlgorithmConfigWarpper.MotionConfig;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 
 @Component
@@ -149,8 +150,14 @@ public class StreamingContextManager{
 	
 	public StreamingContext newAlgorithmContext(ProcessorManager processor,String tokenMask,String utcDateTime) throws Exception {
 	    AlgorithmConfigWarpper algorithmConfig = getAlgorithmConfig(tokenMask);
+	    
+	    MotionConfig baseConfig = algorithmConfig.getBaseConfig();
+	    if( null == baseConfig){
+	        throw new Exception("BaseConfig is null");
+	    }
+	    
 		String algorithmModelId = processor.newAlgorithmModel(tokenMask);
-		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(algorithmConfig.getBaseConfig()));
+		Algorithm algorithm = new Algorithm(algorithmModelId, JSONObject.toJSONString(baseConfig));
 		StreamingContext context =  new StreamingContext(tokenMask, utcDateTime,algorithm, processor,recordCounter,algorithmConfig,this);
 		streamingContextMap.put(tokenMask, context);
 		return context;

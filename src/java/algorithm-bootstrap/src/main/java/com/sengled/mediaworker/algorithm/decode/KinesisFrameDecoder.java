@@ -58,7 +58,7 @@ public class KinesisFrameDecoder {
     }
     public static class FrameConfig{
     	@JSONField(name="action")
-    	private String action;
+    	private String action;//open,exec,close
 
         @JSONField(name="utcDateTime")
     	private String utcDateTime;
