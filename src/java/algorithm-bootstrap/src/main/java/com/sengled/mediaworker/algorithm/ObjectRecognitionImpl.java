@@ -63,9 +63,15 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	private static final int EVENT_BUS_THREAD_COUNT = 100;
 	
-	@Value("http://${OBJECT.RECOGNITION.HOST}:${OBJECT.RECOGNITION.PORT}${OBJECT.RECOGNITION.PATH}")
-	private String objectRecognitionUrl;
-    
+	@Value("${OBJECT.RECOGNITION.HOST}")
+	private String objectRecognitionHost;
+	
+	@Value("${OBJECT.RECOGNITION.PORT}")
+    private String objectRecognitionPort;
+	
+	@Value("${OBJECT.RECOGNITION.PATH}")
+    private String objectRecognitionPath;
+	
     @Value("${debug.image.save.path}")
     private String debugImageSavePath;
     
@@ -93,6 +99,8 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	
 	private AsyncEventBus eventBus;
 	
+	private String objectRecognitionUrl;
+	
 	
 	@Override
 	public void afterPropertiesSet() throws Exception {
@@ -106,7 +114,15 @@ public class ObjectRecognitionImpl implements ObjectRecognition,InitializingBean
 	}
 	
 	private void initialize() {
-		LOGGER.info("ObjectRecognition init. EVENT_BUS_THREAD_COUNT:{}",EVENT_BUS_THREAD_COUNT);
+	    String scheme;
+	    if( "443".equals(objectRecognitionPort.trim())){
+	        scheme = "https://";
+	    }else{
+	        scheme = "http://";
+	    }
+	    objectRecognitionUrl = scheme + objectRecognitionHost +":"+ objectRecognitionPort + objectRecognitionPath;
+	    
+		LOGGER.info("ObjectRecognition init. EVENT_BUS_THREAD_COUNT:{},objectRecognitionUrl:{}",EVENT_BUS_THREAD_COUNT,objectRecognitionUrl);
 		
 		restTemplate = new RestTemplate(clientHttpRequestFactory);
 		try {
