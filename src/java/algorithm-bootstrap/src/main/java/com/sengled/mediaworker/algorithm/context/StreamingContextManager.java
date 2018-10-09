@@ -88,12 +88,10 @@ public class StreamingContextManager{
 	                close(context);
 	            }
 	            context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
-	            context.setAction(context.openAction);
 	        }else if( "exec".equalsIgnoreCase(action) ){
 	            if( null == context ){
 	                context =  newAlgorithmContext(processor,tokenMask,utcDateTime);
 	            }
-                context.setAction(context.execAction);
 	        }else if( "close".equalsIgnoreCase(action) ){
 	            if( null != context ){
 	                close(context);
@@ -125,18 +123,6 @@ public class StreamingContextManager{
         return configWapper;
     }
 
-    public void reload(StreamingContext context) throws AlgorithmIntanceCloseException, AlgorithmIntanceCreateException{
-		if(LOGGER.isDebugEnabled()){
-			LOGGER.debug("StreamingContext reload.{}",context.toString());
-		}
-		String token = context.getTokenMask();
-		Algorithm algorithm = context.getAlgorithm();
-		ProcessorManager processor = context.getProcessorManager();
-		
-		processor.close(algorithm.getAlgorithmModelId());
-		String algorithmModelId = processor.newAlgorithmModel(token);
-		algorithm.setAlgorithmModelId(algorithmModelId);
-	}
 	
 	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
 		if(LOGGER.isDebugEnabled()){

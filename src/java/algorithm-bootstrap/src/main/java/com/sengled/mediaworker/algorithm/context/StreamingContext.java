@@ -12,7 +12,6 @@ import com.sengled.mediaworker.RecordCounter;
 import com.sengled.mediaworker.algorithm.ProcessorManager;
 import com.sengled.mediaworker.algorithm.action.Action;
 import com.sengled.mediaworker.algorithm.action.ExecAction;
-import com.sengled.mediaworker.algorithm.action.OpenAction;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.Frame;
 import com.sengled.mediaworker.algorithm.decode.KinesisFrameDecoder.FrameConfig;
 import com.sengled.mediaworker.algorithm.feedlistener.FeedListener;
@@ -39,13 +38,10 @@ public class StreamingContext extends Context{
 	private AlgorithmConfigWarpper config;
 
 	private Algorithm algorithm;
-	private Action action;
+	private Action action = new ExecAction();
 	private ProcessorManager processorManager;
 	private StreamingContextManager streamingContextManager;
 	private RecordCounter recordCounter;
-	
-	public final Action openAction = new OpenAction();
-	public final Action execAction = new ExecAction();
 	
 	StreamingContext(String tokenMask, 
 					String utcDateTime,
