@@ -177,24 +177,27 @@ public class JnaInterface implements Function{
 			throw new FeedException("Not fonud algorithmModelPointer from pointerMap");
 		}
 		
+		byte[] yuvData = yuvImage.getYUVData();
+        int yuvDataLength = yuvData.length;
+        if(0 == yuvDataLength){
+            throw new FeedException("yuvDataLength is empay");
+        }
+		
 		algorithm_base_result result = new algorithm_base_result();
 		
 		int length;
-		DisposeableMemory algorithm_params;
+		DisposeableMemory algorithm_params = null;
 		try {
 			length = jsonConfig.getBytes("utf-8").length;
 			algorithm_params = new DisposeableMemory(length);
 			algorithm_params.write(0, jsonConfig.getBytes("utf-8"), 0, length);
-		} catch (UnsupportedEncodingException e1) {
+		} catch (Exception e1) {
+		    if( null != algorithm_params){
+		        algorithm_params.dispose();
+		    }
 			throw new  FeedException(e1);
 		}
 
-		byte[] yuvData = yuvImage.getYUVData();
-		int yuvDataLength = yuvData.length;
-		if(0 == yuvDataLength){
-			throw new FeedException("yuvDataLength is empay");
-		}
-		
 		DisposeableMemory yuvDataPointer = new DisposeableMemory(yuvDataLength);
 		try {
 			yuvDataPointer.write(0, yuvData, 0, yuvDataLength);
@@ -209,6 +212,7 @@ public class JnaInterface implements Function{
 		}finally{
 			yuvDataPointer.dispose();
 			algorithm_params.dispose();
+			result.clear();
 		}
 	}
 
