@@ -22,7 +22,7 @@ public class common_params extends Structure {
 	public common_params() {
 		super();
 	}
-	protected List<? > getFieldOrder() {
+	protected List<String> getFieldOrder() {
 		return Arrays.asList("token", "log_callback");
 	}
 	/**

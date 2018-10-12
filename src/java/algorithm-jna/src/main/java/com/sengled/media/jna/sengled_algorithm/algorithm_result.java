@@ -16,7 +16,7 @@ public class algorithm_result extends Structure {
 	public algorithm_result() {
 		super();
 	}
-	protected List<? > getFieldOrder() {
+	protected List<String> getFieldOrder() {
 		return Arrays.asList("bresult", "result");
 	}
 	/** @param result C type : char[10 * 1024] */

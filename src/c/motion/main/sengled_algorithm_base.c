@@ -23,6 +23,19 @@ void feed(SLSHandle handle, void* frame, int frame_width, int frame_height, void
     feed_frame(handle, frame, frame_width, frame_height, algorithm_params, (algorithm_result* )result);
 }
 
+void feed2(SLSHandle handle, void* frame, int frame_width, int frame_height, void* algorithm_params, algorithm_base_result2* result)
+{
+    result->size = ALGORITHM_MAX_RESULT_LENGTH;
+    result->result = malloc(result->size);
+    memset(result->result, 0, result->size);
+    feed_frame(handle, frame, frame_width, frame_height, algorithm_params, (algorithm_result* )result);
+}
+
+void destroy_result(algorithm_base_result2* result)
+{
+    free(result->result);
+}
+
 void delete_instance(SLSHandle handle)
 {
     delete_algorithm_instance(handle);

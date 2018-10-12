@@ -32,12 +32,12 @@
 		<dependency>
 			<groupId>net.java.dev.jna</groupId>
 			<artifactId>jna-platform</artifactId>
-			<version>4.2.2</version>
+			<version>4.5.1</version>
 		</dependency>
 		<dependency>
 			<groupId>com.alibaba</groupId>
 			<artifactId>fastjson</artifactId>
-			 <version>1.2.44</version>
+			<version>1.2.44</version>
 		</dependency>
 		<dependency>
 			<groupId>com.nativelibs4java</groupId>

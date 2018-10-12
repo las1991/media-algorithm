@@ -16,7 +16,7 @@ public class JPGFrame extends Structure {
 	public JPGFrame() {
 		super();
 	}
-	protected List<? > getFieldOrder() {
+	protected List<String> getFieldOrder() {
 		return Arrays.asList("data", "size");
 	}
 	/** @param data C type : char* */
