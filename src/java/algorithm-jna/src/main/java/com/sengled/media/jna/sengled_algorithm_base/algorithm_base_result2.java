@@ -9,31 +9,33 @@ import java.util.List;
  * a tool written by <a href="http://ochafik.com/">Olivier Chafik</a> that <a href="http://code.google.com/p/jnaerator/wiki/CreditsAndLicense">uses a few opensource projects.</a>.<br>
  * For help, please visit <a href="http://nativelibs4java.googlecode.com/">NativeLibs4Java</a> , <a href="http://rococoa.dev.java.net/">Rococoa</a>, or <a href="http://jna.dev.java.net/">JNA</a>.
  */
-public class algorithm_base_result extends Structure {
+public class algorithm_base_result2 extends Structure {
 	public int bresult;
-	/** C type : char[10 * 1024] */
-	public byte[] result = new byte[10 * 1024];
-	public algorithm_base_result() {
+    public Pointer result;
+    public int size;
+	public algorithm_base_result2() {
 		super();
 	}
+	
+	public algorithm_base_result2(int bresult,Pointer data, int size) {
+	        super();
+	        this.bresult = bresult;
+	        this.result = data;
+	        this.size = size;
+	}
+	   
 	protected List<String> getFieldOrder() {
-		return Arrays.asList("bresult", "result");
+		return Arrays.asList("bresult", "result","size");
 	}
-	/** @param result C type : char[10 * 1024] */
-	public algorithm_base_result(int bresult, byte result[]) {
-		super();
-		this.bresult = bresult;
-		if ((result.length != this.result.length)) 
-			throw new IllegalArgumentException("Wrong array size !");
-		this.result = result;
-	}
-	public algorithm_base_result(Pointer peer) {
+
+	
+	public algorithm_base_result2(Pointer peer) {
 		super(peer);
 	}
-	public static class ByReference extends algorithm_base_result implements Structure.ByReference {
+	public static class ByReference extends algorithm_base_result2 implements Structure.ByReference {
 		
 	};
-	public static class ByValue extends algorithm_base_result implements Structure.ByValue {
+	public static class ByValue extends algorithm_base_result2 implements Structure.ByValue {
 		
 	};
 }

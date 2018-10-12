@@ -18,7 +18,7 @@ public class YUVFrame extends Structure {
 	public YUVFrame() {
 		super();
 	}
-	protected List<? > getFieldOrder() {
+	protected List<String> getFieldOrder() {
 		return Arrays.asList("width", "height", "data", "size");
 	}
 	/** @param data C type : char* */

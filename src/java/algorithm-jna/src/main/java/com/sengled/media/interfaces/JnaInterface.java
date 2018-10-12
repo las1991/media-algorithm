@@ -1,15 +1,13 @@
 package com.sengled.media.interfaces;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.concurrent.Executors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCloseException;
 import com.sengled.media.interfaces.exceptions.AlgorithmIntanceCreateException;
 import com.sengled.media.interfaces.exceptions.DecodeException;
@@ -20,7 +18,7 @@ import com.sengled.media.jna.jpg_encoder.Jpg_encoderLibrary;
 import com.sengled.media.jna.nal_decoder.Nal_decoderLibrary;
 import com.sengled.media.jna.nal_decoder.YUVFrame2;
 import com.sengled.media.jna.sengled_algorithm_base.Sengled_algorithm_baseLibrary;
-import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result;
+import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result2;
 import com.sengled.media.jni.JNIFunction;
 import com.sun.jna.Pointer;
 
@@ -51,12 +49,30 @@ public class JnaInterface implements Function{
 			encoderLibrary.SetLogCallback(new Pointer(JNIFunction.getInstance().getLog4CFunction()));
 			
 			LOGGER.info("init finished");
+//			Executors.newFixedThreadPool(1).submit(()->test());
+//			Executors.newFixedThreadPool(1).submit(()->test());
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(),e);
 			LOGGER.error("JnaInterface init failed. System exit.");
 			System.exit(1);
 		}
 	}
+	static void test(){
+	    int n = 0;
+	    while(true){
+	        LOGGER.info("exec count:"+n++);
+            JPGFrame jpg_frame =  new JPGFrame();
+//	        algorithmLibrary.feed1(jpg_frame);
+//	        algorithmLibrary.free1(jpg_frame);
+	        
+	        try {
+                Thread.sleep(5);
+            } catch (InterruptedException e) {
+            }
+	    }
+	    
+	}
+	
 	@Override
 	public List<YUVImage> decode(String token, byte[] nalData) throws DecodeException {
 		if(null == nalData || nalData.length == 0){
@@ -67,6 +83,7 @@ public class JnaInterface implements Function{
 
 		List<YUVImage> yuvImageList = new ArrayList<>();
 		YUVFrame2 yuv_frame = new YUVFrame2();
+		
 		try {
 			ByteBuffer data_buffer  = ByteBuffer.wrap(nalData);
 			int len = nalData.length;
@@ -183,7 +200,7 @@ public class JnaInterface implements Function{
             throw new FeedException("yuvDataLength is empay");
         }
 		
-		algorithm_base_result result = new algorithm_base_result();
+		algorithm_base_result2 result = new algorithm_base_result2();
 		
 		int length;
 		DisposeableMemory algorithm_params = null;
@@ -202,9 +219,9 @@ public class JnaInterface implements Function{
 		try {
 			yuvDataPointer.write(0, yuvData, 0, yuvDataLength);
 			LOGGER.debug("yuvDataPointer data length:{}",yuvDataPointer.getByteArray(0, yuvDataLength).length);
-			algorithmLibrary.feed(algorithmModelPointer, yuvDataPointer, yuvImage.getWidth(), yuvImage.getHeight(), algorithm_params, result);
+			algorithmLibrary.feed2(algorithmModelPointer, yuvDataPointer, yuvImage.getWidth(), yuvImage.getHeight(), algorithm_params, result);
 			if(result.bresult != 0 ){
-				return  new String(result.result,0,(10 * 1024),"utf-8");
+			    return new String(result.result.getByteArray(0, result.size),"UTF8");
 			}
 			return "";
 		} catch (Exception e) {
@@ -212,7 +229,7 @@ public class JnaInterface implements Function{
 		}finally{
 			yuvDataPointer.dispose();
 			algorithm_params.dispose();
-			result.clear();
+			algorithmLibrary.destroy_result(result);
 		}
 	}
 

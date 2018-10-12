@@ -1,4 +1,5 @@
 package com.sengled.media.jna.sengled_algorithm_base;
+import com.sengled.media.jna.jpg_encoder.JPGFrame;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
 import com.sun.jna.NativeLibrary;
@@ -39,9 +40,15 @@ public interface Sengled_algorithm_baseLibrary extends Library {
 	 * <i>native declaration : sengled_algorithm_base.h:38</i>
 	 */
 	void feed(Pointer handle, Pointer frame, int frame_width, int frame_height, Pointer algorithm_params, algorithm_base_result result);
+//	void feed1(JPGFrame result);
+//	void free1(JPGFrame result);
+	
+    void feed2(Pointer handle, Pointer frame, int frame_width, int frame_height, Pointer algorithm_params, algorithm_base_result2 result);
+    void destroy_result(algorithm_base_result2 result);
 	/**
 	 * Original signature : <code>void delete_instance(void*)</code><br>
 	 * <i>native declaration : sengled_algorithm_base.h:40</i>
 	 */
 	void delete_instance(Pointer handle);
+    
 }
