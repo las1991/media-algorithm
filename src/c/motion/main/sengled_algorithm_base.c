@@ -28,7 +28,10 @@ void feed2(SLSHandle handle, void* frame, int frame_width, int frame_height, voi
     result->size = ALGORITHM_MAX_RESULT_LENGTH;
     result->result = malloc(result->size);
     memset(result->result, 0, result->size);
-    feed_frame(handle, frame, frame_width, frame_height, algorithm_params, (algorithm_result* )result);
+    algorithm_result res;
+    memset(&res, 0, sizeof(algorithm_result));
+    feed_frame(handle, frame, frame_width, frame_height, algorithm_params, &res);
+    memcpy(result->result, res.result, result->size); 
 }
 
 void destroy_result(algorithm_base_result2* result)
