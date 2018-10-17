@@ -31,6 +31,7 @@ void feed2(SLSHandle handle, void* frame, int frame_width, int frame_height, voi
     algorithm_result res;
     memset(&res, 0, sizeof(algorithm_result));
     feed_frame(handle, frame, frame_width, frame_height, algorithm_params, &res);
+    result->bresult = res.bresult;
     memcpy(result->result, res.result, result->size); 
 }
 
