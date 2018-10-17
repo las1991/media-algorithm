@@ -1,6 +1,5 @@
 package com.sengled.media.interfaces;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -22,6 +21,8 @@ import com.sengled.media.jna.sengled_algorithm_base.Sengled_algorithm_baseLibrar
 import com.sengled.media.jna.sengled_algorithm_base.algorithm_base_result2;
 import com.sengled.media.jni.JNIFunction;
 import com.sengled.media.objectpool.AlgorithmResultObjectPool;
+import com.sengled.media.objectpool.DecodeYUVFrame2ObjectPool;
+import com.sengled.media.objectpool.EncodeJPGFrameObjectPool;
 import com.sun.jna.Pointer;
 
 public class JnaInterface implements CFunction {
@@ -31,6 +32,9 @@ public class JnaInterface implements CFunction {
     private static Sengled_algorithm_baseLibrary algorithmLibrary;
     private static Jpg_encoderLibrary encoderLibrary;
     private static AlgorithmResultObjectPool algorithmResultObjectPool;
+    private static EncodeJPGFrameObjectPool encodeJPGFrameObjectPool;
+    private static DecodeYUVFrame2ObjectPool decodeYUVFrame2ObjectPool;
+    
     private ConcurrentHashMap<String, Pointer> pointerMap = new ConcurrentHashMap<>();
 
     static {
@@ -52,9 +56,10 @@ public class JnaInterface implements CFunction {
 
             algorithmResultObjectPool = AlgorithmResultObjectPool.getInstance();
 
+            encodeJPGFrameObjectPool = EncodeJPGFrameObjectPool.getInstance();
+            
+            decodeYUVFrame2ObjectPool = new DecodeYUVFrame2ObjectPool();
             LOGGER.info("init finished");
-            // Executors.newFixedThreadPool(1).submit(()->test());
-            // Executors.newFixedThreadPool(1).submit(()->test());
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
             LOGGER.error("JnaInterface init failed. System exit.");
@@ -62,21 +67,6 @@ public class JnaInterface implements CFunction {
         }
     }
 
-    static void test() {
-        int n = 0;
-        while (true) {
-            LOGGER.info("exec count:" + n++);
-            JPGFrame jpg_frame = new JPGFrame();
-            // algorithmLibrary.feed1(jpg_frame);
-            // algorithmLibrary.free1(jpg_frame);
-
-            try {
-                Thread.sleep(5);
-            } catch (InterruptedException e) {
-            }
-        }
-
-    }
 
     @Override
     public List<YUVImage> decode(String token, byte[] nalData) throws DecodeException {
@@ -87,48 +77,46 @@ public class JnaInterface implements CFunction {
         LOGGER.debug("decode token:{},nalData length:{}", token, nalData.length);
 
         List<YUVImage> yuvImageList = new ArrayList<>();
-        YUVFrame2 yuv_frame = new YUVFrame2();
-
-        try {
-            ByteBuffer data_buffer = ByteBuffer.wrap(nalData);
-            int len = nalData.length;
-            long startTime = System.currentTimeMillis();
-
-            int code = decoderLibrary.DecodeNal(data_buffer, len, token, yuv_frame);
-
-            LOGGER.debug("decode code:{} Cost:{}", code, (System.currentTimeMillis() - startTime));
-            if (0 != code) {
-                LOGGER.error("decode failed. code:{} token:{}", code, token);
-                throw new Exception("return code error.");
-            }
-            int size0 = yuv_frame.size[0];
-            int size1 = yuv_frame.size[1];
-            if (size0 != 0) {
-                byte[] yuvData = yuv_frame.data[0].getByteArray(0, yuv_frame.size[0]);
-                if (null == yuvData || 0 == yuvData.length) {
-                    LOGGER.error("decode failed. yuvData empty. code:{} token:{}", code, token);
-                    throw new Exception("yuvData empty.");
-                }
-                yuvImageList.add(new YUVImage(yuv_frame.width, yuv_frame.height, yuvData));
-
-            }
-            if (size1 != 0) {
-                byte[] yuvData = yuv_frame.data[1].getByteArray(0, yuv_frame.size[1]);
-                if (null == yuvData || 0 == yuvData.length) {
-                    LOGGER.error("decode failed. yuvData empty. code:{} token:{}", code, token);
-                    throw new Exception("yuvData empty.");
-                }
-                yuvImageList.add(new YUVImage(yuv_frame.width, yuv_frame.height, yuvData));
-            }
-
-            LOGGER.debug("Token:{},decode finished. width:{},height:{}", token, yuv_frame.width, yuv_frame.height);
-            return yuvImageList;
-        } catch (Exception e) {
-            throw new DecodeException("DecodeException " + e.getMessage());
-        } finally {
-            decoderLibrary.Destroy(yuv_frame);
-            LOGGER.debug("Destroy yuv_frame");
-        }
+        final ByteBuffer data_buffer = ByteBuffer.wrap(nalData);
+        final int len = nalData.length;
+        
+        return  decodeYUVFrame2ObjectPool.function(new Function<YUVFrame2, List<YUVImage>>() {
+                @Override
+                public List<YUVImage> apply(YUVFrame2 yuv_frame) {
+                    try {
+                        int code = decoderLibrary.DecodeNal(data_buffer, len, token, yuv_frame);
+                        if (0 != code) {
+                            LOGGER.error("decode failed. code:{} token:{}", code, token);
+                            throw new Exception("return code error.");
+                        }
+                        int size0 = yuv_frame.size[0];
+                        int size1 = yuv_frame.size[1];
+                        if (size0 != 0) {
+                            byte[] yuvData = yuv_frame.data[0].getByteArray(0, yuv_frame.size[0]);
+                            if (null == yuvData || 0 == yuvData.length) {
+                                LOGGER.error("decode failed. yuvData empty. code:{} token:{}", code, token);
+                                throw new Exception("yuvData empty.");
+                            }
+                            yuvImageList.add(new YUVImage(yuv_frame.width, yuv_frame.height, yuvData));
+    
+                        }
+                        if (size1 != 0) {
+                            byte[] yuvData = yuv_frame.data[1].getByteArray(0, yuv_frame.size[1]);
+                            if (null == yuvData || 0 == yuvData.length) {
+                                LOGGER.error("decode failed. yuvData empty. code:{} token:{}", code, token);
+                                throw new Exception("yuvData empty.");
+                            }
+                            yuvImageList.add(new YUVImage(yuv_frame.width, yuv_frame.height, yuvData));
+                        }
+                        LOGGER.debug("Token:{},decode finished. width:{},height:{}", token, yuv_frame.width, yuv_frame.height);
+                    } catch (Exception e) {
+                        LOGGER.error(e.getMessage(),e);
+                    } finally {
+                        decoderLibrary.Destroy(yuv_frame);
+                        LOGGER.debug("Destroy yuv_frame");
+                    }
+                    return yuvImageList;
+                }});
     }
 
     @Override
@@ -140,22 +128,33 @@ public class JnaInterface implements CFunction {
         }
 
         LOGGER.debug("Token:{} encode ,yuvData length:{}", token, yuvData.length);
-        JPGFrame jpg_frame = new JPGFrame();
-        DisposeableMemory pointer = new DisposeableMemory(yuvDataLength);
+        
+        final DisposeableMemory pointer = new DisposeableMemory(yuvDataLength);
         pointer.write(0, yuvData, 0, yuvDataLength);
         com.sengled.media.jna.jpg_encoder.YUVFrame yuv_frame = new com.sengled.media.jna.jpg_encoder.YUVFrame(width, height, pointer, yuvDataLength);
 
         try {
-            int code = encoderLibrary.EncodeJPG(yuv_frame, dstWidth, dstHeight, token, jpg_frame);
-            if (0 != code) {
-                LOGGER.error("Token:{} encode failed. code:{}", token, code);
-                throw new Exception("return code error.");
-            }
-            return jpg_frame.data.getByteArray(0, jpg_frame.size);
+            return encodeJPGFrameObjectPool.function(new Function<JPGFrame, byte[]>() {
+                @Override
+                public byte[]  apply(JPGFrame jpg_frame) {
+                    try {
+                        int code = encoderLibrary.EncodeJPG(yuv_frame, dstWidth, dstHeight, token, jpg_frame);
+                        if (0 != code) {
+                            LOGGER.error("Token:{} encode failed. code:{}", token, code);
+                            throw new Exception("return code error.");
+                        }
+                        return jpg_frame.data.getByteArray(0, jpg_frame.size);
+                    } catch (Exception e) {
+                        LOGGER.error(e.getMessage(),e);
+                    } finally {
+                        encoderLibrary.Destroy(jpg_frame);
+                    }
+                    return null;
+                }});
         } catch (Exception e) {
-            throw new EncodeException("EncodeException " + e.getMessage());
-        } finally {
-            encoderLibrary.Destroy(jpg_frame);
+            LOGGER.error(e.getMessage(),e);
+            throw new EncodeException("EncodeException");
+        }finally{
             pointer.dispose();
         }
     }
