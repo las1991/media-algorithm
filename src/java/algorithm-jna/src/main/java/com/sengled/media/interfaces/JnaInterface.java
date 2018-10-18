@@ -161,7 +161,7 @@ public class JnaInterface implements CFunction {
 
     @Override
     public String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException {
-        LOGGER.debug("Token:{}  newAlgorithmModel", token);
+        LOGGER.info("Token:{}  newAlgorithmModel", token);
         String algorithmModelId;
         Pointer oldPointer = null;
         try {

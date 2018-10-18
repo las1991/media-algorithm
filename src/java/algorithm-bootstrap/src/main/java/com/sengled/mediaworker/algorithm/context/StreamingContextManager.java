@@ -125,9 +125,7 @@ public class StreamingContextManager{
 
 	
 	public void close(StreamingContext context) throws AlgorithmIntanceCloseException {
-		if(LOGGER.isDebugEnabled()){
-			LOGGER.debug("StreamingContext close.{}",context.toString());
-		}
+	    LOGGER.info("Token:{} close",context.getTokenMask());
 		ProcessorManager processor = context.getProcessorManager();
 		Algorithm algorithm = context.getAlgorithm();
 		processor.close(algorithm.getAlgorithmModelId());
