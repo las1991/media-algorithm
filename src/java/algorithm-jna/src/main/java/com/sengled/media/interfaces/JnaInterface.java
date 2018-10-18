@@ -58,7 +58,7 @@ public class JnaInterface implements CFunction {
 
             encodeJPGFrameObjectPool = EncodeJPGFrameObjectPool.getInstance();
             
-            decodeYUVFrame2ObjectPool = new DecodeYUVFrame2ObjectPool();
+            decodeYUVFrame2ObjectPool = DecodeYUVFrame2ObjectPool.getInstance();
             LOGGER.info("init finished");
         } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
@@ -161,7 +161,7 @@ public class JnaInterface implements CFunction {
 
     @Override
     public String newAlgorithmModel(String token) throws AlgorithmIntanceCreateException {
-        LOGGER.debug("Token:{}  newAlgorithmModel", token);
+        LOGGER.info("Token:{}  newAlgorithmModel", token);
         String algorithmModelId;
         Pointer oldPointer = null;
         try {
@@ -235,7 +235,7 @@ public class JnaInterface implements CFunction {
                     }finally{
                         algorithmLibrary.destroy_result(result);
                     }
-                    return null;
+                    return "";
                 }
             });
         } catch (Exception e) {
