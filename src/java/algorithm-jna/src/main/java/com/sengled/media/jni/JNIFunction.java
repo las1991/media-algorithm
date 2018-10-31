@@ -130,13 +130,13 @@ public class JNIFunction {
     };
     
     public static void log(int level, String chars) {
-    	if (0 <= level && level < LOGGERS.length) {
-    		LOGGERS[level].doLog(chars);
-    	} else if(level < 0) {
-    		LOGGERS[0].doLog(chars);
-    	} else {
-    		LOGGERS[LOGGERS.length - 1].doLog(chars);
-    	}
+//    	if (0 <= level && level < LOGGERS.length) {
+//    		LOGGERS[level].doLog(chars);
+//    	} else if(level < 0) {
+//    		LOGGERS[0].doLog(chars);
+//    	} else {
+//    		LOGGERS[LOGGERS.length - 1].doLog(chars);
+//    	}
     }
 
     // public native void log2(int level, String chars);
